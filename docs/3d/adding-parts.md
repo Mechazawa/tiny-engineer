@@ -122,6 +122,8 @@ Place them under:
 
 Mirror the top-level `3d_models` structure (`cad` + `parts`). Keep CERN-OHL-S licensing consistent with [`3d_models/LICENSE`](../../3d_models/LICENSE) when you distribute Products based on these designs. Each mod may include a short `README.md` describing what it fits and which `parts/{servo_id}/` folders were exported.
 
+Commit and PR title: `type(mods): summary` — name the mod in the summary. `feat(mods)` / `fix(mods)` do not version the stock CAD revision. Promoting a mod into stock `cad/` and `parts/` is `feat(cad)`. See [CONTRIBUTING.md](../../CONTRIBUTING.md).
+
 ## Checklist
 
 - [ ] Source of truth: `.f3d` edited; exports re-generated (no hand-edited meshes)
