@@ -6,6 +6,7 @@ Extensible eye renderers selected by Config / `POST /settings?eyes_style=…`.
 | --- | --- |
 | `classic` | Procedural rounded eyes (default) |
 | `kaomoji` | Animated faces from TinyEngineerExpressions |
+| `cover` | Full-half bars for mods with a mask with eye holes; height changes via top and/or bottom black margins |
 
 ## Add a style
 
