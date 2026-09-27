@@ -59,6 +59,9 @@ Major pieces (exact models and counts in the BOM):
 
 Complete inventory and limits: [docs/hardware/components.md](docs/hardware/components.md). What to buy (cart + which servo): [docs/shopping.md](docs/shopping.md).
 
+> **Interested in an assembled Main Board?**  
+> An integrated PCB that replaces most of the separate electronics modules and wiring is in development. If you'd be interested in getting a fully assembled board, [let me know in the community interest check](https://github.com/jamro/tiny-engineer/discussions/50).
+
 ## Quick start
 
 Firmware is Arduino on [PlatformIO](https://platformio.org/). From the project root:
