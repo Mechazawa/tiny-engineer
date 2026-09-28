@@ -53,6 +53,7 @@ void test_eyes_style() {
   TEST_ASSERT_TRUE(settingsValidateEyesStyle("classic"));
   TEST_ASSERT_TRUE(settingsValidateEyesStyle("kaomoji"));
   TEST_ASSERT_TRUE(settingsValidateEyesStyle("cover"));
+  TEST_ASSERT_TRUE(settingsValidateEyesStyle("dots"));
   TEST_ASSERT_FALSE(settingsValidateEyesStyle("other"));
   TEST_ASSERT_FALSE(settingsValidateEyesStyle(nullptr));
 }
