@@ -230,10 +230,10 @@ Easiest with the desk tipped onto its front wall so the PCA9685 plugs face up, a
 2. Route the chair leads through the existing tunnel and into the desk cavity. Keep the harness inside the perimeter, away from all six cover screw paths; no wire should sit between the cover and the chair/desk mating surfaces.
 3. Use the updated `Chair` from the same servo folder: it has two reinforced blind pilot holes underneath its rear wall. An older chair without these holes must be reprinted for the six-point attachment; do not drill blindly near the existing side screws or wiring.
 4. Place the flat mating face of `BottomCover` against the desk and chair. Its stem follows the chair; the recessed pockets face outward. Align the four desk holes and the two rear chair holes.
-5. Fit **six M2×8 mm thread-forming pan/button-head screws**: four into the desk's existing vertical pilots and two into the new chair pilots. Use heads up to **4.0 mm diameter × 2.0 mm high**. The cover's 2.3 mm shaft holes are clearance holes; retention comes from the receiving pilots, sized with `ScrewSizingTest`. No nuts are added for this joint.
-6. Tighten gently until each head bears on its shoulder. The desk-corner pockets are open at the edges to avoid thin rims; the chair pockets are round. Both leave a 2.2 mm bearing layer and recess the specified heads by 0.3 mm. Check that the cover seats without trapped wires and that no head projects below the flat underside, then return the robot upright.
+5. Fasten with **six M2×8 mm** pan/button-head screws — four into the desk and two into the chair. Heads no larger than **4.0 mm diameter × 2.0 mm high**. No nuts.
+6. Tighten until each head sits in its pocket and none sticks past the flat underside. No trapped wires. Set the robot upright.
 
-Print `BottomCover` with its **mating face down and pockets up**, as exported; no supports. The native model has been checked for all three servo presets, but printed fit, thread grip, and the actual cable harness still require a physical test-fit. See [bottom-cover design and checks](bottom-cover.md).
+Print `BottomCover` with its **mating face down and pockets up**, as exported. No supports. Printed fit still needs a test-fit.
 
 ## 17. Arms — elbow joints
 

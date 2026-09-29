@@ -20,7 +20,7 @@ Any FDM bureau that accepts STL or STEP can work. **[PCBWay 3D printing](https:/
 | `PartsSetB.stl` (or `.step`) | Originally black, including `BottomCover` and the updated `Chair`; customize the color if you like |
 | `LampDiffuser.stl` (or `.step`) | White or translucent. Intentionally thin so light passes through; may fail the provider’s minimum wall-thickness check — expect to accept a wall-thickness / damage-risk disclaimer if asked |
 
-The largest black aggregate (SG90) is approximately **235 × 332 mm**. Services can arrange the parts for their machines; on a smaller home print bed, use the individual files instead. `BottomCover` is already included in `PartsSetB`, so do not order it twice.
+The largest black aggregate (SG90) is approximately **235 × 332 mm**. Services can arrange the parts for their machines; on a smaller home print bed, use the individual files instead.
 
 ## Settings used in the PCBWay test
 
