@@ -35,14 +35,24 @@ Open-source desk robot: 3D-printable body, Wi-Fi, and a small REST API so your t
 
 | | |
 | --- | --- |
-| **Parts (electronics + 5× SG90 Servos)** | About **$50–70** [shopping list](docs/shopping.md) |
+| **Parts (electronics + 5× SG90 Servos)** | About **$50–70** [shopping list](docs/shopping.md) — modular breakouts **or** [main control board](docs/shopping.md#choose-electronics-path) |
 | **Also budget for** | 3D printer + filament, or [order prints](docs/3d/order-parts.md); M2 screws; **5 V / ≥2 A** USB supply |
-| **Tools** | **Soldering required** (modules and harness wires) |
+| **Tools** | Modular path: soldering for the harness. Main control board: mostly plug-in (fab the PCB first) |
 | **Difficulty** | **Medium** - fair first hardware project for a software engineer, not a one-LED kit. Optional primer: [From Code to Circuits](docs/hardware-for-software-engineers/README.md) |
 
 **Print → Wire → Flash → Assemble → Connect** - step-by-step: **[Getting started](docs/getting-started.md)**.
 
-> **Integrated PCB in progress** - a main board that replaces most breakout modules and wiring. [Interest check →](https://github.com/jamro/tiny-engineer/discussions/50)
+## Skip the breakout jungle
+
+![Main Control Board Rev 2](hardware/boards/main-control-board/main-control-board-rev-2-preview.jpg)
+
+**Rev 2 is real — and open source.** One board replaces the PCA9685 servo driver, MAX98357A amp, and USB-C breakout. Plug in the ESP32-C3-Zero, five servos, OLED, and speaker. Equal alternative to the modular harness — pick a path in [shopping](docs/shopping.md#choose-electronics-path); connect steps: [main-control-board.md](docs/hardware/main-control-board.md).
+
+KiCad sources live in the repo ([CERN-OHL-S](3d_models/LICENSE)). Download the design and order manufacturing from any fab yourself today.
+
+The **[interest check](https://github.com/jamro/tiny-engineer/discussions/50)** is about going further: a community batch so boards are cheaper at volume and easy to buy — no fab account, no gerber upload. Say if you’d want a bare PCB, assembled board, or kit.
+
+Board details: [hardware/boards/main-control-board](hardware/boards/main-control-board/).
 
 ## Community builds
 
@@ -85,8 +95,8 @@ Details: [Integrations](docs/integration.md) · [HTTP API](docs/api.md) · [Curs
 | --- | --- |
 | Build end-to-end | [docs/getting-started.md](docs/getting-started.md) |
 | Flash firmware | [docs/flash.md](docs/flash.md) |
-| Parts / cart | [docs/shopping.md](docs/shopping.md) |
-| Wiring / power | [docs/hardware/README.md](docs/hardware/README.md) |
+| Parts / cart | [docs/shopping.md](docs/shopping.md) (modular or main control board) |
+| Wiring / power | [docs/hardware/README.md](docs/hardware/README.md) · PCB path: [docs/hardware/main-control-board.md](docs/hardware/main-control-board.md) |
 | Printable parts | [3d_models/README.md](3d_models/README.md) |
 | Optional mods | [mods/README.md](mods/README.md) |
 | Assemble printed parts | [docs/3d/assembly.md](docs/3d/assembly.md) |
