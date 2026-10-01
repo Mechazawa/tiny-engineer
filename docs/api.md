@@ -486,6 +486,8 @@ curl -X POST "http://tiny-engineer.local/anim?name=none"
 
 Eye detail below for `eyes_style=classic` (default). With `eyes_style=cover`, the same sequences drive full-half bars ([Cover eyes](#cover-eyes)). With `eyes_style=dots`, the same sequences drive 12×12 circles ([Dots eyes](#dots-eyes)). With `eyes_style=kaomoji`, faces follow [Kaomoji eyes](#kaomoji-eyes) instead of procedural blinks, glances, flicker, or X eyes. Servo/audio behavior is the same for every style.
 
+Durations and quoted lines below are the stock clips in [`assets/`](../assets/). A filesystem built with `custom_audio_mod` can replace some of those WAVs. Phrase timing then follows that clip's `.cue` file on LittleFS (`/welcome.cue` and the same pattern for `attention`, `error`, `abort`, and `dead`). See [flash.md](flash.md).
+
 | `name` | Behavior |
 | --- | --- |
 | `none` | Head/neck/body → mid; hands down (right `min`, left `max` — inverted scales). After all joints still for 2 s, PCA9685 PWM is full-off (servos limp; head may droop). Setup AP does not release PWM. |
