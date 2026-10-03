@@ -8,6 +8,8 @@ WAV clips played by animations and the setup wizard. Format: **22050 Hz, mono, 1
 
 `pio run` copies these files into `data/` via [`scripts/copy_assets.py`](../scripts/copy_assets.py). The next filesystem image overwrites `data/`, so edit the files here. Flash them with `pio run -t upload` or `pio run -t uploadfs`.
 
+`custom_audio_mod` in [`platformio.ini`](../platformio.ini) is empty by default, so this folder is the whole image. Set it to a mod name to overlay `mods/<name>/assets/*.wav` on top of these files. Clips the mod omits stay the files below. See [docs/flash.md](../docs/flash.md).
+
 | File | Duration | Transcript |
 | --- | --- | --- |
 | [`abort.wav`](abort.wav) | 2.5 s | Fine! I didn't want to finish that anyway! |

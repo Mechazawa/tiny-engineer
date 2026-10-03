@@ -31,6 +31,8 @@ jobs:
             ${{ runner.os }}-pio-
       - name: Install PlatformIO
         run: pip install -U platformio
+      - name: Audio pack tests
+        run: python3 scripts/test_audio_pack.py
       - name: Build firmware
         run: pio run
       - name: Build OLED expression demo

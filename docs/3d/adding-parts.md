@@ -105,22 +105,24 @@ After the CAD and exports land:
 
 - **Docs sync** — new stock part → parts table in [`3d_models/README.md`](../../3d_models/README.md); color-group / aggregate change → [order-parts.md](order-parts.md); join-order change → [assembly.md](assembly.md).
 - **Trademark** — do not replace or repurpose `AiEmblem` as branding. See [TRADEMARK.md](../../TRADEMARK.md).
-- **License** — `cad/` and `parts/` (including under mods) are [CERN-OHL-S-2.0](../../3d_models/LICENSE). When distributing Products based on these designs, keep Source Location accurate per [`3d_models/NOTICE`](../../3d_models/NOTICE).
+- **License** — stock `cad/` and `parts/`, and mod geometry under `mods/<mod_name>/3d_models/{cad,parts}/`, are [CERN-OHL-S-2.0](../../3d_models/LICENSE). When distributing Products based on these designs, keep Source Location accurate per [`3d_models/NOTICE`](../../3d_models/NOTICE). For a mod, the Source Location is that mod’s `3d_models` tree.
 
 ## Optional mods
 
-Optional elements and community mods do **not** go in the main `cad/` / `parts/` trees as first-class stock parts unless they become core. Overview: [`3d_models/mods/README.md`](../../3d_models/mods/README.md).
+Optional elements and community mods live under [`mods/`](../../mods/README.md). Promote one into stock `cad/` and `parts/` only when it becomes core.
 
 Place them under:
 
 ```text
-3d_models/mods/<mod_name>/
-  cad/      # Fusion source for the mod
-  parts/   # Exported meshes, same layout idea as 3d_models/parts/
-  README.md  # optional but recommended: fit notes, which servo folders exported
+mods/<mod_name>/
+  README.md     # optional: what it is, non-model notes
+  3d_models/
+    cad/        # Fusion source for the mod
+    parts/      # Exported meshes, same layout idea as 3d_models/parts/
+  ...           # anything that is not a model
 ```
 
-Mirror the top-level `3d_models` structure (`cad` + `parts`). Keep CERN-OHL-S licensing consistent with [`3d_models/LICENSE`](../../3d_models/LICENSE) when you distribute Products based on these designs. Each mod may include a short `README.md` describing what it fits and which `parts/{servo_id}/` folders were exported.
+Mirror stock `3d_models` inside the mod (`cad` + `parts`). Keep CERN-OHL-S licensing consistent with [`3d_models/LICENSE`](../../3d_models/LICENSE) when you distribute Products based on these designs. Each mod may include a short `README.md` describing what it fits and which `parts/{servo_id}/` folders were exported.
 
 Commit and PR title: `type(mods): summary` — name the mod in the summary. `feat(mods)` / `fix(mods)` do not version the stock CAD revision. Promoting a mod into stock `cad/` and `parts/` is `feat(cad)`. See [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
@@ -142,7 +144,7 @@ Commit and PR title: `type(mods): summary` — name the mod in the summary. `fea
 - [ ] Docs synced (README parts table / order-parts / assembly as needed)
 - [ ] `AiEmblem` not repurposed as branding
 - [ ] CERN-OHL-S respected; NOTICE Source Location accurate if distributing Products
-- [ ] Optional/mod work under `3d_models/mods/<mod_name>/{cad,parts}/` (+ mod README)
+- [ ] Optional/mod work under `mods/<mod_name>/3d_models/{cad,parts}/` (+ mod README)
 
 ## Related
 
@@ -150,7 +152,7 @@ Commit and PR title: `type(mods): summary` — name the mod in the summary. `fea
 | --- | --- |
 | Servo params, add-in install, new servo preset | [parametric-design.md](parametric-design.md) |
 | Print / part inventory | [`3d_models/README.md`](../../3d_models/README.md) |
-| Optional mods folder | [`3d_models/mods/README.md`](../../3d_models/mods/README.md) |
+| Optional mods folder | [`mods/README.md`](../../mods/README.md) |
 | Order aggregated sets | [order-parts.md](order-parts.md) |
 | Mechanical assembly | [assembly.md](assembly.md) |
 | Trademark | [TRADEMARK.md](../../TRADEMARK.md) |

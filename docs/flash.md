@@ -24,6 +24,22 @@ pio device monitor      # serial (115200)
 
 After firmware upload, a post-script also uploads **LittleFS** ([`scripts/upload_fs_after_upload.py`](../scripts/upload_fs_after_upload.py)) so WAV assets (`welcome`, `bell`, and friends) land on the board. If animations move but stay silent, run `pio run -t uploadfs` once.
 
+## Audio mods
+
+Leave `custom_audio_mod` empty in [`platformio.ini`](../platformio.ini) for the stock clips in [`assets/`](../assets/). Set it to a mod folder name to overlay that mod's WAVs, then flash firmware and the filesystem together:
+
+```ini
+custom_audio_mod = halloween
+```
+
+```bash
+pio run -t upload
+```
+
+The pack step copies `assets/*.wav`, then overwrites any matching file in `mods/<name>/assets/`. A clip the mod does not ship stays the stock file. `welcome`, `attention`, `error`, `abort`, and `dead` replacements need a sibling `.cue` (`key=ms` phrase marks). `bell` does not. Details: [`mods/README.md`](../mods/README.md).
+
+The `spiffs` partition is 896 KB at `0x310000`. The pack step fails the build when the merged WAV set leaves less than 64 KB of it free.
+
 Several serial ports:
 
 ```bash

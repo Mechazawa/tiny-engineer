@@ -10,6 +10,7 @@ This is a desk robot: firmware on an ESP32-C3, 3D-printed mechanics, and HTTP cl
 - Integrations: Cursor hooks, Antigravity CLI, Claude Code hooks, or any REST client ([docs/integration.md](docs/integration.md))
 - Docs, wiring, BOM corrections
 - CAD / printables (`3d_models/`)
+- Optional mods (`mods/`)
 - KiCad PCB boards (`hardware/boards/` — [docs/pcb.md](docs/pcb.md))
 - Photos of a working build or a failure (brownout, binding, blink codes)
 
@@ -25,9 +26,10 @@ Opening a PR licenses your change under the license of the files you touch. No C
 | --- | --- |
 | Firmware, packages, scripts, docs | [MIT](LICENSE) — see [LICENSING.md](LICENSING.md) |
 | `3d_models/cad/`, `3d_models/parts/` | [CERN-OHL-S-2.0](3d_models/LICENSE) |
+| `mods/*/3d_models/cad/`, `mods/*/3d_models/parts/` | [CERN-OHL-S-2.0](3d_models/LICENSE) |
 | `hardware/boards/` | [CERN-OHL-S-2.0](hardware/LICENSE) |
 
-If you modify the hardware designs and distribute Products based on them, CERN-OHL-S-2.0 requires you to make the Complete Source available under the same license. Keep [3d_models/NOTICE](3d_models/NOTICE) and [hardware/NOTICE](hardware/NOTICE) Source Location accurate for the revision you ship.
+If you modify the hardware designs and distribute Products based on them, CERN-OHL-S-2.0 requires you to make the Complete Source available under the same license. Keep [3d_models/NOTICE](3d_models/NOTICE) and [hardware/NOTICE](hardware/NOTICE) Source Location accurate for the revision you ship. For a mod product, the Source Location is that mod’s `3d_models` tree ([mods/README.md](mods/README.md)).
 
 The **Tiny Engineer** name, logo, and [`3d_models/parts/sg90/3mf/AiEmblem.3mf`](3d_models/parts/sg90/3mf/AiEmblem.3mf) are **not** licensed. Factual “based on Tiny Engineer” is fine. Do not imply an official product. Details: [TRADEMARK.md](TRADEMARK.md).
 
@@ -65,7 +67,7 @@ python3 scripts/check_pcb.py
 
 **CAD.** Edit [`3d_models/cad/TinyEngineer.f3d`](3d_models/cad/TinyEngineer.f3d) **and** export the affected [`3d_models/parts/{servo_id}/3mf/*.3mf`](3d_models/parts/). Keep CERN-OHL-S. Do not swap `AiEmblem.3mf` as a branding change. New parts: [docs/3d/adding-parts.md](docs/3d/adding-parts.md). Servo presets / add-in: [docs/3d/parametric-design.md](docs/3d/parametric-design.md).
 
-**Mods.** Optional CAD under [`3d_models/mods/<mod_name>/`](3d_models/mods/README.md). Commit as `type(mods)` and name the mod in the summary. Do not add a scope per mod. `feat(mods)` / `fix(mods)` do not version the stock CAD revision.
+**Mods.** Optional add-ons under [`mods/<mod_name>/`](mods/README.md). Models live in `3d_models/{cad,parts}/`; other files sit beside that folder. Commit as `type(mods)` and name the mod in the summary. Do not add a scope per mod. `feat(mods)` / `fix(mods)` do not version the stock CAD revision.
 
 **PCB.** Follow the [PCB checklist](docs/pcb.md#checklist). Run `python3 scripts/check_pcb.py` before opening a PCB PR. Keep [`expected-nets.yml`](docs/pcb.md#expected-nets-yml) in sync. One board per `hardware/boards/<name>/`, KiCad 10, ERC and DRC reviewed, no generated Gerbers or other fab outputs. Keep CERN-OHL-S. New board paths need a matching `[[annotations]]` block in [REUSE.toml](REUSE.toml).
 
@@ -99,7 +101,7 @@ Scopes: `firmware`, `http`, `settings`, `anim`, `servos`, `wifi`, `integrations`
 
 `integrations` is anything under `packages/` (Cursor, Antigravity, Claude Code, later agent CLIs). Do not add a new scope per package.
 
-`mods` is anything under `3d_models/mods/`. Name the mod in the summary. Do not add a new scope per mod.
+`mods` is anything under `mods/`. Name the mod in the summary. Do not add a new scope per mod.
 
 **Breaking in this repo** means: removed or renamed HTTP route or query param; NVS key rename that drops existing settings; pinout change; default servo range change that invalidates calibration; hook CLI flag or event rename. Call it out with `!` on the type and a `BREAKING CHANGE:` footer.
 
