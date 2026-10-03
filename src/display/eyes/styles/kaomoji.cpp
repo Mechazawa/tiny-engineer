@@ -74,14 +74,14 @@ void drawKaomoji(
     g_expressionArmed = true;
   }
 
-  const uint32_t elapsed = now - g_expressionStartedMs;
+  drawKaomojiFrame(expression, now - g_expressionStartedMs);
+}
 
-  if (!expressions::render(
-        expression,
-        elapsed,
-        g_kaomojiFrame,
-        sizeof(g_kaomojiFrame)
-      )) {
+}  // namespace
+
+void drawKaomojiFrame(tiny_engineer::expressions::Expression expression, uint32_t elapsedMs) {
+  if (!oledAvailable ||
+      !expressions::render(expression, elapsedMs, g_kaomojiFrame, sizeof(g_kaomojiFrame))) {
     return;
   }
 
@@ -96,8 +96,6 @@ void drawKaomoji(
   );
   display.display();
 }
-
-}  // namespace
 
 void kaomojiResetPlayback(uint32_t now) {
   g_expressionArmed = false;

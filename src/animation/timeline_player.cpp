@@ -5,6 +5,8 @@
 #include <cmath>
 #include <cstring>
 
+#include <TinyEngineerExpressions.h>
+
 #include "animation/registry.h"
 #include "display/eyes.h"
 #include "hardware/servo_wrapper.h"
@@ -16,7 +18,7 @@ const char* resolvePreset(const char* name, uint8_t& id) {
   AnimationId anim;
 
   if (!parseAnimationName(name, anim)) {
-    return "unknown name";
+    return "unknown preset";
   }
 
   switch (anim) {
@@ -28,7 +30,7 @@ const char* resolvePreset(const char* name, uint8_t& id) {
       id = static_cast<uint8_t>(anim);
       return nullptr;
     default:
-      return "not available during playback";
+      return "preset not available during playback";
   }
 }
 
@@ -38,14 +40,29 @@ const char* resolveEyes(const char* name, uint8_t& id) {
   if (strcmp(name, "idle") == 0) {
     anim = AnimationId::None;
   } else if (!parseAnimationName(name, anim)) {
-    return "unknown name";
+    return "unknown eye mode";
   }
 
   id = static_cast<uint8_t>(modeByAnimId(anim)->eyeMode);
   return nullptr;
 }
 
-const Timeline::Names kNames = {resolvePreset, resolveEyes};
+const char* resolveFace(const char* name, uint8_t& id) {
+  namespace expressions = tiny_engineer::expressions;
+
+  for (uint8_t i = 0; i < expressions::kExpressionCount; i++) {
+    const char* candidate = expressions::name(static_cast<expressions::Expression>(i));
+
+    if (candidate != nullptr && strcmp(candidate, name) == 0) {
+      id = i;
+      return nullptr;
+    }
+  }
+
+  return "unknown face";
+}
+
+const Timeline::Names kNames = {resolvePreset, resolveEyes, resolveFace};
 
 }  // namespace
 
@@ -92,6 +109,22 @@ void TimelinePlayer::run(const Timeline::Step& step) {
       setEyeMode(static_cast<EyeMode>(step.target), millis());
       break;
 
+    case Timeline::Kind::Look:
+      eyesLookAt(step.x, step.y, step.durationMs, millis());
+      break;
+
+    case Timeline::Kind::Open:
+      eyesSetOpen(step.x, step.durationMs, millis());
+      break;
+
+    case Timeline::Kind::Blink:
+      eyesBlink(millis());
+      break;
+
+    case Timeline::Kind::Face:
+      eyesShowFace(step.target, millis());
+      break;
+
     case Timeline::Kind::Move: {
       manualServos_ = true;
       ensureAllServoOutputs();
@@ -100,11 +133,11 @@ void TimelinePlayer::run(const Timeline::Step& step) {
       float speed = SERVO_MAX_SPEED_DEG_S;
 
       if (step.durationMs > 0) {
-        const float distance = fabsf(servoNormToDeg(step.target, step.to) - servo.angle());
+        const float distance = fabsf(servoNormToDeg(step.target, step.x) - servo.angle());
         speed = fminf(SERVO_MAX_SPEED_DEG_S, fmaxf(1.0f, distance * 1000.0f / step.durationMs));
       }
 
-      servo.setNormTarget(step.to, speed);
+      servo.setNormTarget(step.x, speed);
       break;
     }
   }

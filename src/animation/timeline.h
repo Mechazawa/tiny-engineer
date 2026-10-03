@@ -6,24 +6,31 @@
 #include <vector>
 
 // A choreography sent alongside streamed audio: a JSON array of steps such as
-// ["sleep", 500], ["preset", "typing"], ["move", "head", 0.6, 300], ["eyes", "thinking"].
+// ["sleep", 500], ["preset", "typing"], ["move", "head", 0.6, 300], ["look", -1, 0, 150].
 // Sleeps are folded into each step's start time, measured in playback milliseconds.
-// Moves do not block: moves without a sleep between them run together.
+// Steps do not block: steps without a sleep between them start together.
 class Timeline {
 public:
   enum class Kind : uint8_t {
     Preset,
     Move,
-    Eyes
+    Eyes,
+    Look,
+    Open,
+    Blink,
+    Face
   };
 
   struct Step {
     uint32_t atMs;
     Kind kind;
-    // Preset or eye-mode id from the resolver, or a servo index for Move.
+    // Preset, eye-mode or face id from a resolver, or a servo index for Move.
     uint8_t target;
-    float to;
-    // Time a Move should take to arrive; 0 moves at the maximum servo speed.
+    // Move position, look x or open amount.
+    float x;
+    // Look y.
+    float y;
+    // Time a Move, Look or Open takes to arrive; 0 is as fast as possible.
     uint32_t durationMs;
   };
 
@@ -33,6 +40,7 @@ public:
   struct Names {
     NameResolver preset;
     NameResolver eyes;
+    NameResolver face;
   };
 
   static constexpr size_t kMaxSteps = 256;
