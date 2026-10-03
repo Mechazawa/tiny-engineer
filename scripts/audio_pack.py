@@ -1,4 +1,4 @@
-"""Merge stock WAVs with an optional mod overlay for the LittleFS image."""
+"""Merge stock WAVs with an optional mod overlay and halve their rate for the LittleFS image."""
 
 import math
 import re
@@ -8,6 +8,7 @@ from array import array
 from pathlib import Path
 
 SOURCE_RATE = 44100
+PACKED_RATE = SOURCE_RATE // 2
 
 STOCK_WAVS = (
     "bell.wav",
@@ -166,7 +167,7 @@ def halve_sample_rate(path):
     with wave.open(str(path), "wb") as wav:
         wav.setnchannels(1)
         wav.setsampwidth(2)
-        wav.setframerate(SOURCE_RATE // 2)
+        wav.setframerate(PACKED_RATE)
         wav.writeframes(out.tobytes())
 
 
@@ -247,12 +248,7 @@ def _managed_names():
     return names
 
 
-def pack_audio(assets_dir, dest_dir, partition_bytes, mod_dir=None, rate=SOURCE_RATE):
-    if rate not in (SOURCE_RATE, SOURCE_RATE // 2):
-        raise AudioPackError(
-            f"Audio rate must be {SOURCE_RATE} or {SOURCE_RATE // 2} Hz, got {rate}"
-        )
-
+def pack_audio(assets_dir, dest_dir, partition_bytes, mod_dir=None):
     assets_dir = Path(assets_dir)
     dest_dir = Path(dest_dir)
     dest_dir.mkdir(parents=True, exist_ok=True)
@@ -273,10 +269,9 @@ def pack_audio(assets_dir, dest_dir, partition_bytes, mod_dir=None, rate=SOURCE_
     if mod_dir is not None:
         _overlay_mod(Path(mod_dir), dest_dir)
 
-    if rate != SOURCE_RATE:
-        for name in STOCK_WAVS:
-            halve_sample_rate(dest_dir / name)
-        print(f"Resampled WAVs to {rate} Hz")
+    for name in STOCK_WAVS:
+        halve_sample_rate(dest_dir / name)
+    print(f"Resampled WAVs to {PACKED_RATE} Hz")
 
     total = sum(
         path.stat().st_size

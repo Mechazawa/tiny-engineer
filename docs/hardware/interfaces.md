@@ -35,7 +35,7 @@ Bring-up configuration in [`src/main.cpp`](../../src/main.cpp):
 | Parameter | Value |
 | --- | --- |
 | Mode | `I2S_MODE_STD` |
-| Sample rate | **44100** (`SAMPLE_RATE`) |
+| Sample rate | **22050** (`SAMPLE_RATE`) |
 | Width | `I2S_DATA_BIT_WIDTH_16BIT` |
 | Slots | `I2S_SLOT_MODE_STEREO` |
 

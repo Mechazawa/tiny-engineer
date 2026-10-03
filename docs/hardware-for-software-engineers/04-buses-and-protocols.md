@@ -66,9 +66,9 @@ Three lines from ESP32 to the amp:
 
 ESP32 is master: it generates clocks and **pushes**. The MAX98357A receives and drives the speaker. You don't query the amp for the next sample.
 
-> **If you've written backend code…** I2C is REST. I2S is a one-way socket pumping PCM. While audio plays, samples go out at 44100 Hz until you stop.
+> **If you've written backend code…** I2C is REST. I2S is a one-way socket pumping PCM. While audio plays, samples go out at 22050 Hz until you stop.
 
-Firmware here: **44100 Hz**, 16-bit. Amp is mono; firmware writes the same sample to both stereo slots. Extra amp pins (GAIN, SD) are unwired — the breakout's defaults apply.
+Firmware here: **22050 Hz**, 16-bit. Amp is mono; firmware writes the same sample to both stereo slots. Extra amp pins (GAIN, SD) are unwired — the breakout's defaults apply.
 
 **Trap:** speaker connects **SPK+** to **SPK−** only. **SPK− is not GND.** Tying it to ground can damage the amp. #1 audio wiring mistake.
 

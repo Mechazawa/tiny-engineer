@@ -26,11 +26,8 @@ constexpr int PCA9685_OE_PIN = 5;
 // AUDIO
 // =====================================================
 
-#ifdef TE_SAMPLE_RATE
-constexpr int SAMPLE_RATE = TE_SAMPLE_RATE;
-#else
-constexpr int SAMPLE_RATE = 44100;
-#endif
+// assets/ ships 44100 Hz WAVs; scripts/audio_pack.py halves them while packing LittleFS.
+constexpr int SAMPLE_RATE = 22050;
 
 // =====================================================
 // PCA9685 / SERVOS

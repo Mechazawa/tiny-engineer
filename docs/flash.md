@@ -60,8 +60,7 @@ also lists Bluetooth serial ports, which are not the board.
 The `ota` build environment adds Wi-Fi updates. Compared with the default build it trades:
 
 - the coredump partition, for a second firmware slot ([`partitions_ota.csv`](../partitions_ota.csv))
-- LittleFS shrinks from about 1.81 MB to 960 KB
-- audio plays at 22050 Hz: the build halves each 44100 Hz clip in `assets/` (and any `custom_audio_mod` overlay) while packing LittleFS
+- LittleFS shrinks from about 1.81 MB to 960 KB, so there is less room for longer mod clips
 
 Switching layouts needs one USB flash of firmware and filesystem together:
 

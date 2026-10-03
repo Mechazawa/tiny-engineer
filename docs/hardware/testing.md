@@ -22,7 +22,7 @@ Build/flash: [flash.md](../flash.md) (`pio run`, `pio run -t upload`, serial 115
 | PCA9685 | Probe `0x40` early; park neutral; OE skipped (`PCA9685_OE_WIRED` is false until GP5→OE is implemented) |
 | OLED | Probe `0x3C`, init (optional) |
 | Wi-Fi | STA connect from saved NVS credentials, or setup AP `TinyEngineer-XXXX` when unset/failed; mDNS `{hostname}.local` after STA connect |
-| MAX98357A / I2S | `I2S.begin` 44.1 kHz 16-bit stereo |
+| MAX98357A / I2S | `I2S.begin` 22.05 kHz 16-bit stereo |
 | Servos | Smooth move to mid (or sleep pose) at 35°/s |
 | HTTP | Port 80 when STA connected, or on setup AP at `192.168.4.1` |
 | Success | Dim green RGB during init; then animation LED (see below) |
