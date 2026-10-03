@@ -19,7 +19,7 @@ mods/<mod_name>/
 
 ## Audio
 
-Optional speaker replacements live in `mods/<mod_name>/assets/`. Format matches stock: **22050 Hz, mono, 16-bit PCM**. Firmware still plays `/welcome.wav` and the other root names. The build overlay copies stock [`assets/`](../assets/) first, then overwrites any basename the mod ships. A missing file stays the stock clip.
+Optional speaker replacements live in `mods/<mod_name>/assets/`. Format matches stock: **44100 Hz, mono, 16-bit PCM**. Firmware still plays `/welcome.wav` and the other root names. The build overlay copies stock [`assets/`](../assets/) first, then overwrites any basename the mod ships. A missing file stays the stock clip.
 
 Set the mod in [`platformio.ini`](../platformio.ini) (`custom_audio_mod = halloween`) and flash with `pio run -t upload`. An empty option keeps the stock image. How to flash: [docs/flash.md](../docs/flash.md).
 

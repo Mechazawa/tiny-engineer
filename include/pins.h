@@ -26,7 +26,11 @@ constexpr int PCA9685_OE_PIN = 5;
 // AUDIO
 // =====================================================
 
-constexpr int SAMPLE_RATE = 22050;
+#ifdef TE_SAMPLE_RATE
+constexpr int SAMPLE_RATE = TE_SAMPLE_RATE;
+#else
+constexpr int SAMPLE_RATE = 44100;
+#endif
 
 // =====================================================
 // PCA9685 / SERVOS

@@ -53,7 +53,7 @@ Power pads (not GPIO): **5V**, **GND**, **3V3**.
 
 | Constant | Value | Meaning |
 | --- | --- | --- |
-| `SAMPLE_RATE` | 22050 | I2S sample rate |
+| `SAMPLE_RATE` | 44100 | I2S sample rate |
 | `PCA9685_ADDRESS` | `0x40` | I2C |
 | `OLED_ADDRESS` | `0x3C` | I2C |
 | `OLED_WIDTH` / `OLED_HEIGHT` | 128 / 32 | Display |

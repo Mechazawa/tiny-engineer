@@ -4,7 +4,7 @@ Source files for Tiny Engineer branding and speaker clips. Firmware does not rea
 
 ## Audio
 
-WAV clips played by animations and the setup wizard. Format: **22050 Hz, mono, 16-bit PCM**.
+WAV clips played by animations and the setup wizard. Format: **44100 Hz, mono, 16-bit PCM**.
 
 These files are not in the default image. Set `custom_audio_mod = halloween` in [`platformio.ini`](../../../platformio.ini). [`scripts/copy_assets.py`](../../../scripts/copy_assets.py) copies stock [`assets/`](../../../assets/) first, then overwrites any clip that exists here. `bell` and `dead` are absent, so those stay stock. Flash with `pio run -t upload` or `pio run -t uploadfs`. Do not edit `data/` by hand.
 

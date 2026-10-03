@@ -21,6 +21,7 @@ if mod_name:
 pack_audio(
     project_dir / "assets",
     project_dir / "data",
-    spiffs_size_bytes(project_dir / "partitions.csv"),
+    spiffs_size_bytes(project_dir / env.GetProjectOption("board_build.partitions")),
     mod_dir,
+    int(env.GetProjectOption("custom_audio_rate", "44100")),
 )

@@ -1,5 +1,7 @@
 #include "network/ota.h"
 
+#ifdef TE_OTA
+
 #include <Arduino.h>
 #include <ArduinoOTA.h>
 #include <LittleFS.h>
@@ -122,3 +124,5 @@ void pollOta() {
 
   g_ota->handle();
 }
+
+#endif  // TE_OTA

@@ -20,7 +20,7 @@ from audio_pack import (  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def write_wav(path, duration_ms, rate=22050, channels=1, width=2):
+def write_wav(path, duration_ms, rate=44100, channels=1, width=2):
     frames = rate * duration_ms // 1000
     with wave.open(str(path), "wb") as wav:
         wav.setnchannels(channels)
@@ -144,6 +144,26 @@ class AudioPackTests(unittest.TestCase):
             self.assertTrue((dest / f"{clip}.cue").is_file())
         self.assertFalse((dest / "bell.cue").exists())
         self.assertFalse((dest / "dead.cue").exists())
+
+    def test_half_rate_halves_frames(self):
+        pack_audio(self.assets, self.dest, 2_000_000, rate=22050)
+        for name in STOCK_WAVS:
+            with wave.open(str(self.dest / name), "rb") as wav:
+                self.assertEqual(wav.getframerate(), 22050)
+                self.assertEqual(wav.getnframes(), 44100 * 500 // 1000 // 2)
+
+    def test_rate_other_than_half_fails(self):
+        with self.assertRaises(AudioPackError):
+            pack_audio(self.assets, self.dest, 2_000_000, rate=16000)
+
+    def test_halloween_overlay_fits_ota_partition(self):
+        pack_audio(
+            ROOT / "assets",
+            self.dest,
+            spiffs_size_bytes(ROOT / "partitions_ota.csv"),
+            ROOT / "mods" / "halloween" / "assets",
+            rate=22050,
+        )
 
 
 if __name__ == "__main__":
