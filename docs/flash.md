@@ -39,6 +39,25 @@ Pick the entry whose hardware ID shows Espressif's `VID:PID=303A:1001` (the
 ESP32-C3's native USB) or your board's USB-serial bridge — `pio device list`
 also lists Bluetooth serial ports, which are not the board.
 
+## Over-the-air updates
+
+Once the robot is on your home Wi-Fi, firmware and LittleFS can be updated without USB:
+
+```bash
+export TINY_ENGINEER_URL=http://192.168.x.x   # default: tiny-engineer.local
+export TINY_ENGINEER_TOKEN=...                # only if access_token is set
+pio run -t ota       # firmware
+pio run -t otafs     # LittleFS (WAV assets)
+```
+
+These are the same variables the agent integrations read ([integration.md](integration.md)). OTA listens on UDP/TCP port 3232 and only runs while connected to home Wi-Fi, not in setup AP mode. When `access_token` is set it is also the OTA password; changing it applies to OTA without a reboot.
+
+The flash holds two firmware slots. An update is written to the inactive slot and booted once; it becomes permanent only after it connects to Wi-Fi and starts its OTA listener. Firmware that never gets that far is rolled back to the previous slot on the next reset or power cycle. A firmware that hangs needs that power cycle to recover.
+
+A filesystem update that fails midway reboots the robot; re-run `pio run -t otafs` or fall back to `pio run -t uploadfs` over USB.
+
+Changes to [`partitions.csv`](../partitions.csv) cannot be applied over the air. Flash those with `pio run -t upload` over USB.
+
 ## Done when
 
 Firmware + LittleFS uploaded, and:
