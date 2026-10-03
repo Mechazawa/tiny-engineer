@@ -96,52 +96,19 @@ bool skipWavPcmData(File& file) {
 }
 
 bool pumpWavChunk(File& file) {
-  int16_t buffer[kAudioFrames * 2];
-  uint8_t pcmBytes[kAudioFrames * 2];
+  int16_t samples[kAudioFrames];
 
   const size_t bytesRead =
     file.read(
-      pcmBytes,
-      sizeof(pcmBytes)
+      reinterpret_cast<uint8_t*>(samples),
+      sizeof(samples)
     );
 
   if (bytesRead < 2) {
     return false;
   }
 
-  const int framesThisTime =
-    (int)(bytesRead / 2);
-
-  const uint8_t volume = settingsVolume();
-
-  for (int i = 0; i < framesThisTime; i++) {
-    const int16_t raw =
-      (int16_t)(
-        pcmBytes[i * 2] |
-        (pcmBytes[i * 2 + 1] << 8)
-      );
-
-    int32_t scaled =
-      (static_cast<int32_t>(raw) * volume) / 100;
-
-    if (scaled > 32767) {
-      scaled = 32767;
-    } else if (scaled < -32768) {
-      scaled = -32768;
-    }
-
-    const int16_t sample = static_cast<int16_t>(scaled);
-
-    buffer[i * 2] = sample;
-    buffer[i * 2 + 1] = sample;
-  }
-
-  I2S.write(
-    (uint8_t*)buffer,
-    framesThisTime *
-    2 *
-    sizeof(int16_t)
-  );
+  writeMonoToSpeaker(samples, bytesRead / 2);
 
   return file.available() > 0;
 }

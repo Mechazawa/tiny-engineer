@@ -5,6 +5,8 @@
 extern I2SClass I2S;
 
 bool initAudioStorage();
+// Volume-scaled, duplicated to both I2S slots. Blocks until the DMA buffer accepts it.
+void writeMonoToSpeaker(const int16_t* samples, size_t count);
 void playTone(
   float frequency,
   int durationMs

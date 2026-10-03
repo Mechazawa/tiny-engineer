@@ -55,16 +55,14 @@ void httpSendCorsPreflight(WebServer& server) {
   server.send(204);
 }
 
-bool httpRequireApiAuth(WebServer& server) {
-  if (!settingsAccessTokenSet()) {
-    return true;
-  }
+bool httpApiAuthorized(WebServer& server) {
+  return !settingsAccessTokenSet() ||
+         (server.hasHeader("Authorization") &&
+          bearerTokenMatches(server.header("Authorization"), settingsAccessToken()));
+}
 
-  if (!server.hasHeader("Authorization") ||
-      !bearerTokenMatches(
-        server.header("Authorization"),
-        settingsAccessToken()
-      )) {
+bool httpRequireApiAuth(WebServer& server) {
+  if (!httpApiAuthorized(server)) {
     httpSendJson(
       server,
       401,
