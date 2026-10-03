@@ -36,7 +36,7 @@ python3 scripts/check_pcb.py
 
 `pio test -e native` is not `pio run -e native`. PCB checks need KiCad 10 (`python3 scripts/check_pcb.py`). Details: [docs/testing.md](docs/testing.md).
 
-Do **not** flash (`pio run -t upload`) unless the user asks.
+Do **not** flash (`pio run -t upload`, `-t uploadfs`, `-t ota`, `-t otafs`) unless the user asks.
 
 ## After significant changes
 

@@ -13,6 +13,7 @@
 #include "hardware/pca9685_servos.h"
 #include "hardware/servo_wrapper.h"
 #include "network/wifi_connect.h"
+#include "network/ota.h"
 #include "http/http_server.h"
 #include "settings/settings.h"
 #include "serial_log.h"
@@ -156,6 +157,10 @@ void setup() {
   if (wifiConnected() || wifiProvisioningMode()) {
     startHttpServer();
   }
+
+  if (wifiConnected()) {
+    startOta();
+  }
   initSleep();
 }
 
@@ -163,6 +168,7 @@ void loop() {
   const uint32_t now = millis();
   pollWifi();
   pollHttpServer();
+  pollOta();
   updateProvisioningOled(now);
   updateAnimation();
   // After HTTP/anim so idle timestamp from this frame is not compared to a stale `now`.
