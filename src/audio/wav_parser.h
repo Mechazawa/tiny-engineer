@@ -45,7 +45,7 @@ private:
   Sink& sink_;
   uint32_t sampleRate_;
   State state_ = State::RiffHeader;
-  char message_[48] = {};
+  char message_[80] = {};
 
   uint8_t header_[kHeaderBytes] = {};
   size_t headerFill_ = 0;

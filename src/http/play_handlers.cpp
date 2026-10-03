@@ -6,6 +6,8 @@
 #include <optional>
 
 #include "animation.h"
+#include "animation/timeline.h"
+#include "animation/timeline_player.h"
 #include "audio/audio.h"
 #include "audio/wav_parser.h"
 #include "hardware/rgb.h"
@@ -22,25 +24,33 @@ class PlaySession : public WavStreamParser::Sink {
 public:
   void begin(WebServer& server) {
     parser_.reset();
+    player_.reset();
     rejectCode_ = 0;
+    samplesWritten_ = 0;
 
     if (!settingsWifiConfigured()) {
-      reject(503, "{\"ok\":false,\"error\":\"wifi not configured\"}");
+      reject(503, "wifi not configured");
       return;
     }
 
     if (!httpApiAuthorized(server)) {
-      reject(401, "{\"ok\":false,\"error\":\"unauthorized\"}");
+      reject(401, "unauthorized");
       return;
     }
 
     stopAllWavPlayback();
     parser_.emplace(SAMPLE_RATE, *this);
     serialLogPrintln("[play] start");
+
+    const String& header = server.header("X-Anim");
+
+    if (header.length() > 0 && acceptTimeline(header.c_str(), header.length()) != nullptr) {
+      reject(400, error_);
+    }
   }
 
   void feed(const uint8_t* bytes, size_t length) {
-    if (parser_ && !parser_->failed()) {
+    if (rejectCode_ == 0 && parser_ && !parser_->failed()) {
       parser_->feed(bytes, length);
     }
   }
@@ -51,44 +61,74 @@ public:
       serialLogPrint("[play] end ms=");
       serialLogPrintln(playedMs());
     }
+
+    if (player_) {
+      player_->finish();
+      player_.reset();
+    }
   }
 
   void respond(WebServer& server) {
     if (rejectCode_ != 0) {
-      httpSendJson(server, rejectCode_, rejectBody_);
+      httpSendJson(server, rejectCode_, body_);
       return;
     }
-
-    char body[96];
 
     if (parser_->failed()) {
-      snprintf(body, sizeof(body), "{\"ok\":false,\"error\":\"%s\"}", parser_->error());
-      httpSendJson(server, 415, body);
+      formatError(parser_->error());
+      httpSendJson(server, 415, body_);
       return;
     }
 
-    snprintf(body, sizeof(body), "{\"ok\":true,\"played_ms\":%lu}", static_cast<unsigned long>(playedMs()));
-    httpSendJson(server, 200, body);
+    snprintf(body_, sizeof(body_), "{\"ok\":true,\"played_ms\":%lu}", static_cast<unsigned long>(playedMs()));
+    httpSendJson(server, 200, body_);
   }
 
   void onPcm(const int16_t* samples, size_t count) override {
     writeMonoToSpeaker(samples, count);
-    updateAnimation();
+    samplesWritten_ += count;
+
+    if (player_) {
+      player_->advance(playedMs());
+      player_->update();
+    } else {
+      updateAnimation();
+    }
+
     updateRgb(millis());
   }
 
 private:
   std::optional<WavStreamParser> parser_;
+  std::optional<TimelinePlayer> player_;
   int rejectCode_ = 0;
-  const char* rejectBody_ = nullptr;
+  uint32_t samplesWritten_ = 0;
+  char error_[96] = {};
+  char body_[128] = {};
 
-  void reject(int code, const char* body) {
+  const char* acceptTimeline(const char* json, size_t length) {
+    std::optional<Timeline> timeline = Timeline::parse(json, length, TimelinePlayer::names(), error_, sizeof(error_));
+
+    if (!timeline) {
+      return error_;
+    }
+
+    player_.emplace(std::move(*timeline));
+    player_->advance(0);
+    return nullptr;
+  }
+
+  void reject(int code, const char* message) {
     rejectCode_ = code;
-    rejectBody_ = body;
+    formatError(message);
+  }
+
+  void formatError(const char* message) {
+    snprintf(body_, sizeof(body_), "{\"ok\":false,\"error\":\"%s\"}", message);
   }
 
   uint32_t playedMs() const {
-    return static_cast<uint32_t>(parser_->samplesDelivered() * 1000ULL / SAMPLE_RATE);
+    return static_cast<uint32_t>(samplesWritten_ * 1000ULL / SAMPLE_RATE);
   }
 };
 

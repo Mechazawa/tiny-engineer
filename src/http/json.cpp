@@ -8,7 +8,7 @@ namespace {
 
 void sendCorsHeaders(WebServer& server) {
   server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.sendHeader("Access-Control-Allow-Headers", "Authorization");
+  server.sendHeader("Access-Control-Allow-Headers", "Authorization, X-Anim");
   server.sendHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, OPTIONS"

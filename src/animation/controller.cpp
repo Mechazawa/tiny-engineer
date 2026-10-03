@@ -109,6 +109,10 @@ void setAnimation(AnimationId id) {
   serialLogPrintln(holdLeftMs);
 }
 
+void setAnimationImmediately(AnimationId id) {
+  applyAnimation(id, millis());
+}
+
 void finishAnimation(uint32_t nowMs) {
   applyAnimation(AnimationId::None, nowMs);
 }
