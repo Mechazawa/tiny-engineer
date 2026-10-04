@@ -11,7 +11,7 @@ Firmware is [`src/main.cpp`](../../src/main.cpp). Boot **inits** hardware and st
 
 Constants: [`include/pins.h`](../../include/pins.h). Wi-Fi credentials are saved in NVS and configured only in setup AP mode (first boot, or after factory reset + power-cycle). Servo min/max, RGB LED mapping (`rgb_order`), and OLED rotation (`oled_rotate_180`) are also setup-AP-only; factory reset keeps them.
 
-Build/flash: [flash.md](../flash.md) (`pio run`, `pio run -t upload`, serial 115200). Physical board is **Waveshare ESP32-C3-Zero**; PlatformIO env name is `esp32-c3-devkitm-1`.
+Stock flash: **[Web flash](https://jamro.github.io/tiny-engineer/flash/)**. Build from source / serial (115200): [flash.md](../flash.md) (Advanced: PlatformIO — `pio run`, `pio run -t upload`). Physical board is **Waveshare ESP32-C3-Zero**; PlatformIO env name is `esp32-c3-devkitm-1`.
 
 ## What boot covers
 

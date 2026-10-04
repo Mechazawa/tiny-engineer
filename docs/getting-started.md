@@ -60,8 +60,8 @@ flowchart LR
 
 ### 4. Flash
 
-- **Open:** [flash.md](flash.md).
-- **Until:** firmware + LittleFS uploaded; serial boot OK; PCA9685 found; **Move all to 90°** or one `/test/servo` moves a channel. Do not finish the Wi-Fi wizard yet.
+- **Open:** **[Web flash](https://jamro.github.io/tiny-engineer/flash/)** (Chrome or Edge; USB-C **data** cable). Pick the latest release → Connect & install. No PlatformIO or repo clone needed for stock firmware. More detail / stuck / advanced: [flash.md](flash.md).
+- **Until:** stock firmware + audio on the board; **Move all to 90°** (setup AP config page) or one servo moves. Do not finish the Wi-Fi wizard yet.
 - **Return** here. Keep boards on the desk — do not seat the harness in the chest.
 
 ### 5. Assemble
@@ -102,10 +102,10 @@ curl -X POST "http://tiny-engineer.local/anim?name=ring"
 | Which wires / voltages? | [hardware/wiring.md](hardware/wiring.md), [hardware/pinout.md](hardware/pinout.md) |
 | What to print? | [3d_models/README.md](../3d_models/README.md) |
 | How to assemble printed parts? | [3d/assembly.md](3d/assembly.md) |
-| Flash / serial / LittleFS | [flash.md](flash.md) |
+| Flash / install stuck | [Web flash](https://jamro.github.io/tiny-engineer/flash/) · [flash.md](flash.md) |
 | `.local` slow or fails | OLED IP; `curl -4 http://…` |
 | OLED shows join AP / `192.168.4.1` | Wi-Fi not saved or STA failed — finish [assembly §20](3d/assembly.md#20-setup-wizard-and-first-boot-on-wi-fi) |
-| Welcome / ring silent (servos move) | LittleFS missing WAVs — `pio run -t uploadfs` ([flash.md](flash.md)) |
+| Welcome / ring silent (servos move) | Re-install the same release from [Web flash](https://jamro.github.io/tiny-engineer/flash/) (stock image includes audio). Advanced: [flash.md](flash.md) |
 | Hooks never move the robot | Node 18+, hook `timeout` ≥ 30, HTTPS tarball `npx` — see [hooks.md](hooks.md) |
 | Servos twitch / board resets on motion | Power budget — [hardware/power.md](hardware/power.md) |
 | Other boot / I2C / audio failures | [hardware/testing.md](hardware/testing.md) |

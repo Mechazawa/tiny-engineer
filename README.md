@@ -40,7 +40,7 @@ Open-source desk robot: 3D-printable body, Wi-Fi, and a small REST API so your t
 | **Tools** | **Soldering required** (modules and harness wires) |
 | **Difficulty** | **Medium** - fair first hardware project for a software engineer, not a one-LED kit. Optional primer: [From Code to Circuits](docs/hardware-for-software-engineers/README.md) |
 
-**Print → Wire → Flash → Assemble → Connect** - step-by-step: **[Getting started](docs/getting-started.md)**.
+**Print → Assemble → Connect** - step-by-step: **[Getting started](docs/getting-started.md)**. 
 
 > **Integrated PCB in progress** - a main board that replaces most breakout modules and wiring. [Interest check →](https://github.com/jamro/tiny-engineer/discussions/50)
 
@@ -84,7 +84,7 @@ Details: [Integrations](docs/integration.md) · [HTTP API](docs/api.md) · [Curs
 | Goal | Doc |
 | --- | --- |
 | Build end-to-end | [docs/getting-started.md](docs/getting-started.md) |
-| Flash firmware | [docs/flash.md](docs/flash.md) |
+| Flash firmware | **[Web flash](https://jamro.github.io/tiny-engineer/flash/)** · [docs/flash.md](docs/flash.md) (PlatformIO / mods / OTA) |
 | Parts / cart | [docs/shopping.md](docs/shopping.md) |
 | Wiring / power | [docs/hardware/README.md](docs/hardware/README.md) |
 | Printable parts | [3d_models/README.md](3d_models/README.md) |

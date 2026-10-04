@@ -10,7 +10,7 @@ Pick a path. Depth lives in the linked pages.
 | **Buy parts** (one cart) | [shopping.md](shopping.md) |
 | **Bridge into hardware/electronics** (software engineer background) | [hardware-for-software-engineers/README.md](hardware-for-software-engineers/README.md) — optional parallel reading; safety card lives on the checklist |
 | **Assemble printed parts** (mechanical procedure) | [3d/assembly.md](3d/assembly.md) |
-| **Flash firmware** | [flash.md](flash.md) |
+| **Flash firmware** | **[Web flash](https://jamro.github.io/tiny-engineer/flash/)** (default) · [flash.md](flash.md) (PlatformIO / mods / OTA) |
 | **Wire / power detail** | [hardware/wiring.md](hardware/wiring.md) → [hardware/README.md](hardware/README.md) |
 | **Print / parts inventory** | [../3d_models/README.md](../3d_models/README.md) |
 | **Order printed parts** (no 3D printer) | [3d/order-parts.md](3d/order-parts.md) |
