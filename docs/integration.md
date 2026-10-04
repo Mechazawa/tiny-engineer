@@ -238,6 +238,17 @@ Inside this firmware repository, [`.claude/settings.json`](../.claude/settings.j
 
 To use it in every project, copy the `hooks` block into `~/.claude/settings.json` and replace `$CLAUDE_PROJECT_DIR/packages/…` with the absolute path to this repo's bin.
 
+### Custom animations from the agent
+
+The same CLI has a `play` command that an agent can run to speak and move. It streams a WAV to [`POST /play`](api.md#post-play) with a timeline of moves, gaze and faces, prints the robot's reply when the clip ends, and exits 1 with the reason on any error:
+
+```bash
+node packages/tiny-engineer-claude-code/bin/tiny-engineer-claude-code.js play hello.wav \
+  --anim '[["preset","thinking"],["sleep",800],["move","head",0.6,300],["face","happy"]]'
+```
+
+`--anim-file dance.json` reads the timeline from a file. `--help` lists every step.
+
 ### Smoke test
 
 ```bash
