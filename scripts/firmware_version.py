@@ -1,9 +1,9 @@
 # Bake git-describe into FW_VERSION for the robot firmware env.
 #
-# A later GitHub release workflow should use fetch-depth: 0 so tags are
-# visible (shallow checkout yields a bare SHA). Attach
-# .pio/build/esp32-c3-devkitm-1/firmware.bin (flash at 0x10000) and
-# littlefs.bin from `pio run -t buildfs` (flash at 0x220000).
+# CI and release workflows use fetch-depth: 0 so tags are visible
+# (shallow checkout yields a bare SHA). Release assets:
+# firmware.bin (flash at 0x10000) and littlefs.bin from
+# `pio run -t buildfs` (flash at 0x220000).
 Import("env")
 
 import re

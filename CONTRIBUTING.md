@@ -115,7 +115,7 @@ Robot builds bake `git describe --tags --always --dirty` into `FW_VERSION` via [
 - Dev build: `v0.1.0-<n>-g<sha>` (optional `-dirty`)
 - No git metadata: `unknown`
 
-A firmware tag does not bump the npm packages. A future GitHub release workflow should use `fetch-depth: 0` (shallow checkout loses tags) and attach both `.pio/build/esp32-c3-devkitm-1/firmware.bin` (flash at `0x10000`) and `littlefs.bin` from `pio run -t buildfs` (flash at `0x220000`).
+A firmware tag does not bump the npm packages. CI (`.github/workflows/ci.yml`) builds with full git history and uploads `firmware.bin` + `littlefs.bin` as the `firmware-<sha>` Actions artifact on every PR and `main` push. Pushing a tag matching `v*` runs `.github/workflows/release.yml`, which attaches `tiny-engineer-<tag>-firmware.bin` (flash at `0x10000`) and `tiny-engineer-<tag>-littlefs.bin` (flash at `0x220000`) to a GitHub Release.
 
 Examples:
 
