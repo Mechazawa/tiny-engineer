@@ -285,7 +285,7 @@ body:not(.setup-mode) #setup-wizard{display:none!important}
 <tr><td><code>wakeup</code></td><td>One-shot sleep-inertia wake</td></tr>
 <tr><td><code>sleep</code></td><td>Close eyes and sleep</td></tr>
 </table>
-<p>POST <code>/play</code> &mdash; body: 16-bit mono PCM WAV at 44100 Hz. Optional header <code>X-Anim</code>: JSON array of steps, run in order; only <code>sleep</code> advances time:</p>
+<p>POST <code>/play</code> &mdash; body: 16-bit mono PCM WAV at 22050 Hz. Optional header <code>X-Anim</code>: JSON array of steps, run in order; only <code>sleep</code> advances time:</p>
 <table>
 <tr><th>Step</th><th>Values</th></tr>
 <tr><td><code>["sleep", ms]</code></td><td>0&ndash;600000 ms of playback</td></tr>

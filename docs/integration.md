@@ -105,6 +105,20 @@ curl http://tiny-engineer.local/health
 
 More routes (tests, servo, web UI): [`api.md`](api.md).
 
+### Speech for `POST /play`
+
+[`scripts/say.py`](../scripts/say.py) speaks a line in the robot's voice: [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M) text-to-speech through a tin-can filter, written as a WAV that [`POST /play`](api.md#post-play) accepts. It needs [uv](https://docs.astral.sh/uv/) and ffmpeg. The first run installs its Python dependencies and downloads the model (about 330 MB).
+
+```bash
+scripts/say.py "Build passed. Ship it!" -o /tmp/te-clip.wav
+```
+
+```json
+{"wav": "/tmp/te-clip.wav", "duration_ms": 2200, "words": [["Build", 375], ["passed", 650], ["Ship", 1188], ["it", 1475]]}
+```
+
+`words` holds the start of each word in milliseconds of the clip, so an agent can put a `move` or `face` step on the word it belongs to. `--voice` picks another [Kokoro voice](https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md) (default `am_michael`), `--plain` skips the filter, `--rate` matches a robot built with another sample rate.
+
 ---
 
 ## 2. Cursor dedicated script

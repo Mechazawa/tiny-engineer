@@ -542,7 +542,7 @@ Streams a WAV to the speaker and optionally drives the robot from a timeline whi
 
 | Part | Value |
 | --- | --- |
-| Body | WAV, 16-bit mono PCM at 44100 Hz (the firmware `SAMPLE_RATE`). `Content-Length` is required. Chunks other than `fmt ` and `data` are skipped |
+| Body | WAV, 16-bit mono PCM at 22050 Hz (the firmware `SAMPLE_RATE`). `Content-Length` is required. Chunks other than `fmt ` and `data` are skipped |
 | `X-Anim` header | Optional JSON array of timeline steps, up to 8 KB and 256 steps |
 | `Authorization` | `Bearer <token>` when `access_token` is set |
 
@@ -574,7 +574,7 @@ curl -X POST http://tiny-engineer.local/play \
 { "ok": true, "played_ms": 3000 }
 ```
 
-The Claude Code CLI wraps this for agents: `tiny-engineer-claude-code play clip.wav --anim '[...]'` ([integration.md](integration.md#4-claude-code-dedicated-script)).
+The Claude Code CLI wraps this for agents: `tiny-engineer-claude-code play clip.wav --anim '[...]'` ([integration.md](integration.md#4-claude-code-dedicated-script)). [`scripts/say.py`](../scripts/say.py) makes a speech clip in this format and prints when each word starts ([integration.md](integration.md#speech-for-post-play)).
 
 Errors arrive before any audio plays:
 
@@ -582,7 +582,7 @@ Errors arrive before any audio plays:
 | --- | --- | --- |
 | `400` | `step N: ...` | Timeline step `N` (0-based) is invalid, names an unknown servo, eye mode or face, or a preset that plays its own sound |
 | `400` | `X-Anim is not a JSON array` | Header is not a JSON array |
-| `415` | `expected 16-bit mono PCM at 44100 Hz` | WAV format or sample rate differs |
+| `415` | `expected 16-bit mono PCM at 22050 Hz` | WAV format or sample rate differs |
 | `415` | `not a WAV file`, `no audio data` | Body is not a RIFF/WAVE file, or has no `data` chunk |
 
 ## Errors
