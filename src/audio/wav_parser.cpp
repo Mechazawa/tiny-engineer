@@ -80,8 +80,6 @@ void WavStreamParser::feed(const uint8_t* bytes, size_t length) {
     bytes += used;
     length -= used;
   }
-
-  flush();
 }
 
 void WavStreamParser::finish() {
@@ -157,13 +155,9 @@ void WavStreamParser::parseFormat() {
   }
 
   if (format != kFormatPcm || channels != 1 || bits != 16 || rate != sampleRate_) {
-    snprintf(
-      message_,
-      sizeof(message_),
-      "expected 16-bit mono PCM at %lu Hz",
-      static_cast<unsigned long>(sampleRate_)
-    );
-    state_ = State::Failed;
+    char expected[48];
+    snprintf(expected, sizeof(expected), "expected 16-bit mono PCM at %lu Hz", static_cast<unsigned long>(sampleRate_));
+    fail(expected);
     return;
   }
 

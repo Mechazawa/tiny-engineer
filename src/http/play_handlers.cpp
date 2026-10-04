@@ -17,25 +17,13 @@
 
 namespace {
 
-// Animations with no sound of their own, so they cannot talk over the clip.
-bool playableDuringClip(AnimationId id) {
-  switch (id) {
-    case AnimationId::Talking:
-    case AnimationId::Typing:
-    case AnimationId::Reading:
-    case AnimationId::Thinking:
-    case AnimationId::None:
-      return true;
-    default:
-      return false;
-  }
-}
+constexpr size_t kPlayPrefixLen = sizeof("/play/") - 1;
 
 // One POST /play request. loop() is blocked while the body streams, so the
 // session runs tickRobot() between speaker writes.
 class PlaySession : public WavStreamParser::Sink {
 public:
-  void begin(WebServer& server, bool named) {
+  void begin(WebServer& server) {
     parser_.reset();
     rejectCode_ = 0;
     started_ = false;
@@ -50,9 +38,13 @@ public:
       return;
     }
 
-    const String name = named ? server.pathArg(0) : String("talking");
+    // "/play" or "/play/<name>"; pathArg() would assert on the route without a name.
+    const String uri = server.uri();
+    const char* name = uri.length() > kPlayPrefixLen ? uri.c_str() + kPlayPrefixLen : "talking";
 
-    if (!parseAnimationName(name.c_str(), animation_) || !playableDuringClip(animation_)) {
+    // Continuous animations and none play no sound of their own, so they cannot talk over the clip.
+    if (!parseAnimationName(name, animation_) ||
+        (animation_ != AnimationId::None && !animationIsContinuous(animation_))) {
       reject(400, "name must be talking, typing, reading, thinking or none");
       return;
     }
@@ -63,7 +55,7 @@ public:
   }
 
   void feed(const uint8_t* bytes, size_t length) {
-    if (rejectCode_ == 0 && parser_) {
+    if (parser_) {
       parser_->feed(bytes, length);
     }
   }
@@ -137,12 +129,12 @@ PlaySession g_session;
 
 }  // namespace
 
-void handlePlayBody(WebServer& server, bool named) {
+void handlePlayBody(WebServer& server) {
   HTTPRaw& raw = server.raw();
 
   switch (raw.status) {
     case RAW_START:
-      g_session.begin(server, named);
+      g_session.begin(server);
       break;
     case RAW_WRITE:
       g_session.feed(raw.buf, raw.currentSize);

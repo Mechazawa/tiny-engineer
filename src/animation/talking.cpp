@@ -7,7 +7,6 @@
 #include "hardware/servo_wrapper.h"
 #include "servos.h"
 
-using anim::parkTorso;
 using anim::randRangeMs;
 using anim::randUnit;
 using anim::stopAnimServos;
@@ -62,7 +61,7 @@ void updateTalking(uint32_t now) {
 
   if (hasPendingAnimation() && !g_poseFrozen) {
     g_poseFrozen = true;
-    parkTorso(anim::TRANSITION_TORSO_SPEED_DEG_S);
+    anim::parkForTransition();
   }
 
   if (g_poseFrozen) {

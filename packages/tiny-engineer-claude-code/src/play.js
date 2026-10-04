@@ -31,7 +31,7 @@ export function parsePlayArgs(argv) {
 /**
  * POST a WAV to /play (or /play/<name>). Resolves with the robot's reply.
  * @param {{ baseUrl: string, wav: Uint8Array, name?: string, token?: string | null }} request
- * @returns {Promise<{ ok: boolean, status: number, body: string }>}
+ * @returns {Promise<{ ok: boolean, body: string }>}
  */
 export async function postPlay({ baseUrl, wav, name, token }) {
   const response = await robotFetch(
@@ -46,5 +46,5 @@ export async function postPlay({ baseUrl, wav, name, token }) {
     token,
   );
 
-  return { ok: response.ok, status: response.status, body: await response.text() };
+  return { ok: response.ok, body: await response.text() };
 }

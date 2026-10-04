@@ -39,7 +39,7 @@ test("postPlay streams the WAV to the named animation's route with the token", a
       token: "secret",
     });
 
-    assert.deepEqual(reply, { ok: true, status: 200, body: '{"ok":true,"played_ms":10}' });
+    assert.deepEqual(reply, { ok: true, body: '{"ok":true,"played_ms":10}' });
     assert.equal(received.url, "/play/thinking");
     assert.equal(received.headers.authorization, "Bearer secret");
     assert.equal(received.body.toString(), "RIFFdata");

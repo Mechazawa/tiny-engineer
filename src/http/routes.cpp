@@ -90,13 +90,13 @@ void registerHttpRoutes() {
     "/play",
     HTTP_POST,
     []() { handlePlayDone(httpServer()); },
-    []() { handlePlayBody(httpServer(), false); }
+    []() { handlePlayBody(httpServer()); }
   );
   server.on(
     UriBraces("/play/{}"),
     HTTP_POST,
     []() { handlePlayDone(httpServer()); },
-    []() { handlePlayBody(httpServer(), true); }
+    []() { handlePlayBody(httpServer()); }
   );
   server.on("/settings", HTTP_GET, []() {
     httpWithApiAuth(httpServer(), handleSettingsGet);
