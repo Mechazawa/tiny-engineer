@@ -1,9 +1,4 @@
 (() => {
-  const OWNER = "jamro";
-  const REPO = "tiny-engineer";
-  const RELEASES_URL =
-    "https://api.github.com/repos/" + OWNER + "/" + REPO + "/releases?per_page=30";
-
   const statusEl = document.getElementById("flash-status");
   const ledEl = document.getElementById("flash-led");
   const versionEl = document.getElementById("flash-version");
@@ -11,6 +6,21 @@
   const partsEl = document.getElementById("flash-parts");
   const manifestUrlEl = document.getElementById("flash-manifest-url");
   const installWrap = document.getElementById("flash-install");
+
+  let releases = [];
+  let blobUrl = null;
+  let loadId = 0;
+
+  /** Directory URL for this page (handles missing trailing slash / index.html). */
+  function pageDir() {
+    let href = window.location.href.split("#")[0].split("?")[0];
+    if (/\/index\.html$/i.test(href)) {
+      href = href.replace(/\/index\.html$/i, "/");
+    } else if (!href.endsWith("/")) {
+      href += "/";
+    }
+    return href;
+  }
 
   function setStatus(kind, text) {
     if (!statusEl) return;
@@ -34,25 +44,16 @@
     if (installWrap) installWrap.hidden = false;
   }
 
-  function basename(path) {
-    const clean = String(path || "").split("?")[0];
-    const parts = clean.split("/");
-    return parts[parts.length - 1] || clean;
-  }
-
-  function partLabel(path, tag) {
-    let name = basename(path);
-    const prefix = "tiny-engineer-" + tag + "-";
-    if (tag && name.startsWith(prefix)) {
-      name = name.slice(prefix.length);
-    }
-    return name.replace(/\.bin$/i, "") || name;
-  }
-
   function formatOffset(offset) {
     const n = Number(offset);
     if (!Number.isFinite(n)) return String(offset);
     return "0x" + n.toString(16).toUpperCase();
+  }
+
+  function partLabel(file) {
+    return String(file || "")
+      .replace(/^tiny-engineer-v[\w.-]+-/, "")
+      .replace(/\.bin$/i, "");
   }
 
   function clearParts(message) {
@@ -67,13 +68,8 @@
     partsEl.appendChild(tr);
   }
 
-  function renderParts(manifest, tag) {
+  function renderParts(parts) {
     if (!partsEl) return;
-    const parts =
-      manifest &&
-      manifest.builds &&
-      manifest.builds[0] &&
-      manifest.builds[0].parts;
     if (!Array.isArray(parts) || !parts.length) {
       clearParts("Manifest has no parts.");
       return;
@@ -83,7 +79,7 @@
       const tr = document.createElement("tr");
       const nameTd = document.createElement("td");
       const offTd = document.createElement("td");
-      nameTd.textContent = partLabel(part.path, tag);
+      nameTd.textContent = partLabel(part.file);
       offTd.textContent = formatOffset(part.offset);
       tr.appendChild(nameTd);
       tr.appendChild(offTd);
@@ -91,11 +87,36 @@
     });
   }
 
-  function remountInstallButton(manifestUrl) {
+  function revokeBlob() {
+    if (blobUrl) {
+      URL.revokeObjectURL(blobUrl);
+      blobUrl = null;
+    }
+  }
+
+  function buildManifest(release) {
+    const base = new URL("firmware/" + release.tag + "/", pageDir());
+    return {
+      name: "Tiny Engineer",
+      version: release.version || release.tag,
+      new_install_prompt_erase: true,
+      builds: [
+        {
+          chipFamily: "ESP32-C3",
+          parts: (release.parts || []).map((part) => ({
+            path: new URL(part.file, base).href,
+            offset: part.offset,
+          })),
+        },
+      ],
+    };
+  }
+
+  function remountInstallButton(manifestObjectUrl) {
     if (!installWrap) return;
     installWrap.innerHTML = "";
     const btn = document.createElement("esp-web-install-button");
-    btn.setAttribute("manifest", manifestUrl);
+    btn.setAttribute("manifest", manifestObjectUrl);
     const activate = document.createElement("button");
     activate.setAttribute("slot", "activate");
     activate.className = "btn btn-primary";
@@ -104,66 +125,56 @@
     installWrap.appendChild(btn);
   }
 
-  function selectedOption() {
+  function selectedRelease() {
     if (!selectEl || selectEl.selectedIndex < 0) return null;
-    return selectEl.options[selectEl.selectedIndex];
+    const tag = selectEl.value;
+    return releases.find((r) => r.tag === tag) || null;
   }
 
-  function loadSelectedManifest() {
-    const opt = selectedOption();
-    if (!opt || !opt.value) {
-      hideInstall();
+  function loadSelectedRelease() {
+    const requestId = ++loadId;
+    const release = selectedRelease();
+    revokeBlob();
+    hideInstall();
+
+    if (!release) {
       clearParts("Select a release…");
       if (manifestUrlEl) manifestUrlEl.textContent = "—";
       if (versionEl) versionEl.textContent = "—";
       return;
     }
 
-    const tag = opt.dataset.tag || opt.textContent.replace(/\s*\(latest\)\s*$/, "");
-    const manifestUrl = opt.value;
     if (manifestUrlEl) {
-      manifestUrlEl.textContent = "releases/download/" + tag + "/manifest.json";
-      manifestUrlEl.title = manifestUrl;
+      manifestUrlEl.textContent = "firmware/" + release.tag + "/ (Pages mirror)";
+      manifestUrlEl.title = new URL(
+        "firmware/" + release.tag + "/",
+        pageDir()
+      ).href;
     }
 
-    setStatus("warn", "Loading " + tag + " manifest…");
-    hideInstall();
-    clearParts("Loading…");
-
-    fetch(manifestUrl, { method: "GET", cache: "no-store" })
-      .then((res) => {
-        if (!res.ok) throw new Error("manifest " + res.status);
-        return res.json();
-      })
-      .then((manifest) => {
-        const version = manifest.version || tag;
-        if (versionEl) versionEl.textContent = version;
-        renderParts(manifest, tag);
-        remountInstallButton(manifestUrl);
-        showInstall();
-        setStatus(
-          "ok",
-          "Release " + version + " ready. Plug in the C3, then install."
-        );
-      })
-      .catch(() => {
-        if (versionEl) versionEl.textContent = "—";
-        clearParts("Could not load manifest.");
-        hideInstall();
-        setStatus(
-          "err",
-          "Could not load manifest for " + tag + ". Try another release."
-        );
-      });
+    if (versionEl) versionEl.textContent = release.version || release.tag;
+    renderParts(release.parts);
+    const manifest = buildManifest(release);
+    blobUrl = URL.createObjectURL(
+      new Blob([JSON.stringify(manifest)], { type: "application/json" })
+    );
+    remountInstallButton(blobUrl);
+    if (requestId !== loadId) return;
+    showInstall();
+    setStatus(
+      "ok",
+      "Release " +
+        (release.version || release.tag) +
+        " ready. Plug in the C3, then install."
+    );
   }
 
-  function populateSelect(releases) {
+  function populateSelect(list) {
     if (!selectEl) return;
     selectEl.innerHTML = "";
-    releases.forEach((rel, index) => {
+    list.forEach((rel, index) => {
       const opt = document.createElement("option");
-      opt.value = rel.manifestUrl;
-      opt.dataset.tag = rel.tag;
+      opt.value = rel.tag;
       opt.textContent = index === 0 ? rel.tag + " (latest)" : rel.tag;
       selectEl.appendChild(opt);
     });
@@ -190,38 +201,17 @@
 
   setStatus("warn", "Loading flashable releases…");
 
-  fetch(RELEASES_URL, {
+  fetch(new URL("releases.json", pageDir()).href, {
     method: "GET",
-    headers: { Accept: "application/vnd.github+json" },
     cache: "no-store",
   })
     .then((res) => {
-      if (!res.ok) throw new Error("releases " + res.status);
+      if (!res.ok) throw new Error("releases.json " + res.status);
       return res.json();
     })
-    .then((releases) => {
-      const flashable = (Array.isArray(releases) ? releases : [])
-        .filter((r) => r && !r.draft && !r.prerelease)
-        .map((r) => {
-          const asset = (r.assets || []).find((a) => a.name === "manifest.json");
-          if (!asset) return null;
-          const tag = r.tag_name;
-          return {
-            tag,
-            manifestUrl:
-              asset.browser_download_url ||
-              "https://github.com/" +
-                OWNER +
-                "/" +
-                REPO +
-                "/releases/download/" +
-                tag +
-                "/manifest.json",
-          };
-        })
-        .filter(Boolean);
-
-      if (!flashable.length) {
+    .then((list) => {
+      releases = Array.isArray(list) ? list : [];
+      if (!releases.length) {
         if (selectEl) {
           selectEl.innerHTML = "";
           const opt = document.createElement("option");
@@ -236,32 +226,32 @@
         hideInstall();
         setStatus(
           "err",
-          "No flashable releases yet. Publish a v* release with manifest.json, or backfill an older tag."
+          "No flashable releases in the Pages catalog yet. Upload manifest.json + bins to a Release, then redeploy Pages."
         );
         return;
       }
 
-      populateSelect(flashable);
+      populateSelect(releases);
       if (selectEl) {
-        selectEl.addEventListener("change", loadSelectedManifest);
+        selectEl.addEventListener("change", loadSelectedRelease);
       }
-      loadSelectedManifest();
+      loadSelectedRelease();
     })
     .catch(() => {
       if (selectEl) {
         selectEl.innerHTML = "";
         const opt = document.createElement("option");
         opt.value = "";
-        opt.textContent = "Could not load releases";
+        opt.textContent = "Catalog missing";
         selectEl.appendChild(opt);
         selectEl.disabled = true;
       }
       if (versionEl) versionEl.textContent = "—";
-      clearParts("Could not load releases");
+      clearParts("Could not load release catalog");
       hideInstall();
       setStatus(
         "err",
-        "Could not load GitHub releases. Check the network and try again."
+        "Could not load releases.json. Redeploy GitHub Pages after a Release has manifest.json."
       );
     });
 })();

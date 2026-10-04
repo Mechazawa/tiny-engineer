@@ -491,4 +491,4 @@ When making design decisions, prefer the option that feels:
 
 GitHub Pages is deployed from `web/` via [`.github/workflows/pages.yml`](../.github/workflows/pages.yml). One-time: repo **Settings → Pages → Source → GitHub Actions**.
 
-Firmware install manifest is published on each `v*` Release as `manifest.json` (stable name for `/releases/latest/download/manifest.json`). The flasher page must keep pointing at that URL unless the release naming scheme changes.
+Firmware install manifests ship on each `v*` Release as `manifest.json`. Pages deploy mirrors those assets via `scripts/build_flash_catalog.py` into `web/flash/firmware/<tag>/` and `web/flash/releases.json` (same-origin; browser cannot fetch Release CDN bins due to CORS). The flasher must load `releases.json`, not GitHub download URLs.

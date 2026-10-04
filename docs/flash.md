@@ -32,19 +32,19 @@ Browser installer (Chrome or Edge, USB data cable):
 
 **[jamro.github.io/tiny-engineer/flash/](https://jamro.github.io/tiny-engineer/flash/)**
 
-Pick any **stable** GitHub Release that includes `manifest.json`. The flasher loads that release’s manifest for bin URLs and flash offsets, so older tags keep working after the partition layout changes. Site UI lives under [`web/`](../web/) and follows [`web/STYLE.md`](../web/STYLE.md). Enable Pages once: repo **Settings → Pages → Source → GitHub Actions**.
+Pick any **stable** GitHub Release that includes `manifest.json`. The Pages deploy runs [`scripts/build_flash_catalog.py`](../scripts/build_flash_catalog.py), which mirrors each flashable release’s bins onto the site (same origin). The flasher reads that catalog, so browser CORS cannot block GitHub Release downloads. Partition offsets come from each release’s own `manifest.json`, so older tags keep working after the layout changes. Site UI lives under [`web/`](../web/) and follows [`web/STYLE.md`](../web/STYLE.md). Enable Pages once: repo **Settings → Pages → Source → GitHub Actions**.
 
 ### Backfill a historical release (e.g. `v0.1.0`)
 
-Tagged releases created before the release workflow can be made flashable later — no Pages redeploy needed.
+Tagged releases created before the release workflow can be made flashable later.
 
 1. Build the four bins from **that tag’s commit** (`git switch --detach <tag>`, then `pio run` and `pio run -t buildfs`).
 2. Write a `manifest.json` (ESP Web Tools schema, `chipFamily: "ESP32-C3"`) whose `parts` point at  
    `https://github.com/jamro/tiny-engineer/releases/download/<tag>/tiny-engineer-<tag>-{bootloader,partitions,firmware,littlefs}.bin`  
    with offsets from **that tag’s** [`partitions.csv`](../partitions.csv) (plus bootloader `0x0`, partition table `0x8000`).  
-   Example for `v0.1.0` (dual-OTA layout on that tag): LittleFS / `spiffs` at **`0x2B0000`**, not the current `main` offset.
+   Example for `v0.1.0` (dual-OTA layout on that tag): LittleFS / `spiffs` at **`0x2B0000`** (`2818048`), not the current `main` offset.
 3. Upload the four bins and `manifest.json` (exact asset name) to that Release (`gh release upload` or the GitHub UI).
-4. Reload `/flash/` — the tag appears in the release list.
+4. Redeploy Pages (**Actions → Pages → Run workflow**, or push a `web/**` change, or edit/publish a Release). The catalog script mirrors the new assets; then reload `/flash/`.
 
 Do **not** reuse current-`main` offsets for an old tag.
 
