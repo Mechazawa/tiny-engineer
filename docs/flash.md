@@ -26,6 +26,14 @@ After firmware upload, a post-script also uploads **LittleFS** ([`scripts/upload
 
 Cloning a tagged commit and running `pio run -t upload` remains the usual path.
 
+## Web flash
+
+Browser installer (Chrome or Edge, USB data cable):
+
+**[jamro.github.io/tiny-engineer/flash/](https://jamro.github.io/tiny-engineer/flash/)**
+
+Uses the latest GitHub Release `manifest.json` plus the four stock bins. Site UI lives under [`web/`](../web/) and follows [`web/STYLE.md`](../web/STYLE.md). Enable Pages once: repo **Settings → Pages → Source → GitHub Actions**.
+
 ## Download release binaries
 
 Tagged releases publish stock default-layout bins on [GitHub Releases](https://github.com/jamro/tiny-engineer/releases):
@@ -37,7 +45,7 @@ Tagged releases publish stock default-layout bins on [GitHub Releases](https://g
 | `tiny-engineer-<tag>-firmware.bin` | `0x10000` |
 | `tiny-engineer-<tag>-littlefs.bin` | `0x220000` |
 
-All **four** files are required for a clean first flash or web install. App + LittleFS alone is enough only when bootloader and partition table are already on the chip. With esptool, write each file at the offset above. CI attaches the same four paths as the `firmware-<sha>` Actions artifact on PR and `main` builds (90-day retention).
+All **four** files are required for a clean first flash or web install. App + LittleFS alone is enough only when bootloader and partition table are already on the chip. With esptool, write each file at the offset above. Each `v*` Release also attaches `manifest.json` for the web flasher. CI attaches the same four bin paths as the `firmware-<sha>` Actions artifact on PR and `main` builds (90-day retention).
 
 ## Audio mods
 

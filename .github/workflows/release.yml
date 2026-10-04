@@ -44,6 +44,33 @@ jobs:
             "dist/tiny-engineer-${GITHUB_REF_NAME}-firmware.bin"
           cp .pio/build/esp32-c3-devkitm-1/littlefs.bin \
             "dist/tiny-engineer-${GITHUB_REF_NAME}-littlefs.bin"
+      - name: Write ESP Web Tools manifest
+        run: |
+          python3 - <<'PY'
+          import json, os
+          tag = os.environ["GITHUB_REF_NAME"]
+          base = f"https://github.com/jamro/tiny-engineer/releases/download/{tag}"
+          version = tag[1:] if tag.startswith("v") else tag
+          manifest = {
+              "name": "Tiny Engineer",
+              "version": version,
+              "new_install_prompt_erase": True,
+              "builds": [
+                  {
+                      "chipFamily": "ESP32-C3",
+                      "parts": [
+                          {"path": f"{base}/tiny-engineer-{tag}-bootloader.bin", "offset": 0},
+                          {"path": f"{base}/tiny-engineer-{tag}-partitions.bin", "offset": 32768},
+                          {"path": f"{base}/tiny-engineer-{tag}-firmware.bin", "offset": 65536},
+                          {"path": f"{base}/tiny-engineer-{tag}-littlefs.bin", "offset": 2228224},
+                      ],
+                  }
+              ],
+          }
+          with open("dist/manifest.json", "w", encoding="utf-8") as f:
+              json.dump(manifest, f, indent=2)
+              f.write("\n")
+          PY
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -52,6 +79,7 @@ jobs:
             dist/tiny-engineer-${{ github.ref_name }}-partitions.bin
             dist/tiny-engineer-${{ github.ref_name }}-firmware.bin
             dist/tiny-engineer-${{ github.ref_name }}-littlefs.bin
+            dist/manifest.json
           generate_release_notes: true
           body: |
             ## Flash offsets (default USB layout)
@@ -63,4 +91,6 @@ jobs:
             | `tiny-engineer-${{ github.ref_name }}-firmware.bin` | `0x10000` |
             | `tiny-engineer-${{ github.ref_name }}-littlefs.bin` | `0x220000` |
 
-            All **four** files are required for a clean first flash or web install. App + LittleFS alone is enough only when bootloader and partition table are already on the chip. Usual path: clone the tagged commit and run `pio run -t upload` (see [docs/flash.md](https://github.com/jamro/tiny-engineer/blob/main/docs/flash.md)). esptool users write each bin at the offset above.
+            All **four** files are required for a clean first flash or web install. App + LittleFS alone is enough only when bootloader and partition table are already on the chip.
+
+            Web flash: [jamro.github.io/tiny-engineer/flash/](https://jamro.github.io/tiny-engineer/flash/) (uses `manifest.json` from this release). Usual path: clone the tagged commit and run `pio run -t upload` (see [docs/flash.md](https://github.com/jamro/tiny-engineer/blob/main/docs/flash.md)). esptool users write each bin at the offset above.
