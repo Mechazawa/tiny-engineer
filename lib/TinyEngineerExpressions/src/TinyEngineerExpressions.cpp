@@ -35,6 +35,16 @@ const char* name(Expression expression) {
   return index < kExpressionCount ? kNames[index] : nullptr;
 }
 
+bool fromName(const char* text, Expression& expression) {
+  for (std::size_t i = 0; text != nullptr && i < kExpressionCount; i++) {
+    if (std::strcmp(kNames[i], text) == 0) {
+      expression = static_cast<Expression>(i);
+      return true;
+    }
+  }
+  return false;
+}
+
 bool render(Expression expression, uint32_t elapsedMs,
             uint8_t* output, std::size_t outputSize) {
   const auto index = static_cast<uint8_t>(expression);

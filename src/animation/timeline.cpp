@@ -2,6 +2,7 @@
 
 #include <ArduinoJson.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 #include <strings.h>
@@ -19,10 +20,6 @@ bool findServo(const char* name, uint8_t& index) {
   }
 
   return false;
-}
-
-float clampTo(float value, float lo, float hi) {
-  return value < lo ? lo : (value > hi ? hi : value);
 }
 
 bool isMs(JsonVariantConst value) {
@@ -56,19 +53,31 @@ const char* parseStep(JsonArrayConst item, const Timeline::Names& names, uint32_
     return nullptr;
   }
 
-  if (strcmp(command, "preset") == 0 || strcmp(command, "eyes") == 0 || strcmp(command, "face") == 0) {
-    const Kind kind = command[0] == 'p' ? Kind::Preset : (command[0] == 'e' ? Kind::Eyes : Kind::Face);
-    const Timeline::NameResolver resolve = kind == Kind::Preset ? names.preset : (kind == Kind::Eyes ? names.eyes : names.face);
+  const struct {
+    const char* command;
+    Kind kind;
+    Timeline::NameResolver resolve;
+  } named[] = {
+    {"preset", Kind::Preset, names.preset},
+    {"eyes", Kind::Eyes, names.eyes},
+    {"face", Kind::Face, names.face},
+  };
+
+  for (const auto& entry : named) {
+    if (strcmp(command, entry.command) != 0) {
+      continue;
+    }
+
     const char* name = item[1].as<const char*>();
     uint8_t id = 0;
 
     if (name == nullptr) {
       return "needs a name";
     }
-    if (const char* reason = resolve(name, id)) {
+    if (const char* reason = entry.resolve(name, id)) {
       return reason;
     }
-    step = Timeline::Step{atMs, kind, id, 0.0f, 0.0f, 0};
+    step = Timeline::Step{atMs, entry.kind, id, 0.0f, 0.0f, 0};
     return nullptr;
   }
 
@@ -94,8 +103,8 @@ const char* parseStep(JsonArrayConst item, const Timeline::Names& names, uint32_
       atMs,
       Kind::Look,
       0,
-      clampTo(item[1].as<float>(), -1.0f, 1.0f),
-      clampTo(item[2].as<float>(), -1.0f, 1.0f),
+      servoSaturateNorm(item[1].as<float>()),
+      servoSaturateNorm(item[2].as<float>()),
       item[3].as<uint32_t>()
     };
     return nullptr;
@@ -105,7 +114,7 @@ const char* parseStep(JsonArrayConst item, const Timeline::Names& names, uint32_
     if (!item[1].is<float>() || !isOptionalMs(item[2])) {
       return "open needs an amount 0..1 and optional duration ms";
     }
-    step = Timeline::Step{atMs, Kind::Open, 0, clampTo(item[1].as<float>(), 0.0f, 1.0f), 0.0f, item[2].as<uint32_t>()};
+    step = Timeline::Step{atMs, Kind::Open, 0, std::clamp(item[1].as<float>(), 0.0f, 1.0f), 0.0f, item[2].as<uint32_t>()};
     return nullptr;
   }
 
@@ -136,6 +145,7 @@ std::optional<Timeline> Timeline::parse(
   }
 
   Timeline timeline;
+  timeline.steps_.reserve(items.size());
   uint32_t atMs = 0;
   unsigned index = 0;
 

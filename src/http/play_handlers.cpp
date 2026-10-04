@@ -26,7 +26,6 @@ public:
     parser_.reset();
     player_.reset();
     rejectCode_ = 0;
-    samplesWritten_ = 0;
 
     if (!settingsWifiConfigured()) {
       reject(503, "wifi not configured");
@@ -44,13 +43,23 @@ public:
 
     const String& header = server.header("X-Anim");
 
-    if (header.length() > 0 && acceptTimeline(header.c_str(), header.length()) != nullptr) {
-      reject(400, error_);
+    if (header.length() == 0) {
+      return;
     }
+
+    std::optional<Timeline> timeline = Timeline::parse(header.c_str(), header.length(), TimelinePlayer::names(), error_, sizeof(error_));
+
+    if (!timeline) {
+      reject(400, error_);
+      return;
+    }
+
+    player_.emplace(std::move(*timeline));
+    player_->advance(0);
   }
 
   void feed(const uint8_t* bytes, size_t length) {
-    if (rejectCode_ == 0 && parser_ && !parser_->failed()) {
+    if (rejectCode_ == 0 && parser_) {
       parser_->feed(bytes, length);
     }
   }
@@ -86,7 +95,6 @@ public:
 
   void onPcm(const int16_t* samples, size_t count) override {
     writeMonoToSpeaker(samples, count);
-    samplesWritten_ += count;
 
     if (player_) {
       player_->advance(playedMs());
@@ -102,21 +110,8 @@ private:
   std::optional<WavStreamParser> parser_;
   std::optional<TimelinePlayer> player_;
   int rejectCode_ = 0;
-  uint32_t samplesWritten_ = 0;
   char error_[96] = {};
   char body_[128] = {};
-
-  const char* acceptTimeline(const char* json, size_t length) {
-    std::optional<Timeline> timeline = Timeline::parse(json, length, TimelinePlayer::names(), error_, sizeof(error_));
-
-    if (!timeline) {
-      return error_;
-    }
-
-    player_.emplace(std::move(*timeline));
-    player_->advance(0);
-    return nullptr;
-  }
 
   void reject(int code, const char* message) {
     rejectCode_ = code;
@@ -128,7 +123,7 @@ private:
   }
 
   uint32_t playedMs() const {
-    return static_cast<uint32_t>(samplesWritten_ * 1000ULL / SAMPLE_RATE);
+    return static_cast<uint32_t>(parser_->samplesDelivered() * 1000ULL / SAMPLE_RATE);
   }
 };
 

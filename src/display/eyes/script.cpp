@@ -15,53 +15,29 @@ namespace expressions = tiny_engineer::expressions;
 constexpr float kLookRangeX = 16.0f;
 constexpr float kLookRangeY = 8.0f;
 
-struct Tween {
-  float from;
-  float to;
-  uint32_t startMs;
-  uint32_t durationMs;
-
-  float at(uint32_t now) const {
-    const float t = anim::easeInOutCubic(eyes::moveProgress(now, startMs, durationMs));
-    return from + (to - from) * t;
-  }
-
-  void retarget(float target, uint32_t durationMs_, uint32_t now) {
-    from = at(now);
-    to = target;
-    startMs = now;
-    durationMs = durationMs_;
-  }
-};
+anim::EasedMove g_lookX = {};
+anim::EasedMove g_lookY = {};
+anim::EasedMove g_open = {1.0f, 1.0f, 0, 0, false};
 
 bool g_posing = false;
-Tween g_lookX = {0.0f, 0.0f, 0, 0};
-Tween g_lookY = {0.0f, 0.0f, 0, 0};
-Tween g_open = {1.0f, 1.0f, 0, 0};
-
 bool g_faceShowing = false;
 expressions::Expression g_face = expressions::Expression::Idle;
 uint32_t g_faceStartedMs = 0;
+uint32_t g_faceFrameDrawn = UINT32_MAX;
+
+void retarget(anim::EasedMove& move, float target, uint32_t durationMs, uint32_t now) {
+  anim::beginEasedMove(move, anim::easedMoveValue(move, now), target, now, durationMs);
+}
 
 Eye scriptedEye(const Eye& base, uint32_t now) {
-  const int16_t height = static_cast<int16_t>(base.height * g_open.at(now));
-
-  return {
-    static_cast<int16_t>(base.x + g_lookX.at(now) * kLookRangeX),
-    static_cast<int16_t>(base.y + g_lookY.at(now) * kLookRangeY + (base.height - height) / 2),
-    base.width,
-    height
-  };
+  Eye eye = eyes::renderEye(base, anim::easedMoveValue(g_open, now));
+  eye.x += static_cast<int16_t>(anim::easedMoveValue(g_lookX, now) * kLookRangeX);
+  eye.y += static_cast<int16_t>(anim::easedMoveValue(g_lookY, now) * kLookRangeY);
+  return eye;
 }
 
 void beginPosing() {
-  if (!g_posing) {
-    g_lookX = {0.0f, 0.0f, 0, 0};
-    g_lookY = {0.0f, 0.0f, 0, 0};
-    g_open = {1.0f, 1.0f, 0, 0};
-    g_posing = true;
-  }
-
+  g_posing = true;
   g_faceShowing = false;
   eyes::requestForceRedraw();
 }
@@ -70,13 +46,13 @@ void beginPosing() {
 
 void eyesLookAt(float x, float y, uint32_t durationMs, uint32_t now) {
   beginPosing();
-  g_lookX.retarget(x, durationMs, now);
-  g_lookY.retarget(y, durationMs, now);
+  retarget(g_lookX, x, durationMs, now);
+  retarget(g_lookY, y, durationMs, now);
 }
 
 void eyesSetOpen(float amount, uint32_t durationMs, uint32_t now) {
   beginPosing();
-  g_open.retarget(amount, durationMs, now);
+  retarget(g_open, amount, durationMs, now);
 }
 
 void eyesBlink(uint32_t now) {
@@ -86,6 +62,7 @@ void eyesBlink(uint32_t now) {
 void eyesShowFace(uint8_t expression, uint32_t now) {
   g_face = static_cast<expressions::Expression>(expression);
   g_faceStartedMs = now;
+  g_faceFrameDrawn = UINT32_MAX;
   g_faceShowing = true;
   eyes::requestForceRedraw();
 }
@@ -107,11 +84,22 @@ bool drawScriptFace(uint32_t now) {
     return false;
   }
 
-  drawKaomojiFrame(g_face, now - g_faceStartedMs);
+  // Faces change frame every kFrameDurationMs; skip the I2C flush in between.
+  const uint32_t elapsed = now - g_faceStartedMs;
+  const uint32_t frame = elapsed / expressions::kFrameDurationMs;
+
+  if (frame != g_faceFrameDrawn || forceRedraw()) {
+    drawKaomojiFrame(g_face, elapsed);
+    g_faceFrameDrawn = frame;
+  }
+
   return true;
 }
 
 void clearScript() {
+  g_lookX = {0.0f, 0.0f, 0, 0, false};
+  g_lookY = {0.0f, 0.0f, 0, 0, false};
+  g_open = {1.0f, 1.0f, 0, 0, false};
   g_posing = false;
   g_faceShowing = false;
 }

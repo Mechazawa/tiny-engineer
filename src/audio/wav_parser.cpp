@@ -102,10 +102,6 @@ const char* WavStreamParser::error() const {
   return failed() ? message_ : nullptr;
 }
 
-bool WavStreamParser::reachedPcm() const {
-  return reachedPcm_;
-}
-
 uint32_t WavStreamParser::samplesDelivered() const {
   return samplesDelivered_;
 }
@@ -226,8 +222,8 @@ void WavStreamParser::flush() {
     return;
   }
 
-  sink_.onPcm(batch_, batchFill_);
   samplesDelivered_ += batchFill_;
+  sink_.onPcm(batch_, batchFill_);
   batchFill_ = 0;
 }
 

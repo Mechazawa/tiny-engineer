@@ -90,9 +90,24 @@ void test_callers_can_render_independently() {
   TEST_ASSERT_EQUAL_UINT8_ARRAY(first, again, sizeof first);
 }
 
+void test_from_name_round_trips_every_name() {
+  for (std::size_t i = 0; i < expr::kExpressionCount; i++) {
+    const auto expected = static_cast<expr::Expression>(i);
+    auto parsed = expr::Expression::Idle;
+    TEST_ASSERT_TRUE(expr::fromName(expr::name(expected), parsed));
+    TEST_ASSERT_EQUAL_UINT8(i, static_cast<uint8_t>(parsed));
+  }
+
+  auto untouched = expr::Expression::Love;
+  TEST_ASSERT_FALSE(expr::fromName("grumpy", untouched));
+  TEST_ASSERT_FALSE(expr::fromName(nullptr, untouched));
+  TEST_ASSERT_TRUE(untouched == expr::Expression::Love);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_names_and_invalid_ids);
+  RUN_TEST(test_from_name_round_trips_every_name);
   RUN_TEST(test_all_frames_match_original_designs);
   RUN_TEST(test_invalid_inputs_leave_buffer_untouched);
   RUN_TEST(test_frame_timing_and_loop_boundaries);

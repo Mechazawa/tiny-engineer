@@ -24,7 +24,7 @@ public:
   bool failed() const;
   // Human-readable reason when failed(), else nullptr.
   const char* error() const;
-  bool reachedPcm() const;
+  // Includes the batch currently being handed to Sink::onPcm.
   uint32_t samplesDelivered() const;
 
 private:

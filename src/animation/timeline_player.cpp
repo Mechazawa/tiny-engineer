@@ -48,18 +48,14 @@ const char* resolveEyes(const char* name, uint8_t& id) {
 }
 
 const char* resolveFace(const char* name, uint8_t& id) {
-  namespace expressions = tiny_engineer::expressions;
+  tiny_engineer::expressions::Expression face;
 
-  for (uint8_t i = 0; i < expressions::kExpressionCount; i++) {
-    const char* candidate = expressions::name(static_cast<expressions::Expression>(i));
-
-    if (candidate != nullptr && strcmp(candidate, name) == 0) {
-      id = i;
-      return nullptr;
-    }
+  if (!tiny_engineer::expressions::fromName(name, face)) {
+    return "unknown face";
   }
 
-  return "unknown face";
+  id = static_cast<uint8_t>(face);
+  return nullptr;
 }
 
 const Timeline::Names kNames = {resolvePreset, resolveEyes, resolveFace};
