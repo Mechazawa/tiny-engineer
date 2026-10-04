@@ -6,6 +6,8 @@
 #include <LittleFS.h>
 
 #include "audio/audio.h"
+#include "audio/wav_header.h"
+#include "pins.h"
 #include "settings/settings.h"
 #include "serial_log.h"
 
@@ -54,46 +56,17 @@ void logAudioStorageContents() {
   root.close();
 }
 
-bool skipWavPcmData(File& file) {
-  char tag[4];
+struct WavFileReader {
+  File& file;
 
-  if (file.readBytes(tag, 4) != 4 ||
-      memcmp(tag, "RIFF", 4) != 0) {
-    return false;
+  bool read(uint8_t* dest, size_t len) {
+    return file.read(dest, len) == len;
   }
 
-  file.seek(8);
-
-  if (file.readBytes(tag, 4) != 4 ||
-      memcmp(tag, "WAVE", 4) != 0) {
-    return false;
+  bool skip(uint32_t len) {
+    return file.seek(file.position() + len);
   }
-
-  while (file.available()) {
-    if (file.readBytes(tag, 4) != 4) {
-      return false;
-    }
-
-    uint32_t chunkSize = 0;
-
-    if (file.read(
-          reinterpret_cast<uint8_t*>(&chunkSize),
-          sizeof(chunkSize)
-        ) != sizeof(chunkSize)) {
-      return false;
-    }
-
-    if (memcmp(tag, "data", 4) == 0) {
-      return true;
-    }
-
-    if (!file.seek(file.position() + chunkSize)) {
-      return false;
-    }
-  }
-
-  return false;
-}
+};
 
 bool pumpWavChunk(File& file) {
   int16_t samples[kAudioFrames];
@@ -149,10 +122,15 @@ bool wavStreamStart(WavClip clip) {
     return false;
   }
 
-  if (!skipWavPcmData(g_file)) {
+  WavFileReader reader{g_file};
+  const WavHeaderResult header = readWavHeader(reader, SAMPLE_RATE);
+
+  if (header != WavHeaderResult::Ok) {
     g_file.close();
     serialLogPrint(def.label);
-    serialLogPrintln(" failed: invalid WAV");
+    serialLogPrint(" failed: invalid WAV (");
+    serialLogPrint(wavHeaderResultText(header));
+    serialLogPrintln(")");
     return false;
   }
 

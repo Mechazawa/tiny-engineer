@@ -4,7 +4,7 @@ Source files for Tiny Engineer branding and speaker clips. Firmware does not rea
 
 ## Audio
 
-WAV clips played by animations and the setup wizard. Format: **44100 Hz, mono, 16-bit PCM**.
+WAV clips played by animations and the setup wizard. Format: **44100 Hz, mono, 16-bit PCM**. The build downsamples them to 22050 Hz, the firmware's playback rate, when it packs LittleFS.
 
 `pio run` copies these files into `data/` via [`scripts/copy_assets.py`](../scripts/copy_assets.py). The next filesystem image overwrites `data/`, so edit the files here. Flash them with `pio run -t upload` or `pio run -t uploadfs`.
 

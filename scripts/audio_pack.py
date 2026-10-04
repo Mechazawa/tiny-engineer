@@ -1,9 +1,14 @@
-"""Merge stock WAVs with an optional mod overlay for the LittleFS image."""
+"""Merge stock WAVs with an optional mod overlay and halve their rate for the LittleFS image."""
 
+import math
 import re
 import shutil
 import wave
+from array import array
 from pathlib import Path
+
+SOURCE_RATE = 44100
+PACKED_RATE = SOURCE_RATE // 2
 
 STOCK_WAVS = (
     "bell.wav",
@@ -108,20 +113,62 @@ def validate_mod_name(name):
     return name
 
 
+def _require_source_format(wav, path):
+    if wav.getnchannels() != 1 or wav.getframerate() != SOURCE_RATE or wav.getsampwidth() != 2:
+        raise AudioPackError(
+            f"{path} must be {SOURCE_RATE} Hz mono 16-bit PCM "
+            f"(got {wav.getframerate()} Hz, "
+            f"{wav.getnchannels()} ch, "
+            f"{wav.getsampwidth() * 8}-bit)"
+        )
+
+
 def wav_duration_ms(path):
     with wave.open(str(path), "rb") as wav:
-        if wav.getnchannels() != 1 or wav.getframerate() != 44100 or wav.getsampwidth() != 2:
-            raise AudioPackError(
-                f"{path} must be 44100 Hz mono 16-bit PCM "
-                f"(got {wav.getframerate()} Hz, "
-                f"{wav.getnchannels()} ch, "
-                f"{wav.getsampwidth() * 8}-bit)"
-            )
+        _require_source_format(wav, path)
         frames = wav.getnframes()
-        rate = wav.getframerate()
-    if rate == 0:
-        raise AudioPackError(f"{path} has a zero sample rate")
-    return int(round(frames * 1000 / rate))
+    return int(round(frames * 1000 / SOURCE_RATE))
+
+
+def _halfband_taps(count=31):
+    # Blackman-windowed sinc with its cutoff at the output Nyquist. Every
+    # even offset from the centre is zero, so only the odd pairs are kept.
+    middle = count // 2
+    window = [
+        0.42 - 0.5 * math.cos(2 * math.pi * n / (count - 1))
+        + 0.08 * math.cos(4 * math.pi * n / (count - 1))
+        for n in range(count)
+    ]
+    pairs = [
+        (offset, math.sin(math.pi * offset / 2) / (math.pi * offset) * window[middle + offset])
+        for offset in range(1, middle + 1, 2)
+    ]
+    gain = 0.5 + 2 * sum(tap for _, tap in pairs)
+    return 0.5 / gain, [(offset, tap / gain) for offset, tap in pairs]
+
+
+def halve_sample_rate(path):
+    """Low-pass and keep every second sample, rewriting the WAV in place."""
+    with wave.open(str(path), "rb") as wav:
+        _require_source_format(wav, path)
+        samples = array("h", wav.readframes(wav.getnframes()))
+
+    centre, pairs = _halfband_taps()
+    reach = pairs[-1][0]
+    count = len(samples) // 2
+    padded = [0] * reach + samples.tolist() + [0] * reach
+    acc = [centre * value for value in padded[reach:reach + 2 * count:2]]
+    for offset, tap in pairs:
+        before = padded[reach - offset::2]
+        after = padded[reach + offset::2]
+        acc = [total + tap * (left + right) for total, left, right in zip(acc, before, after)]
+
+    out = array("h", (max(-32768, min(32767, round(value))) for value in acc))
+    with wave.open(str(path), "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(PACKED_RATE)
+        wav.writeframes(out.tobytes())
 
 
 def parse_cue_text(text, label):
@@ -221,6 +268,10 @@ def pack_audio(assets_dir, dest_dir, partition_bytes, mod_dir=None):
 
     if mod_dir is not None:
         _overlay_mod(Path(mod_dir), dest_dir)
+
+    for name in STOCK_WAVS:
+        halve_sample_rate(dest_dir / name)
+    print(f"Resampled WAVs to {PACKED_RATE} Hz")
 
     total = sum(
         path.stat().st_size
