@@ -32,20 +32,34 @@ Browser installer (Chrome or Edge, USB data cable):
 
 **[jamro.github.io/tiny-engineer/flash/](https://jamro.github.io/tiny-engineer/flash/)**
 
-Uses the latest GitHub Release `manifest.json` plus the four stock bins. Site UI lives under [`web/`](../web/) and follows [`web/STYLE.md`](../web/STYLE.md). Enable Pages once: repo **Settings → Pages → Source → GitHub Actions**.
+Pick any **stable** GitHub Release that includes `manifest.json`. The flasher loads that release’s manifest for bin URLs and flash offsets, so older tags keep working after the partition layout changes. Site UI lives under [`web/`](../web/) and follows [`web/STYLE.md`](../web/STYLE.md). Enable Pages once: repo **Settings → Pages → Source → GitHub Actions**.
+
+### Backfill a historical release (e.g. `v0.1.0`)
+
+Tagged releases created before the release workflow can be made flashable later — no Pages redeploy needed.
+
+1. Build the four bins from **that tag’s commit** (`git switch --detach <tag>`, then `pio run` and `pio run -t buildfs`).
+2. Write a `manifest.json` (ESP Web Tools schema, `chipFamily: "ESP32-C3"`) whose `parts` point at  
+   `https://github.com/jamro/tiny-engineer/releases/download/<tag>/tiny-engineer-<tag>-{bootloader,partitions,firmware,littlefs}.bin`  
+   with offsets from **that tag’s** [`partitions.csv`](../partitions.csv) (plus bootloader `0x0`, partition table `0x8000`).  
+   Example for `v0.1.0` (dual-OTA layout on that tag): LittleFS / `spiffs` at **`0x2B0000`**, not the current `main` offset.
+3. Upload the four bins and `manifest.json` (exact asset name) to that Release (`gh release upload` or the GitHub UI).
+4. Reload `/flash/` — the tag appears in the release list.
+
+Do **not** reuse current-`main` offsets for an old tag.
 
 ## Download release binaries
 
-Tagged releases publish stock default-layout bins on [GitHub Releases](https://github.com/jamro/tiny-engineer/releases):
+Tagged releases publish stock bins on [GitHub Releases](https://github.com/jamro/tiny-engineer/releases). Offsets are defined per release in that tag’s `partitions.csv` and copied into `manifest.json` by [`.github/workflows/release.yml`](../.github/workflows/release.yml). On current `main`:
 
 | Asset | Flash offset |
 | --- | --- |
 | `tiny-engineer-<tag>-bootloader.bin` | `0x0` |
 | `tiny-engineer-<tag>-partitions.bin` | `0x8000` |
-| `tiny-engineer-<tag>-firmware.bin` | `0x10000` |
-| `tiny-engineer-<tag>-littlefs.bin` | `0x220000` |
+| `tiny-engineer-<tag>-firmware.bin` | `0x10000` (`app0`) |
+| `tiny-engineer-<tag>-littlefs.bin` | `0x220000` (`spiffs`) |
 
-All **four** files are required for a clean first flash or web install. App + LittleFS alone is enough only when bootloader and partition table are already on the chip. With esptool, write each file at the offset above. Each `v*` Release also attaches `manifest.json` for the web flasher. CI attaches the same four bin paths as the `firmware-<sha>` Actions artifact on PR and `main` builds (90-day retention).
+All **four** files are required for a clean first flash or web install. App + LittleFS alone is enough only when bootloader and partition table are already on the chip. Each `v*` Release also attaches `manifest.json` for the web flasher. CI attaches the same four bin paths as the `firmware-<sha>` Actions artifact on PR and `main` builds (90-day retention).
 
 ## Audio mods
 
