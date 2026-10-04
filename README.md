@@ -40,6 +40,12 @@ Open-source desk robot: 3D-printable body, Wi-Fi, and a small REST API so your t
 | **Tools** | **Soldering required** (modules and harness wires) |
 | **Difficulty** | **Medium** - fair first hardware project for a software engineer, not a one-LED kit. Optional primer: [From Code to Circuits](docs/hardware-for-software-engineers/README.md) |
 
+I am exploring a main control board that could replace most breakout modules and eliminate much of the point-to-point wiring, making the build cleaner and easier to assemble.
+
+[![Main control board](docs/pcb_banner.jpg)](https://github.com/jamro/tiny-engineer/discussions/50)
+
+If a ~$15–20 assembled board like this would be useful to you, [Vote here 👍 →](https://github.com/jamro/tiny-engineer/discussions/50) → I’m using the interest to decide whether it’s worth developing further.
+
 **Print → Assemble → Connect** - step-by-step: **[Getting started](docs/getting-started.md)**. 
 
 > **Integrated PCB in progress** - a main board that replaces most breakout modules and wiring. [Interest check →](https://github.com/jamro/tiny-engineer/discussions/50)
