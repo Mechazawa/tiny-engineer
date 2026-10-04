@@ -35,7 +35,7 @@ bool playableDuringClip(AnimationId id) {
 // session runs tickRobot() between speaker writes.
 class PlaySession : public WavStreamParser::Sink {
 public:
-  void begin(WebServer& server) {
+  void begin(WebServer& server, bool named) {
     parser_.reset();
     rejectCode_ = 0;
     started_ = false;
@@ -50,9 +50,9 @@ public:
       return;
     }
 
-    const String name = server.pathArg(0);
+    const String name = named ? server.pathArg(0) : String("talking");
 
-    if (!parseAnimationName(name.length() > 0 ? name.c_str() : "talking", animation_) || !playableDuringClip(animation_)) {
+    if (!parseAnimationName(name.c_str(), animation_) || !playableDuringClip(animation_)) {
       reject(400, "name must be talking, typing, reading, thinking or none");
       return;
     }
@@ -137,12 +137,12 @@ PlaySession g_session;
 
 }  // namespace
 
-void handlePlayBody(WebServer& server) {
+void handlePlayBody(WebServer& server, bool named) {
   HTTPRaw& raw = server.raw();
 
   switch (raw.status) {
     case RAW_START:
-      g_session.begin(server);
+      g_session.begin(server, named);
       break;
     case RAW_WRITE:
       g_session.feed(raw.buf, raw.currentSize);
