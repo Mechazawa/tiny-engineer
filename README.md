@@ -81,17 +81,29 @@ Details: [Integrations](docs/integration.md) · [HTTP API](docs/api.md) · [Curs
 
 ## Documentation
 
-- **[Getting started](docs/getting-started.md)** - build checklist
-- **[Shopping list](docs/shopping.md)** - what to buy
-- **[Integrations](docs/integration.md)** - Claude Code, Cursor, Antigravity, REST
-- **[HTTP API](docs/api.md)** - routes and animations
-- **[Full docs index](docs/README.md)** - wiring, CAD, flash, settings, tests
+| Goal | Doc |
+| --- | --- |
+| Build end-to-end | [docs/getting-started.md](docs/getting-started.md) |
+| Flash firmware | [docs/flash.md](docs/flash.md) |
+| Parts / cart | [docs/shopping.md](docs/shopping.md) |
+| Wiring / power | [docs/hardware/README.md](docs/hardware/README.md) |
+| Printable parts | [3d_models/README.md](3d_models/README.md) |
+| Optional mods | [mods/README.md](mods/README.md) |
+| Assemble printed parts | [docs/3d/assembly.md](docs/3d/assembly.md) |
+| Resize CAD for another servo | [docs/3d/parametric-design.md](docs/3d/parametric-design.md) |
+| Servo axes / safe ranges | [docs/robot-movement.md](docs/robot-movement.md) |
+| HTTP API | [docs/api.md](docs/api.md) |
+| Settings | [docs/settings.md](docs/settings.md) |
+| Cursor hooks | [docs/hooks.md](docs/hooks.md) |
+| Any IDE / REST | [docs/integration.md](docs/integration.md) |
+| Firmware / package tests | [docs/testing.md](docs/testing.md) |
+| Full index | [docs/README.md](docs/README.md) |
 
 Print it, wire it, change the CAD, or hook up another agent. Issues and PRs welcome - especially new integrations. [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) · [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
 ## License
 
-- **Software** (firmware, integrations, scripts, documentation) - [MIT](LICENSE)
-- **Hardware designs** (CAD source and `.3mf` printables in [`3d_models/`](3d_models/); KiCad PCBs in [`hardware/`](hardware/)) - [CERN-OHL-S-2.0](3d_models/LICENSE)
+- **Software** (firmware, integrations, scripts, documentation) — [MIT](LICENSE)
+- **Hardware designs** (CAD source and printables in [`3d_models/`](3d_models/) and under [`mods/*/3d_models/`](mods/); KiCad PCBs in [`hardware/`](hardware/)) — [CERN-OHL-S-2.0](3d_models/LICENSE)
 
 See [LICENSING.md](LICENSING.md) for scope and effective date. The **Tiny Engineer** name and logo are not licensed - see [TRADEMARK.md](TRADEMARK.md).

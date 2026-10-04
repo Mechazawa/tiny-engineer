@@ -4,6 +4,7 @@
 #include <LittleFS.h>
 #include <math.h>
 
+#include "audio/audio_cues.h"
 #include "audio/wav_stream.h"
 #include "pins.h"
 #include "display/oled.h"
@@ -91,6 +92,7 @@ bool initAudioStorage() {
     }
   }
 
+  loadAudioCues();
   return true;
 }
 

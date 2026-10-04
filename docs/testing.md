@@ -8,9 +8,10 @@ Unity on the host. Compiles `src/settings/validate.cpp` plus header-only helpers
 
 ```bash
 pio test -e native
+python3 scripts/test_audio_pack.py
 ```
 
-`pio run` builds firmware. Native tests are **`pio test -e native`**, not `pio run -e native`.
+`pio run` builds firmware. Native tests are **`pio test -e native`**, not `pio run -e native`. `scripts/test_audio_pack.py` checks the stock WAV copy and mod overlay (no PlatformIO, no hardware).
 
 ## OLED expressions
 

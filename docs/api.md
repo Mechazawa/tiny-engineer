@@ -251,7 +251,7 @@ curl -X POST http://tiny-engineer.local/test/audio
 
 ### `POST /test/audio/bell`
 
-Plays `/bell.wav` from LittleFS (`playBell()`). Git source is [`assets/bell.wav`](../assets/bell.wav) (44100 Hz mono PCM); `pio run` copies it into `data/` for the filesystem image. After changing the asset, upload with `pio run -t upload` or `pio run -t uploadfs`. Do not edit `data/` by hand — the next build overwrites it.
+Plays `/bell.wav` from LittleFS (`playBell()`). Git source is [`assets/bell.wav`](../assets/bell.wav) (44100 Hz mono PCM); `pio run` downsamples it to 22050 Hz into `data/` for the filesystem image. After changing the asset, upload with `pio run -t upload` or `pio run -t uploadfs`. Do not edit `data/` by hand — the next build overwrites it.
 
 ```bash
 curl -X POST http://tiny-engineer.local/test/audio/bell
@@ -485,6 +485,8 @@ curl -X POST "http://tiny-engineer.local/anim?name=none"
 ```
 
 Eye detail below for `eyes_style=classic` (default). With `eyes_style=cover`, the same sequences drive full-half bars ([Cover eyes](#cover-eyes)). With `eyes_style=dots`, the same sequences drive 12×12 circles ([Dots eyes](#dots-eyes)). With `eyes_style=kaomoji`, faces follow [Kaomoji eyes](#kaomoji-eyes) instead of procedural blinks, glances, flicker, or X eyes. Servo/audio behavior is the same for every style.
+
+Durations and quoted lines below are the stock clips in [`assets/`](../assets/). A filesystem built with `custom_audio_mod` can replace some of those WAVs. Phrase timing then follows that clip's `.cue` file on LittleFS (`/welcome.cue` and the same pattern for `attention`, `error`, `abort`, and `dead`). See [flash.md](flash.md).
 
 | `name` | Behavior |
 | --- | --- |

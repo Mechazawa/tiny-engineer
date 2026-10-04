@@ -23,7 +23,7 @@ Scopes: `firmware`, `http`, `settings`, `anim`, `servos`, `wifi`, `integrations`
 
 `integrations` is anything under `packages/` (Cursor, Antigravity, Claude Code, later agent CLIs). Do not add a new scope per package.
 
-`mods` is anything under `3d_models/mods/`. Name the mod in the summary. Do not add a new scope per mod.
+`mods` is anything under `mods/`. Name the mod in the summary. Do not add a new scope per mod.
 
 **Breaking here:** removed/renamed HTTP route or query param; NVS key rename that drops settings; pinout change; default servo range change that invalidates calibration; hook CLI flag or event rename. Use `!` on the type **and** a `BREAKING CHANGE:` footer.
 

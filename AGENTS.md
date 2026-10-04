@@ -13,6 +13,7 @@ Tiny Engineer is an open-source ESP32-C3 Wi-Fi desk robot: 3D-printed mechanics,
 | `src/`, `include/`, `lib/`, `data/` | Firmware (PlatformIO) |
 | `packages/` | HTTP / hook CLIs (Cursor, Antigravity, Claude Code, …) — scope `integrations` |
 | `3d_models/` | CAD and printables (CERN-OHL-S) |
+| `mods/` | Optional mods; models under `mods/<name>/3d_models/` (CERN-OHL-S) |
 | `hardware/` | KiCad boards (CERN-OHL-S) |
 | `docs/` | Human docs; depth lives here |
 
@@ -36,7 +37,7 @@ python3 scripts/check_pcb.py
 
 `pio test -e native` is not `pio run -e native`. PCB checks need KiCad 10 (`python3 scripts/check_pcb.py`). Details: [docs/testing.md](docs/testing.md).
 
-Do **not** flash (`pio run -t upload`, `-t uploadfs`, `-t ota`, `-t otafs`) unless the user asks.
+Do **not** flash (`pio run -t upload`, `-t uploadfs`, `pio run -e ota -t upload`, `-t ota`, or `-t otafs`) unless the user asks.
 
 ## After significant changes
 
@@ -62,7 +63,7 @@ Format: `type(scope): summary` (imperative, lowercase type, no trailing period; 
 
 Scopes: `firmware`, `http`, `settings`, `anim`, `servos`, `wifi`, `integrations`, `cad`, `mods`, `pcb`, `docs`, `scripts`, `ci`.  
 `integrations` = anything under `packages/`. Do not add a new scope per package.  
-`mods` = anything under `3d_models/mods/`. Name the mod in the summary. Do not add a new scope per mod.
+`mods` = anything under `mods/`. Name the mod in the summary. Do not add a new scope per mod.
 
 Breaking rules, SemVer mapping, and examples: [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -72,8 +73,7 @@ Breaking rules, SemVer mapping, and examples: [CONTRIBUTING.md](CONTRIBUTING.md)
 - **Settings** — layer checklist in [docs/settings.md](docs/settings.md). Never log raw `access_token`.
 - **Integrations** — add/extend package tests; prefer short timeouts and ignore network errors so a missing robot does not stall the agent.
 - **CAD** — edit `.f3d` **and** export affected `3mf`. CERN-OHL-S. Do not swap `AiEmblem.3mf` as branding. New parts: [docs/3d/adding-parts.md](docs/3d/adding-parts.md).
-- **Mods** — optional CAD under `3d_models/mods/<mod_name>/`. Commit `type(mods)` and name the mod in the summary. `feat(mods)` / `fix(mods)` do not version stock CAD. See [3d_models/mods/README.md](3d_models/mods/README.md).
-- **Mods** — optional CAD under `3d_models/mods/<mod_name>/`. Commit `type(mods)` and name the mod in the summary. `feat(mods)` / `fix(mods)` do not version stock CAD. See [3d_models/mods/README.md](3d_models/mods/README.md).
+- **Mods** — optional add-ons under `mods/<mod_name>/`. Models live in `3d_models/{cad,parts}/`. Commit `type(mods)` and name the mod in the summary. `feat(mods)` / `fix(mods)` do not version stock CAD. See [mods/README.md](mods/README.md).
 - **PCB** — [docs/pcb.md](docs/pcb.md) checklist + KiCad review rules below. Run `python3 scripts/check_pcb.py` (KiCad 10). New board paths need `REUSE.toml`. CERN-OHL-S.
 - **Motion** — poses −1..1 mapped to saved min/max; see [docs/robot-movement.md](docs/robot-movement.md). Do not widen NVS servo clamps without testing on a real robot.
 - **Secrets** — no `.env`, tokens, or Wi-Fi passwords in logs or screenshots.

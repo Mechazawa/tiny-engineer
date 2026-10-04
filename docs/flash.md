@@ -24,6 +24,22 @@ pio device monitor      # serial (115200)
 
 After firmware upload, a post-script also uploads **LittleFS** ([`scripts/upload_fs_after_upload.py`](../scripts/upload_fs_after_upload.py)) so WAV assets (`welcome`, `bell`, and friends) land on the board. If animations move but stay silent, run `pio run -t uploadfs` once.
 
+## Audio mods
+
+Leave `custom_audio_mod` empty in [`platformio.ini`](../platformio.ini) for the stock clips in [`assets/`](../assets/). Set it to a mod folder name to overlay that mod's WAVs, then flash firmware and the filesystem together:
+
+```ini
+custom_audio_mod = halloween
+```
+
+```bash
+pio run -t upload
+```
+
+The pack step copies `assets/*.wav`, then overwrites any matching file in `mods/<name>/assets/`. A clip the mod does not ship stays the stock file. `welcome`, `attention`, `error`, `abort`, and `dead` replacements need a sibling `.cue` (`key=ms` phrase marks). `bell` does not. Details: [`mods/README.md`](../mods/README.md).
+
+The `spiffs` partition starts at `0x220000` and is about 1.81 MB, so a longer replacement set can fit. NVS stays at `0x9000`, so saved settings stay. An image flashed at the old `0x270000` offset will not mount. Use `pio run -t upload` (app + filesystem), not a firmware-only flash, after pulling this layout.
+
 Several serial ports:
 
 ```bash
@@ -39,24 +55,35 @@ Pick the entry whose hardware ID shows Espressif's `VID:PID=303A:1001` (the
 ESP32-C3's native USB) or your board's USB-serial bridge — `pio device list`
 also lists Bluetooth serial ports, which are not the board.
 
-## Over-the-air updates
+## Over-the-air updates (optional)
 
-Once the robot is on your home Wi-Fi, firmware and LittleFS can be updated without USB:
+The `ota` build environment adds Wi-Fi updates. Compared with the default build it trades:
+
+- the coredump partition, for a second firmware slot ([`partitions_ota.csv`](../partitions_ota.csv))
+- LittleFS shrinks from about 1.81 MB to 960 KB, so there is less room for longer mod clips
+
+Switching layouts needs one USB flash of firmware and filesystem together:
+
+```bash
+pio run -e ota -t upload
+```
+
+After that, with the robot on your home Wi-Fi:
 
 ```bash
 export TINY_ENGINEER_URL=http://192.168.x.x   # default: tiny-engineer.local
 export TINY_ENGINEER_TOKEN=...                # only if access_token is set
-pio run -t ota       # firmware
-pio run -t otafs     # LittleFS (WAV assets)
+pio run -e ota -t ota       # firmware
+pio run -e ota -t otafs     # LittleFS (WAV assets)
 ```
 
 These are the same variables the agent integrations read ([integration.md](integration.md)). OTA listens on UDP/TCP port 3232 and only runs while connected to home Wi-Fi, not in setup AP mode. When `access_token` is set it is also the OTA password; changing it applies to OTA without a reboot.
 
-The flash holds two firmware slots. An update is written to the inactive slot and booted once; it becomes permanent only after it connects to Wi-Fi and starts its OTA listener. Firmware that never gets that far is rolled back to the previous slot on the next reset or power cycle. A firmware that hangs needs that power cycle to recover.
+An update is written to the inactive slot and booted once; it becomes permanent only after it connects to Wi-Fi and starts its OTA listener. Firmware that never gets that far is rolled back to the previous slot on the next reset or power cycle. A firmware that hangs needs that power cycle to recover.
 
-A filesystem update that fails midway reboots the robot; re-run `pio run -t otafs` or fall back to `pio run -t uploadfs` over USB.
+A filesystem update that fails midway reboots the robot; re-run `pio run -e ota -t otafs` or fall back to `pio run -e ota -t uploadfs` over USB.
 
-Changes to [`partitions.csv`](../partitions.csv) cannot be applied over the air. Flash those with `pio run -t upload` over USB.
+Partition changes, including a switch back to the default build, cannot be applied over the air. Flash those with `pio run -t upload` over USB.
 
 ## Done when
 
