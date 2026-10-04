@@ -8,7 +8,7 @@ namespace {
 
 void sendCorsHeaders(WebServer& server) {
   server.sendHeader("Access-Control-Allow-Origin", "*");
-  server.sendHeader("Access-Control-Allow-Headers", "Authorization");
+  server.sendHeader("Access-Control-Allow-Headers", "Authorization, X-Anim");
   server.sendHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, OPTIONS"
@@ -55,16 +55,14 @@ void httpSendCorsPreflight(WebServer& server) {
   server.send(204);
 }
 
-bool httpRequireApiAuth(WebServer& server) {
-  if (!settingsAccessTokenSet()) {
-    return true;
-  }
+bool httpApiAuthorized(WebServer& server) {
+  return !settingsAccessTokenSet() ||
+         (server.hasHeader("Authorization") &&
+          bearerTokenMatches(server.header("Authorization"), settingsAccessToken()));
+}
 
-  if (!server.hasHeader("Authorization") ||
-      !bearerTokenMatches(
-        server.header("Authorization"),
-        settingsAccessToken()
-      )) {
+bool httpRequireApiAuth(WebServer& server) {
+  if (!httpApiAuthorized(server)) {
     httpSendJson(
       server,
       401,

@@ -105,6 +105,20 @@ curl http://tiny-engineer.local/health
 
 More routes (tests, servo, web UI): [`api.md`](api.md).
 
+### Speech for `POST /play`
+
+[`scripts/say.py`](../scripts/say.py) speaks a line in the robot's voice: [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M) text-to-speech through a tin-can filter, written as a WAV that [`POST /play`](api.md#post-play) accepts. It needs [uv](https://docs.astral.sh/uv/) and ffmpeg. The first run installs its Python dependencies and downloads the model (about 330 MB).
+
+```bash
+scripts/say.py "Build passed. Ship it!" -o /tmp/te-clip.wav
+```
+
+```json
+{"wav": "/tmp/te-clip.wav", "duration_ms": 2200, "words": [["Build", 375], ["passed", 650], ["Ship", 1188], ["it", 1475]]}
+```
+
+`words` holds the start of each word in milliseconds of the clip, so an agent can put a `move` or `face` step on the word it belongs to. `--voice` picks another [Kokoro voice](https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md) (default `am_michael`), `--plain` skips the filter, `--rate` matches a robot built with another sample rate.
+
 ---
 
 ## 2. Cursor dedicated script
@@ -237,6 +251,25 @@ Inside this firmware repository, [`.claude/settings.json`](../.claude/settings.j
 - If a hook never fires, run `/hooks` inside Claude Code to confirm the project settings loaded.
 
 To use it in every project, copy the `hooks` block into `~/.claude/settings.json` and replace `$CLAUDE_PROJECT_DIR/packages/…` with the absolute path to this repo's bin.
+
+### Custom animations from the agent
+
+The same CLI has a `play` command that an agent can run to speak and move. It streams a WAV to [`POST /play`](api.md#post-play) with a timeline of moves, gaze and faces, prints the robot's reply when the clip ends, and exits 1 with the reason on any error:
+
+```bash
+node packages/tiny-engineer-claude-code/bin/tiny-engineer-claude-code.js play hello.wav \
+  --anim '[["preset","thinking"],["sleep",800],["move","head",0.6,300],["face","happy"]]'
+```
+
+`--anim-file dance.json` reads the timeline from a file. `--help` lists every step.
+
+To let Claude use it on its own in any project, install the bundled skill. It explains how to make a clip with text-to-speech, write the timeline, and fix errors:
+
+```bash
+ln -s "$PWD/packages/tiny-engineer-claude-code/skills/tiny-engineer-play" ~/.claude/skills/tiny-engineer-play
+```
+
+Then ask Claude something like "have the robot congratulate me on the green build".
 
 ### Smoke test
 
