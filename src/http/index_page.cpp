@@ -27,6 +27,7 @@ nav a.active{background:var(--accent);color:#fff}
 .hero h1{font-size:1.75rem;margin:0 0 .5rem;font-weight:700}
 .hero p{color:var(--muted);margin:0;font-size:1.05rem}
 .info-strip{background:var(--card);border:1px solid var(--border);border-radius:.5rem;padding:.6rem 1rem;margin:1rem 0;font-size:.85rem;color:var(--muted)}
+#fw-version{margin:.4rem 0 0;font-size:.8rem;font-variant-numeric:tabular-nums}
 .cards{display:grid;gap:.85rem;margin:1.5rem 0;grid-template-columns:1fr}
 @media(min-width:480px){.cards{grid-template-columns:1fr 1fr}}
 .card{display:block;background:var(--card);border:1px solid var(--border);border-radius:.6rem;padding:1.1rem 1.25rem;text-decoration:none;color:inherit;transition:box-shadow .15s,border-color .15s,transform .15s}
@@ -630,6 +631,7 @@ body:not(.setup-mode) #setup-wizard{display:none!important}
 
 <footer>
 <a href="https://github.com/jamro/tiny-engineer" target="_blank" rel="noopener">github.com/jamro/tiny-engineer</a>
+<p id="fw-version">Firmware &hellip;</p>
 </footer>
 
 <script>
@@ -727,9 +729,15 @@ function enterApp(){
     loadSettings();
   });
 }
+function setFwVersion(j){
+  var el=document.getElementById("fw-version");
+  if(!el)return;
+  if(j&&j.ok&&j.version)el.textContent="Firmware "+j.version;
+}
 function syncSetupUi(done){
-  fetch("/health").then(function(r){return r.json();}).then(function(j){
+  apiFetch("/health").then(function(r){return r.json();}).then(function(j){
     if(j.ok){
+      setFwVersion(j);
       provisioningMode=!!j.provisioning;
       wifiConfigured=!!j.wifi_configured;
       var inSetup=provisioningMode||!wifiConfigured;
@@ -1029,11 +1037,13 @@ function loadHealth(){
   apiFetch("/health").then(function(r){return r.json();}).then(function(j){
     var el=document.getElementById("health-info");
     if(!j.ok){el.textContent="Could not load status.";return;}
+    setFwVersion(j);
     if(j.uptime_ms!=null)lastHealthUptimeMs=j.uptime_ms;
     var ip=j.wifi&&j.wifi.connected?j.wifi.ip:"offline";
     var heapPct=j.heap_size?Math.round((1-j.free_heap/j.heap_size)*100):0;
     var line="IP: "+ip+" \u00b7 Uptime: "+formatUptime(j.uptime_ms)+" \u00b7 Heap: "+heapPct+"% used ("+formatBytes(j.free_heap)+" free)";
     if(typeof j.cpu_temp_c==="number")line+=" \u00b7 Temp: "+j.cpu_temp_c.toFixed(1)+" \u00b0C";
+    if(j.version)line+=" \u00b7 "+j.version;
     el.textContent=line;
   }).catch(function(){
     document.getElementById("health-info").textContent="Could not load status.";

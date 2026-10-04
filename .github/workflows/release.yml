@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+            .pio
+          key: ${{ runner.os }}-pio-${{ hashFiles('platformio.ini') }}
+          restore-keys: |
+            ${{ runner.os }}-pio-
+      - name: Install PlatformIO
+        run: pip install -U platformio
+      - name: Build firmware
+        run: pio run
+      - name: Build LittleFS image
+        run: pio run -t buildfs
+      - name: Stage release binaries
+        run: |
+          mkdir -p dist
+          cp .pio/build/esp32-c3-devkitm-1/bootloader.bin \
+            "dist/tiny-engineer-${GITHUB_REF_NAME}-bootloader.bin"
+          cp .pio/build/esp32-c3-devkitm-1/partitions.bin \
+            "dist/tiny-engineer-${GITHUB_REF_NAME}-partitions.bin"
+          cp .pio/build/esp32-c3-devkitm-1/firmware.bin \
+            "dist/tiny-engineer-${GITHUB_REF_NAME}-firmware.bin"
+          cp .pio/build/esp32-c3-devkitm-1/littlefs.bin \
+            "dist/tiny-engineer-${GITHUB_REF_NAME}-littlefs.bin"
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/tiny-engineer-${{ github.ref_name }}-bootloader.bin
+            dist/tiny-engineer-${{ github.ref_name }}-partitions.bin
+            dist/tiny-engineer-${{ github.ref_name }}-firmware.bin
+            dist/tiny-engineer-${{ github.ref_name }}-littlefs.bin
+          generate_release_notes: true
+          body: |
+            ## Flash offsets (default USB layout)
+
+            | File | Offset |
+            | --- | --- |
+            | `tiny-engineer-${{ github.ref_name }}-bootloader.bin` | `0x0` |
+            | `tiny-engineer-${{ github.ref_name }}-partitions.bin` | `0x8000` |
+            | `tiny-engineer-${{ github.ref_name }}-firmware.bin` | `0x10000` |
+            | `tiny-engineer-${{ github.ref_name }}-littlefs.bin` | `0x220000` |
+
+            All **four** files are required for a clean first flash or web install. App + LittleFS alone is enough only when bootloader and partition table are already on the chip. Usual path: clone the tagged commit and run `pio run -t upload` (see [docs/flash.md](https://github.com/jamro/tiny-engineer/blob/main/docs/flash.md)). esptool users write each bin at the offset above.

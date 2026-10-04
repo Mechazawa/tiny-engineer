@@ -11,7 +11,7 @@ pio test -e native
 python3 scripts/test_audio_pack.py
 ```
 
-`pio run` builds firmware. Native tests are **`pio test -e native`**, not `pio run -e native`. `scripts/test_audio_pack.py` checks the stock WAV copy and mod overlay (no PlatformIO, no hardware).
+`pio run` builds firmware. Native tests are **`pio test -e native`**, not `pio run -e native`. `scripts/test_audio_pack.py` checks the stock WAV copy and mod overlay (no PlatformIO, no hardware). On GitHub Actions the firmware job also runs `pio run -t buildfs` and uploads `bootloader.bin`, `partitions.bin`, `firmware.bin`, and `littlefs.bin` as the `firmware-<sha>` artifact.
 
 ## OLED expressions
 

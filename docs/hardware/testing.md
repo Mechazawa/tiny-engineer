@@ -45,7 +45,7 @@ silent, which makes the LED the only signal a first-boot board gives you.
 
 ## Expected boot sequence
 
-1. Serial banner `TINY ENGINEER`
+1. Serial banner `TINY ENGINEER`, then the firmware version string (`v0.1.0`, or a `git describe` form such as `v0.1.0-82-g7c79b83`)
 2. `Starting I2C` / `SDA = GP0` / `SCL = GP1`
 3. `Checking PCA9685 at 0x40...` → **must** succeed; all channels parked at mid
 4. `Checking OLED at 0x3C...` → found or `ERROR: OLED not found` (continues)
