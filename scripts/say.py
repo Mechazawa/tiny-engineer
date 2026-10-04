@@ -16,16 +16,7 @@ import subprocess
 import sys
 import warnings
 
-import espeakng_loader
-
-warnings.simplefilter("ignore")
-os.environ.setdefault("HF_HUB_VERBOSITY", "error")
-
-# The bundled espeak-ng library looks for its data at the path it was built in.
-os.environ.setdefault("ESPEAK_DATA_PATH", espeakng_loader.get_data_path())
-
-import numpy  # noqa: E402
-from kokoro import KPipeline  # noqa: E402
+import numpy
 
 KOKORO_RATE = 24000
 
@@ -53,7 +44,16 @@ def parse_args():
 
 
 def synthesize(text, voice, speed):
-    """Return the audio and [word, start_ms] pairs, offset across Kokoro's chunks."""
+    """Return the audio, [word, start_ms] pairs offset across Kokoro's chunks, and the length in ms."""
+    # Imported here so argument errors and --help do not wait for torch to load.
+    import espeakng_loader
+
+    warnings.simplefilter("ignore")
+    os.environ.setdefault("HF_HUB_VERBOSITY", "error")
+    # The bundled espeak-ng library looks for its data at the path it was built in.
+    os.environ.setdefault("ESPEAK_DATA_PATH", espeakng_loader.get_data_path())
+    from kokoro import KPipeline
+
     pipeline = KPipeline(lang_code=voice[0], repo_id="hexgrad/Kokoro-82M")
     chunks = []
     words = []
@@ -69,7 +69,7 @@ def synthesize(text, voice, speed):
         chunks.append(audio)
         offset_ms += round(len(audio) * 1000 / KOKORO_RATE)
 
-    return numpy.concatenate(chunks), words
+    return numpy.concatenate(chunks), words, offset_ms
 
 
 def write_wav(audio, path, rate, plain):
@@ -80,19 +80,18 @@ def write_wav(audio, path, rate, plain):
             "-filter_complex", PLAIN_FILTER if plain else ROBOT_FILTER,
             "-map", "[out]", "-ar", str(rate), "-ac", "1", "-c:a", "pcm_s16le", path,
         ],
-        input=audio.astype(numpy.float32).tobytes(),
+        input=audio.astype(numpy.float32, copy=False).tobytes(),
         check=True,
     )
 
 
 def main():
     args = parse_args()
-    audio, words = synthesize(args.text, args.voice, args.speed)
+    audio, words, duration_ms = synthesize(args.text, args.voice, args.speed)
     if not words:
         sys.exit("Kokoro produced no speech for that text")
 
     write_wav(audio, args.output, args.rate, args.plain)
-    duration_ms = round(len(audio) * 1000 / KOKORO_RATE)
     print(json.dumps({"wav": args.output, "duration_ms": duration_ms, "words": words}))
 
 
