@@ -57,6 +57,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" http://tiny-engineer.local/health
 ```json
 {
   "ok": true,
+  "version": "v0.1.0-82-g7c79b83",
   "uptime_ms": 12345,
   "free_heap": 120000,
   "heap_size": 320000,
@@ -78,6 +79,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" http://tiny-engineer.local/health
 | Field | Meaning |
 | --- | --- |
 | `ok` | Always `true` on this route |
+| `version` | Firmware build string from `git describe` at compile time (`v0.1.0` on a tagged release, `v0.1.0-<n>-g<sha>[-dirty]` for a dev build, or `unknown`) |
 | `uptime_ms` | `millis()` since boot |
 | `free_heap` | `ESP.getFreeHeap()` — bytes available for allocation |
 | `heap_size` | `ESP.getHeapSize()` — total heap bytes; usage % = `(1 - free_heap / heap_size) × 100` |

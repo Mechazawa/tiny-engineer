@@ -3,6 +3,7 @@
 #include <ESP_I2S.h>
 
 #include "pins.h"
+#include "firmware_version.h"
 #include "hardware/rgb.h"
 #include "hardware/chip_temp.h"
 #include "display/oled.h"
@@ -40,6 +41,7 @@ void setup() {
   serialLogPrintln();
   serialLogPrintln("==========================");
   serialLogPrintln("TINY ENGINEER");
+  serialLogPrintln(FW_VERSION);
   serialLogPrintln("==========================");
 
   setRgb(0, 32, 0);

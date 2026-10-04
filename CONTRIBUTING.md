@@ -107,6 +107,16 @@ Scopes: `firmware`, `http`, `settings`, `anim`, `servos`, `wifi`, `integrations`
 
 CAD-only `feat(cad)` / `fix(cad)` and PCB-only `feat(pcb)` / `fix(pcb)` version the hardware design, not the npm packages. `feat(mods)` / `fix(mods)` do not version the stock CAD revision. Promoting a mod into stock `cad/` and `parts/` is `feat(cad)`.
 
+### Firmware version string
+
+Robot builds bake `git describe --tags --always --dirty` into `FW_VERSION` via [`scripts/firmware_version.py`](scripts/firmware_version.py) (env `esp32-c3-devkitm-1` only). The string appears on the serial banner (when `serial_log` is on), in `GET /health` as `version`, and in the web UI.
+
+- Tagged release, clean tree: exact tag (`v0.1.0`)
+- Dev build: `v0.1.0-<n>-g<sha>` (optional `-dirty`)
+- No git metadata: `unknown`
+
+A firmware tag does not bump the npm packages. A future GitHub release workflow should use `fetch-depth: 0` (shallow checkout loses tags) and attach both `.pio/build/esp32-c3-devkitm-1/firmware.bin` (flash at `0x10000`) and `littlefs.bin` from `pio run -t buildfs` (flash at `0x220000`).
+
 Examples:
 
 ```
