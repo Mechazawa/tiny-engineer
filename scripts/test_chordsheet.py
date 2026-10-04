@@ -1,12 +1,24 @@
 """Tests for the chordsheet parser and compiler in the tiny-engineer-play skill."""
 
+import json
+import re
 import sys
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "packages/tiny-engineer-claude-code/skills/tiny-engineer-play/scripts"))
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "packages/tiny-engineer-claude-code/skills/tiny-engineer-play/scripts"))
 
-from chordsheet import Sheet, SheetError, align  # noqa: E402
+from chordsheet import (  # noqa: E402
+    EYES,
+    FACES,
+    MAX_STEPS,
+    PRESETS,
+    SERVOS,
+    Sheet,
+    SheetError,
+    align,
+)
 
 
 def compile_sheet(text, timings):
@@ -88,6 +100,33 @@ class AlignTest(unittest.TestCase):
 
     def test_punctuation_only_words_follow_the_next_word(self):
         self.assertEqual(align(["Wait", "-", "what"], [["Wait", 0], ["what", 600]]), [0, 600, 600])
+
+
+class FirmwareParityTest(unittest.TestCase):
+    """chordsheet.py ships without the repo, so it mirrors these names; keep the copies in step."""
+
+    def source(self, path):
+        return (ROOT / path).read_text()
+
+    def test_faces_match_the_expression_manifest(self):
+        manifest = json.loads(self.source("scripts/expressions/manifest.json"))
+        self.assertEqual(list(FACES), [expression["id"] for expression in manifest["expressions"]])
+
+    def test_servos_match_the_firmware(self):
+        names = re.findall(r'\{"([A-Z_]+)",\s*SERVO_', self.source("include/servos.h"))
+        self.assertEqual(list(SERVOS), [name.lower() for name in names])
+
+    def test_step_limit_matches_the_firmware(self):
+        self.assertIn(f"kMaxSteps = {MAX_STEPS};", self.source("src/animation/timeline.h"))
+
+    def test_presets_match_what_the_firmware_allows(self):
+        player = self.source("src/animation/timeline_player.cpp")
+        allowed = player[player.index("resolvePreset"):player.index("default:")]
+        self.assertEqual(sorted(PRESETS), sorted(name.lower() for name in re.findall(r"AnimationId::(\w+):", allowed)))
+
+    def test_eye_modes_are_animation_names(self):
+        names = set(re.findall(r'^    "(\w+)",$', self.source("src/animation/registry.cpp"), re.MULTILINE)) - {"scripted"}
+        self.assertLessEqual(set(EYES) - {"idle"}, names)
 
 
 if __name__ == "__main__":

@@ -32,14 +32,19 @@ ROBOT_FILTER = (
 PLAIN_FILTER = "[0:a]loudnorm=I=-15:TP=-1:LRA=7[out]"
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("text")
-    parser.add_argument("-o", "--output", default="/tmp/te-clip.wav")
+def add_voice_args(parser):
+    """Voice options shared with perform.py."""
     parser.add_argument("--voice", default="am_michael", help="Kokoro voice; the first letter picks the accent (a = US, b = UK)")
     parser.add_argument("--speed", type=float, default=1.0)
     parser.add_argument("--rate", type=int, default=22050, help="the robot's sample rate")
     parser.add_argument("--plain", action="store_true", help="skip the robot filter")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("text")
+    parser.add_argument("-o", "--output", default="/tmp/te-clip.wav")
+    add_voice_args(parser)
     return parser.parse_args()
 
 

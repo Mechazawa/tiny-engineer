@@ -23,15 +23,17 @@ SERVOS = ("head", "neck", "hand_left", "hand_right", "body")
 # Hands rest down; their "lift" runs toward the other end of each hand's range.
 HAND_DOWN = {"hand_left": 1.0, "hand_right": -1.0}
 
+def wave(hand):
+    return [(0, hand, 1.8, 200), (250, hand, 1.3, 150), (420, hand, 1.8, 150), (590, hand, 1.3, 150), (760, hand, 0.0, 300)]
+
+
 # Built-in gestures: (ms after the gesture starts, servo, target, move ms).
 # Head, neck and body targets are offsets from the mood's resting pose; hand targets are lift 0..2.
 GESTURES = {
     "nod": [(0, "head", 0.45, 180), (200, "head", -0.15, 180), (400, "head", 0.0, 200)],
     "shake": [(0, "neck", 0.5, 180), (200, "neck", -0.5, 250), (470, "neck", 0.3, 200), (690, "neck", 0.0, 200)],
-    "wave": [(0, "hand_right", 1.8, 200), (250, "hand_right", 1.3, 150), (420, "hand_right", 1.8, 150),
-             (590, "hand_right", 1.3, 150), (760, "hand_right", 0.0, 300)],
-    "wave_left": [(0, "hand_left", 1.8, 200), (250, "hand_left", 1.3, 150), (420, "hand_left", 1.8, 150),
-                  (590, "hand_left", 1.3, 150), (760, "hand_left", 0.0, 300)],
+    "wave": wave("hand_right"),
+    "wave_left": wave("hand_left"),
     "shrug": [(0, "hand_left", 0.7, 200), (0, "hand_right", 0.7, 200), (0, "head", -0.2, 200),
               (600, "hand_left", 0.0, 300), (600, "hand_right", 0.0, 300), (600, "head", 0.0, 300)],
     "cheer": [(0, "hand_left", 2.0, 250), (0, "hand_right", 2.0, 250), (0, "head", 0.3, 250),
@@ -52,6 +54,12 @@ MOODS = {
     "shy": (("face", "shy"), -0.3),
     "sleepy": (("face", "sleepy"), -0.3),
 }
+
+# Named arguments: `face:sleep`, `eyes:thinking`, `preset:typing`, `mood:proud`.
+CHOICES = {"face": FACES, "eyes": EYES, "preset": PRESETS, "mood": MOODS}
+# Numeric arguments: (low, high, default move ms).
+RANGES = {**{servo: (-1, 1, 300) for servo in SERVOS}, "open": (0, 1, 200), "look": (-1, 1, 200)}
+DIRECTIVES = ("mood", "pause", "define", "lead")
 
 MOOD_MOVE_MS = 400
 DEFAULT_LEAD_MS = 150
@@ -156,9 +164,7 @@ class Sheet:
             key, value = key.strip(), value.strip()
 
             if key == "mood":
-                if value not in MOODS:
-                    raise SheetError(column, f"unknown mood {value!r}{suggest(value, MOODS)}")
-                pending.append(Cue(column=column, name="mood", args=value))
+                pending.append(cls._check(Cue(column=column, name="mood", args=value), defines))
             elif key == "pause":
                 flush_pending(END)
                 segments[-1].pause_after_ms = int(number(value, column, 0, 10000))
@@ -172,7 +178,7 @@ class Sheet:
             elif key == "lead":
                 lead_ms = int(number(value, column, 0, 1000))
             else:
-                raise SheetError(column, f"unknown directive {key!r}{suggest(key, ['mood', 'pause', 'define', 'lead'])}")
+                raise SheetError(column, f"unknown directive {key!r}{suggest(key, DIRECTIVES)}")
 
         flush_pending(END)
         return cls(segments, lead_ms)
@@ -192,30 +198,18 @@ class Sheet:
             raise SheetError(column, f"{name} has its own timing; drop /{cue.ms}")
         if name in GESTURES or name == "blink" or (name in FACES and args is None):
             return cue
-        if name == "face":
-            if args not in FACES:
-                raise SheetError(column, f"unknown face {args!r}{suggest(args or '', FACES)}")
-        elif name == "eyes":
-            if args not in EYES:
-                raise SheetError(column, f"unknown eye mode {args!r}{suggest(args or '', EYES)}")
-        elif name == "preset":
-            if args not in PRESETS:
-                raise SheetError(column, f"unknown preset {args!r}{suggest(args or '', PRESETS)}")
-        elif name == "mood":
-            if args not in MOODS:
-                raise SheetError(column, f"unknown mood {args!r}{suggest(args or '', MOODS)}")
-        elif name in SERVOS:
-            number(args or "", column, -1, 1)
-        elif name == "look":
+        if name in CHOICES:
+            if args not in CHOICES[name]:
+                raise SheetError(column, f"unknown {name} {args!r}{suggest(args or '', CHOICES[name])}")
+        elif name in RANGES:
+            low, high, _ = RANGES[name]
             parts = (args or "").split(",")
-            if len(parts) != 2:
-                raise SheetError(column, "look needs x,y, e.g. look:-1,0/200")
+            if len(parts) != (2 if name == "look" else 1):
+                raise SheetError(column, "look needs x,y, e.g. look:-1,0/200" if name == "look" else f"{name} needs a value, e.g. {name}:{high}")
             for part in parts:
-                number(part, column, -1, 1)
-        elif name == "open":
-            number(args or "", column, 0, 1)
+                number(part, column, low, high)
         else:
-            known = [*GESTURES, *FACES, "blink", "face", "eyes", "preset", "mood", "look", "open", *SERVOS, *defines]
+            known = [*GESTURES, *FACES, *CHOICES, *RANGES, "blink", *defines]
             raise SheetError(column, f"unknown cue {name!r}{suggest(name, known)}")
         return cue
 
@@ -283,13 +277,10 @@ class Sheet:
             add(start, column, ["face", name])
         elif name in ("face", "eyes", "preset"):
             add(start, column, [name, args])
-        elif name in SERVOS:
-            add(moving, column, ["move", name, float(args), cue.ms or 300])
-        elif name == "look":
-            x, y = (float(part) for part in args.split(","))
-            add(moving, column, ["look", x, y, cue.ms or 200])
-        elif name == "open":
-            add(moving, column, ["open", float(args), cue.ms or 200])
+        elif name in RANGES:
+            values = [float(part) for part in args.split(",")]
+            ms = cue.ms or RANGES[name][2]
+            add(moving, column, ["move", name, *values, ms] if name in SERVOS else [name, *values, ms])
 
 
 def normalize(word):
