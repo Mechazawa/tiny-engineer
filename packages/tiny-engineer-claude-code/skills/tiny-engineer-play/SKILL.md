@@ -5,7 +5,37 @@ description: Make the Tiny Engineer desk robot speak and perform a custom animat
 
 # Tiny Engineer: speak and perform
 
-The robot plays a WAV clip while running a timeline of moves and eye changes. Send it with the script in this skill's base directory:
+The robot plays a WAV clip while running a timeline of moves and eye changes.
+
+## Quick path: one string
+
+Write the line with cues in front of the words they belong to, and `perform.py` (in this skill's base directory) speaks it, times every cue against the speech and sends it. It needs `uv` and `ffmpeg`.
+
+```bash
+<base directory>/scripts/perform.py "{mood: proud}[nod]Build passed. {pause: 300}[look:-1,0/200]All [look:1,0/200]tests [look:0,0/150 cheer]green."
+```
+
+| Form | Meaning |
+| --- | --- |
+| `[cue cue ...]word` | Cues fire on that word; moves start 150 ms early so they land on it. A group with no word after it fires when the speech before the next pause ends |
+| `nod`, `shake`, `wave`, `wave_left`, `shrug`, `cheer`, `bounce`, `blink` | Gestures; they return to the mood's resting pose |
+| `happy`, `sad`, `wink`, ... | A bare face name (`idle`, `happy`, `laugh`, `wink`, `curious`, `thinking`, `surprise`, `smug`, `sleepy`, `sleep`, `sad`, `cry`, `angry`, `panic`, `shy`, `love`) |
+| `eyes:thinking`, `preset:typing`, `face:sleep` | Prefixed names, for eye modes, presets, and faces that share a name |
+| `head:0.5/300`, `neck`, `body`, `hand_left`, `hand_right` | Move a joint to -1..1, optional `/ms` |
+| `look:-1,0/200`, `open:0.3/200` | Gaze (x -1 left..1 right, y -1 up..1 down) and eyelids (0..1) |
+| `@+200`, `@-300` | Shift the cue before it, e.g. `[blink @+200]` |
+| `{mood: proud}` | Face plus resting head pose until the next mood: `neutral`, `happy`, `proud`, `excited`, `curious`, `thinking`, `sad`, `angry`, `shy`, `sleepy` |
+| `{pause: 600}` | Real silence between sentences (splits the speech, so intonation restarts) |
+| `{define: hype = cheer happy}` | Name a group of cues to reuse as `[hype]` |
+| `{lead: 120}` | Change how early moves start |
+
+`--check` validates the string without speaking (instant, run it first), `--dry-run` prints the clip and compiled timeline without sending. Errors name the column and the closest valid name. A face replaces the eyes, so a later `look`, `open`, `eyes` or `preset` clears it; the script warns when that happens. Spell numbers out if a cue sits on them.
+
+For full control, build the clip and timeline yourself as below.
+
+## Manual path
+
+Send a clip and timeline with the `play` script in this skill's base directory:
 
 ```bash
 <base directory>/scripts/play clip.wav --anim '<timeline json>'

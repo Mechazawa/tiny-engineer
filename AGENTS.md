@@ -32,6 +32,8 @@ node scripts/expressions/test-assets.js
 npm test --prefix packages/tiny-engineer-cursor
 npm test --prefix packages/tiny-engineer-antigravity
 npm test --prefix packages/tiny-engineer-claude-code
+python3 scripts/test_audio_pack.py
+python3 scripts/test_chordsheet.py
 python3 scripts/check_pcb.py
 ```
 

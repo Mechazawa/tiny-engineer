@@ -33,6 +33,8 @@ jobs:
         run: pip install -U platformio
       - name: Audio pack tests
         run: python3 scripts/test_audio_pack.py
+      - name: Chordsheet tests
+        run: python3 scripts/test_chordsheet.py
       - name: Build firmware
         run: pio run
       - name: Build OLED expression demo

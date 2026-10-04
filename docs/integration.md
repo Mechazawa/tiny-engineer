@@ -119,6 +119,15 @@ scripts/say.py "Build passed. Ship it!" -o /tmp/te-clip.wav
 
 `words` holds the start of each word in milliseconds of the clip, so an agent can put a `move` or `face` step on the word it belongs to. `--voice` picks another [Kokoro voice](https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md) (default `am_michael`), `--plain` skips the filter, `--rate` matches a robot built with another sample rate.
 
+`perform.py`, next to it in the skill, takes one string with cues in front of the words they belong to, speaks it, times the cues against the words and sends it:
+
+```bash
+packages/tiny-engineer-claude-code/skills/tiny-engineer-play/scripts/perform.py \
+  "{mood: proud}[nod]Build passed. {pause: 300}[look:-1,0/200]All [look:1,0/200]tests [cheer]green."
+```
+
+The cue syntax is in the skill's [`SKILL.md`](../packages/tiny-engineer-claude-code/skills/tiny-engineer-play/SKILL.md). `--check` validates the string without speaking; `--dry-run` prints the compiled timeline instead of sending it.
+
 ---
 
 ## 2. Cursor dedicated script

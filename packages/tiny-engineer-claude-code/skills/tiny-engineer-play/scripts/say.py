@@ -43,8 +43,8 @@ def parse_args():
     return parser.parse_args()
 
 
-def synthesize(text, voice, speed):
-    """Return the audio, [word, start_ms] pairs offset across Kokoro's chunks, and the length in ms."""
+def load_pipeline(voice):
+    """Load Kokoro for `voice`; the first letter of the voice picks the language."""
     # Imported here so argument errors and --help do not wait for torch to load.
     import espeakng_loader
 
@@ -54,7 +54,11 @@ def synthesize(text, voice, speed):
     os.environ.setdefault("ESPEAK_DATA_PATH", espeakng_loader.get_data_path())
     from kokoro import KPipeline
 
-    pipeline = KPipeline(lang_code=voice[0], repo_id="hexgrad/Kokoro-82M")
+    return KPipeline(lang_code=voice[0], repo_id="hexgrad/Kokoro-82M")
+
+
+def synthesize(pipeline, text, voice, speed):
+    """Return the audio, [word, start_ms] pairs offset across Kokoro's chunks, and the length in ms."""
     chunks = []
     words = []
     offset_ms = 0
@@ -87,7 +91,7 @@ def write_wav(audio, path, rate, plain):
 
 def main():
     args = parse_args()
-    audio, words, duration_ms = synthesize(args.text, args.voice, args.speed)
+    audio, words, duration_ms = synthesize(load_pipeline(args.voice), args.text, args.voice, args.speed)
     if not words:
         sys.exit("Kokoro produced no speech for that text")
 
