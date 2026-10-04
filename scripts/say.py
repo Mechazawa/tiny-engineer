@@ -1,1 +1,0 @@
-../packages/tiny-engineer-claude-code/skills/tiny-engineer-play/scripts/say.py

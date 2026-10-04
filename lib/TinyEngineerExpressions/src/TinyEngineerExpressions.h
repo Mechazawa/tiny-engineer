@@ -53,9 +53,6 @@ constexpr uint32_t kLoopDurationMs = 3000;
 // enum values return nullptr.
 const char* name(Expression expression);
 
-// Reverse of name(); false leaves `expression` unchanged for unknown names.
-bool fromName(const char* text, Expression& expression);
-
 // Render the frame at elapsedMs since the caller selected this expression.
 // The caller owns timing, selection, and display output. Animation loops every
 // kLoopDurationMs; this function never reads a clock or accesses a display.

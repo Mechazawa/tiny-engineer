@@ -9,6 +9,7 @@ namespace eyes {
 uint32_t modeStartedMs();
 void setModeStartedMs(uint32_t ms);
 
+EyeMode currentEyeMode();
 void setCurrentEyeMode(EyeMode mode);
 
 bool forceRedraw();

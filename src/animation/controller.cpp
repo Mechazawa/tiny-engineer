@@ -109,10 +109,6 @@ void setAnimation(AnimationId id) {
   serialLogPrintln(holdLeftMs);
 }
 
-void setAnimationImmediately(AnimationId id) {
-  applyAnimation(id, millis());
-}
-
 void finishAnimation(uint32_t nowMs) {
   applyAnimation(AnimationId::None, nowMs);
 }
@@ -140,7 +136,7 @@ const char* animationName(AnimationId id) {
 bool parseAnimationName(const char* name, AnimationId& out) {
   const ModeEntry* entry = modeByName(name);
 
-  if (entry == nullptr || entry->animId == AnimationId::Scripted) {
+  if (entry == nullptr) {
     return false;
   }
 

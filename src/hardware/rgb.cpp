@@ -109,10 +109,10 @@ void resolveAnimationTarget(AnimationId id, uint8_t& r, uint8_t& g, uint8_t& b) 
     case AnimationId::Typing:
     case AnimationId::Reading:
     case AnimationId::Thinking:
+    case AnimationId::Talking:
     case AnimationId::Welcome:
     case AnimationId::Ring:
     case AnimationId::Wakeup:
-    case AnimationId::Scripted:
       r = RGB_ANIM_WHITE;
       g = RGB_ANIM_WHITE;
       b = RGB_ANIM_WHITE;

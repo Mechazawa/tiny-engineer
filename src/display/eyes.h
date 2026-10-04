@@ -21,7 +21,7 @@ enum class EyeMode {
   Abort,
   Wakeup,
   Dead,
-  Scripted
+  Talking
 };
 
 enum class SleepEyeResult {
@@ -41,15 +41,7 @@ void requestSleepEyeOpen(uint32_t now);
 void clearSleepEyeAnim();
 SleepEyeResult updateSleepEyes(uint32_t now);
 
-// Also clears a scripted face.
 void setEyeMode(EyeMode mode, uint32_t now);
-EyeMode eyeMode();
-
-// POST /play timeline steps. look and open switch to EyeMode::Scripted; x/y are -1..1, amount 0..1.
-void eyesLookAt(float x, float y, uint32_t durationMs, uint32_t now);
-void eyesSetOpen(float amount, uint32_t durationMs, uint32_t now);
-void eyesBlink(uint32_t now);
-void eyesShowFace(uint8_t expression, uint32_t now);
 void triggerEyeImpact(uint32_t now);
 
 const Eye& leftEye();

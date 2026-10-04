@@ -9,6 +9,7 @@
 #include "animation/dead.h"
 #include "animation/error.h"
 #include "animation/reading.h"
+#include "animation/talking.h"
 #include "animation/ring.h"
 #include "animation/sleep_anim.h"
 #include "animation/thinking.h"
@@ -19,10 +20,10 @@
 #include "display/eyes/modes/abort.h"
 #include "display/eyes/modes/attention.h"
 #include "display/eyes/modes/dead.h"
-#include "display/eyes/modes/scripted.h"
 #include "display/eyes/modes/error.h"
 #include "display/eyes/modes/idle.h"
 #include "display/eyes/modes/reading.h"
+#include "display/eyes/modes/talking.h"
 #include "display/eyes/modes/ring.h"
 #include "display/eyes/modes/thinking.h"
 #include "display/eyes/modes/typing.h"
@@ -80,6 +81,10 @@ void startTypingAt(uint32_t /*nowMs*/) {
 
 void startReadingAt(uint32_t /*nowMs*/) {
   startReading();
+}
+
+void startTalkingAt(uint32_t /*nowMs*/) {
+  startTalking();
 }
 
 void startRingAt(uint32_t /*nowMs*/) {
@@ -260,15 +265,15 @@ constexpr ModeEntry kModes[] = {
     updateDeadEyes,
   },
   {
-    AnimationId::Scripted,
-    EyeMode::Scripted,
-    "scripted",
-    false,
+    AnimationId::Talking,
+    EyeMode::Talking,
+    "talking",
+    true,
     -1,
-    nullptr,
-    nullptr,
-    startScriptedEyes,
-    updateScriptedEyes,
+    startTalkingAt,
+    updateTalking,
+    startTalkingEyes,
+    updateTalkingEyes,
   },
 };
 

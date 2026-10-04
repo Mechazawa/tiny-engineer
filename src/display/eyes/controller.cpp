@@ -14,7 +14,6 @@
 #include "display/eyes/core/impact.h"
 #include "display/eyes/core/internal.h"
 #include "display/eyes/core/util.h"
-#include "display/eyes/modes/scripted.h"
 #include "display/eyes/styles/eye_style.h"
 #include "display/eyes/styles/kaomoji.h"
 #include "settings/settings.h"
@@ -67,10 +66,6 @@ void updateModePose(uint32_t now) {
 }
 
 void drawCurrentEyes(uint32_t now) {
-  if (eyes::drawScriptFace(now)) {
-    return;
-  }
-
   const EyeStyleRenderer* style = currentEyeStyle();
   style->draw(
     g_eyeMode,
@@ -146,6 +141,10 @@ void setModeStartedMs(uint32_t ms) {
   g_modeStartedMs = ms;
 }
 
+EyeMode currentEyeMode() {
+  return g_eyeMode;
+}
+
 void setCurrentEyeMode(EyeMode mode) {
   g_eyeMode = mode;
 }
@@ -180,12 +179,7 @@ void setEyesRunning(bool active) {
 
 }  // namespace eyes
 
-EyeMode eyeMode() {
-  return g_eyeMode;
-}
-
 void setEyeMode(EyeMode mode, uint32_t now) {
-  eyes::clearScriptFace();
   g_eyeMode = mode;
   g_modeStartedMs = now;
   resetImpactState();
