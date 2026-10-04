@@ -32,10 +32,12 @@ Tagged releases publish stock default-layout bins on [GitHub Releases](https://g
 
 | Asset | Flash offset |
 | --- | --- |
+| `tiny-engineer-<tag>-bootloader.bin` | `0x0` |
+| `tiny-engineer-<tag>-partitions.bin` | `0x8000` |
 | `tiny-engineer-<tag>-firmware.bin` | `0x10000` |
 | `tiny-engineer-<tag>-littlefs.bin` | `0x220000` |
 
-Flash **both** for a stock audio image. With esptool, write each file at the offset above (plus bootloader/partition table if you are not using PlatformIO’s upload). CI also attaches the same two paths as the `firmware-<sha>` Actions artifact on PR and `main` builds (90-day retention).
+All **four** files are required for a clean first flash or web install. App + LittleFS alone is enough only when bootloader and partition table are already on the chip. With esptool, write each file at the offset above. CI attaches the same four paths as the `firmware-<sha>` Actions artifact on PR and `main` builds (90-day retention).
 
 ## Audio mods
 

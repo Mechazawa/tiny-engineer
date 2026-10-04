@@ -44,6 +44,8 @@ jobs:
         with:
           name: firmware-${{ github.sha }}
           path: |
+            .pio/build/esp32-c3-devkitm-1/bootloader.bin
+            .pio/build/esp32-c3-devkitm-1/partitions.bin
             .pio/build/esp32-c3-devkitm-1/firmware.bin
             .pio/build/esp32-c3-devkitm-1/littlefs.bin
           retention-days: 90

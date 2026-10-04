@@ -36,6 +36,10 @@ jobs:
       - name: Stage release binaries
         run: |
           mkdir -p dist
+          cp .pio/build/esp32-c3-devkitm-1/bootloader.bin \
+            "dist/tiny-engineer-${GITHUB_REF_NAME}-bootloader.bin"
+          cp .pio/build/esp32-c3-devkitm-1/partitions.bin \
+            "dist/tiny-engineer-${GITHUB_REF_NAME}-partitions.bin"
           cp .pio/build/esp32-c3-devkitm-1/firmware.bin \
             "dist/tiny-engineer-${GITHUB_REF_NAME}-firmware.bin"
           cp .pio/build/esp32-c3-devkitm-1/littlefs.bin \
@@ -44,6 +48,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
+            dist/tiny-engineer-${{ github.ref_name }}-bootloader.bin
+            dist/tiny-engineer-${{ github.ref_name }}-partitions.bin
             dist/tiny-engineer-${{ github.ref_name }}-firmware.bin
             dist/tiny-engineer-${{ github.ref_name }}-littlefs.bin
           generate_release_notes: true
@@ -52,7 +58,9 @@ jobs:
 
             | File | Offset |
             | --- | --- |
+            | `tiny-engineer-${{ github.ref_name }}-bootloader.bin` | `0x0` |
+            | `tiny-engineer-${{ github.ref_name }}-partitions.bin` | `0x8000` |
             | `tiny-engineer-${{ github.ref_name }}-firmware.bin` | `0x10000` |
             | `tiny-engineer-${{ github.ref_name }}-littlefs.bin` | `0x220000` |
 
-            Flash **both** files for a stock audio image. Usual path: clone the tagged commit and run `pio run -t upload` (see [docs/flash.md](https://github.com/jamro/tiny-engineer/blob/main/docs/flash.md)). esptool users write each bin at the offset above.
+            All **four** files are required for a clean first flash or web install. App + LittleFS alone is enough only when bootloader and partition table are already on the chip. Usual path: clone the tagged commit and run `pio run -t upload` (see [docs/flash.md](https://github.com/jamro/tiny-engineer/blob/main/docs/flash.md)). esptool users write each bin at the offset above.
