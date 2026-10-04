@@ -107,7 +107,7 @@ More routes (tests, servo, web UI): [`api.md`](api.md).
 
 ### Speech for `POST /play`
 
-[`scripts/say.py`](../scripts/say.py) speaks a line in the robot's voice: [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M) text-to-speech through a tin-can filter, written as a WAV that [`POST /play`](api.md#post-play) accepts. It needs [uv](https://docs.astral.sh/uv/) and ffmpeg. The first run installs its Python dependencies and downloads the model (about 330 MB).
+[`scripts/say.py`](../packages/tiny-engineer-claude-code/skills/tiny-engineer-play/scripts/say.py) speaks a line in the robot's voice: [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M) text-to-speech through a tin-can filter, written as a WAV that [`POST /play`](api.md#post-play) accepts. The script lives in the Claude Code skill and `scripts/say.py` links to it. It needs [uv](https://docs.astral.sh/uv/) and ffmpeg. The first run installs its Python dependencies and downloads the model (about 330 MB).
 
 ```bash
 scripts/say.py "Build passed. Ship it!" -o /tmp/te-clip.wav

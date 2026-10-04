@@ -15,10 +15,10 @@ It reads `TINY_ENGINEER_URL` and `TINY_ENGINEER_TOKEN` from the environment (or 
 
 ## 1. Make the clip
 
-The robot accepts only 16-bit mono PCM WAV at its own sample rate. Make speech in the robot's voice with the `say` script in this skill's base directory. It needs `uv` and `ffmpeg`; the first run installs its dependencies and downloads the voice model, so allow a few minutes, and later runs take about 15 s.
+The robot accepts only 16-bit mono PCM WAV at its own sample rate. Make speech in the robot's voice with the `say.py` script in this skill's base directory. It needs `uv` and `ffmpeg`; the first run installs its dependencies and downloads the voice model, so allow a few minutes, and later runs take about 15 s.
 
 ```bash
-<base directory>/scripts/say "Build passed. Ship it!" -o /tmp/te-clip.wav
+<base directory>/scripts/say.py "Build passed. Ship it!" -o /tmp/te-clip.wav
 ```
 
 It prints the clip length and the start of every word in milliseconds:
@@ -31,7 +31,7 @@ Build the timeline from these timings.
 
 Options: `--voice bm_george` for a British voice (any Kokoro voice; the default is `am_michael`), `--speed 0.9` to slow down, `--plain` for the voice without the robot filter, `--rate N` for a robot with another sample rate.
 
-If `say` is unavailable (no `uv`), fall back to the machine's own text-to-speech and convert it. There are no word timings then, so estimate from `ffprobe` duration divided by the word count:
+If `say.py` cannot run (no `uv`), fall back to the machine's own text-to-speech and convert it. There are no word timings then, so estimate from `ffprobe` duration divided by the word count:
 
 ```bash
 espeak-ng -v en-us -s 165 -w /tmp/te-raw.wav "Build passed. Ship it!"     # Linux
@@ -46,7 +46,7 @@ For a silent performance, make silence of the right length:
 ffmpeg -y -loglevel error -f lavfi -i anullsrc=r=22050:cl=mono -t 4 -c:a pcm_s16le /tmp/te-clip.wav
 ```
 
-22050 Hz is the stock rate. If the reply is `expected 16-bit mono PCM at N Hz`, re-run `say` with `--rate N` (or the `ffmpeg` step with `-ar N`).
+22050 Hz is the stock rate. If the reply is `expected 16-bit mono PCM at N Hz`, re-run `say.py` with `--rate N` (or the `ffmpeg` step with `-ar N`).
 
 ## 2. Write the timeline
 
@@ -93,7 +93,7 @@ The sleeps add up to the target times: 175 is 200 ms before "Build", 175 + 475 =
 | Reply | Fix |
 | --- | --- |
 | `400 step N: ...` | Step `N` (0-based) is wrong: unknown servo, eye mode or face, a preset with its own sound (`ring`, `welcome`, ...), or bad numbers |
-| `415 expected 16-bit mono PCM at N Hz` | Re-run `say` with `--rate N`, or convert with `ffmpeg ... -ar N -ac 1 -c:a pcm_s16le` |
+| `415 expected 16-bit mono PCM at N Hz` | Re-run `say.py` with `--rate N`, or convert with `ffmpeg ... -ar N -ac 1 -c:a pcm_s16le` |
 | `401 unauthorized` | Set `TINY_ENGINEER_TOKEN` to the robot's `access_token` |
 | `robot unreachable` | Check `TINY_ENGINEER_URL`; the robot must be on the same network |
 
