@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 
+import { robotFetch } from "./post.js";
+
 // The robot answers once the clip has finished playing.
 const PLAY_TIMEOUT_MS = 10 * 60 * 1000;
 
@@ -10,7 +12,6 @@ const PLAY_TIMEOUT_MS = 10 * 60 * 1000;
 export function parsePlayArgs(argv) {
   /** @type {{ wavPath?: string, anim?: string, url?: string }} */
   const opts = {};
-  let animSource;
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -23,8 +24,7 @@ export function parsePlayArgs(argv) {
         opts.url = value;
         continue;
       }
-      if (animSource) return { error: "use --anim or --anim-file, not both" };
-      animSource = arg;
+      if (opts.anim !== undefined) return { error: "use --anim or --anim-file, not both" };
       try {
         opts.anim = arg === "--anim" ? value : readFileSync(value, "utf8");
       } catch (err) {
@@ -59,14 +59,13 @@ export async function postPlay({ baseUrl, wav, anim, token }) {
   /** @type {Record<string, string>} */
   const headers = { "Content-Type": "audio/wav" };
   if (anim) headers["X-Anim"] = anim;
-  if (token) headers.Authorization = `Bearer ${token}`;
 
-  const response = await fetch(`${baseUrl.replace(/\/+$/, "")}/play`, {
-    method: "POST",
-    headers,
-    body: wav,
-    signal: AbortSignal.timeout(PLAY_TIMEOUT_MS),
-  });
+  const response = await robotFetch(
+    baseUrl,
+    "/play",
+    { method: "POST", headers, body: wav, signal: AbortSignal.timeout(PLAY_TIMEOUT_MS) },
+    token,
+  );
 
   return { ok: response.ok, status: response.status, body: await response.text() };
 }
