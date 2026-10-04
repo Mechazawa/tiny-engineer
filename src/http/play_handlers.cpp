@@ -5,18 +5,31 @@
 #include <cstdio>
 #include <optional>
 
-#include "animation/timeline.h"
-#include "animation/timeline_player.h"
+#include "animation.h"
 #include "audio/audio.h"
 #include "audio/wav_parser.h"
 #include "http/json.h"
 #include "pins.h"
 #include "robot_tick.h"
-#include "sleep.h"
 #include "settings/settings.h"
 #include "serial_log.h"
+#include "sleep.h"
 
 namespace {
+
+// Animations with no sound of their own, so they cannot talk over the clip.
+bool playableDuringClip(AnimationId id) {
+  switch (id) {
+    case AnimationId::Talking:
+    case AnimationId::Typing:
+    case AnimationId::Reading:
+    case AnimationId::Thinking:
+    case AnimationId::None:
+      return true;
+    default:
+      return false;
+  }
+}
 
 // One POST /play request. loop() is blocked while the body streams, so the
 // session runs tickRobot() between speaker writes.
@@ -24,8 +37,8 @@ class PlaySession : public WavStreamParser::Sink {
 public:
   void begin(WebServer& server) {
     parser_.reset();
-    player_.reset();
     rejectCode_ = 0;
+    started_ = false;
 
     if (!settingsWifiConfigured()) {
       reject(503, "wifi not configured");
@@ -37,25 +50,16 @@ public:
       return;
     }
 
+    const String name = server.pathArg(0);
+
+    if (!parseAnimationName(name.length() > 0 ? name.c_str() : "talking", animation_) || !playableDuringClip(animation_)) {
+      reject(400, "name must be talking, typing, reading, thinking or none");
+      return;
+    }
+
     stopAllWavPlayback();
     parser_.emplace(SAMPLE_RATE, *this);
     serialLogPrintln("[play] start");
-
-    const String& header = server.header("X-Anim");
-
-    if (header.length() == 0) {
-      return;
-    }
-
-    std::optional<Timeline> timeline = Timeline::parse(header.c_str(), header.length(), TimelinePlayer::names(), error_, sizeof(error_));
-
-    if (!timeline) {
-      reject(400, error_);
-      return;
-    }
-
-    player_.emplace(std::move(*timeline));
-    player_->advance(0);
   }
 
   void feed(const uint8_t* bytes, size_t length) {
@@ -65,15 +69,16 @@ public:
   }
 
   void end() {
-    if (parser_) {
-      parser_->finish();
-      serialLogPrint("[play] end ms=");
-      serialLogPrintln(playedMs());
+    if (!parser_) {
+      return;
     }
 
-    if (player_) {
-      player_->finish();
-      player_.reset();
+    parser_->finish();
+    serialLogPrint("[play] end ms=");
+    serialLogPrintln(playedMs());
+
+    if (started_) {
+      setAnimationImmediately(animationIsContinuous(previous_) ? previous_ : AnimationId::None);
     }
   }
 
@@ -94,22 +99,25 @@ public:
   }
 
   void onPcm(const int16_t* samples, size_t count) override {
-    writeMonoToSpeaker(samples, count);
-
-    if (player_) {
-      player_->advance(playedMs());
+    if (!started_) {
+      // The format is known good by now, so the robot only moves for clips it can play.
+      started_ = true;
+      previous_ = getAnimation();
+      setAnimationImmediately(animation_);
     }
 
+    writeMonoToSpeaker(samples, count);
     noteActivity(millis());
     tickRobot();
   }
 
 private:
   std::optional<WavStreamParser> parser_;
-  std::optional<TimelinePlayer> player_;
+  AnimationId animation_ = AnimationId::Talking;
+  AnimationId previous_ = AnimationId::None;
+  bool started_ = false;
   int rejectCode_ = 0;
-  char error_[96] = {};
-  char body_[128] = {};
+  char body_[96] = {};
 
   void reject(int code, const char* message) {
     rejectCode_ = code;

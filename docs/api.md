@@ -455,7 +455,7 @@ curl http://tiny-engineer.local/anim
 
 | Field | Meaning |
 | --- | --- |
-| `animation` | `none`, `typing`, `reading`, `thinking`, `ring`, `welcome`, `attention`, `error`, `abort`, `dead`, `wakeup`, or `sleep`; `scripted` while a [`POST /play`](#post-play) timeline moves the joints (not accepted by `POST /anim`) |
+| `animation` | `none`, `typing`, `reading`, `thinking`, `talking`, `ring`, `welcome`, `attention`, `error`, `abort`, `dead`, `wakeup`, or `sleep` |
 
 ### `POST /anim`
 
@@ -463,12 +463,13 @@ Request an animation switch. Each animation runs at least **1s**; if the current
 
 | Param | Type | Values |
 | --- | --- | --- |
-| `name` | string | `none`, `typing`, `reading`, `thinking`, `ring`, `welcome`, `attention`, `error`, `abort`, `dead`, `wakeup`, `sleep` |
+| `name` | string | `none`, `typing`, `reading`, `thinking`, `talking`, `ring`, `welcome`, `attention`, `error`, `abort`, `dead`, `wakeup`, `sleep` |
 
 ```bash
 curl -X POST "http://tiny-engineer.local/anim?name=typing"
 curl -X POST "http://tiny-engineer.local/anim?name=reading"
 curl -X POST "http://tiny-engineer.local/anim?name=thinking"
+curl -X POST "http://tiny-engineer.local/anim?name=talking"
 curl -X POST "http://tiny-engineer.local/anim?name=ring"
 curl -X POST "http://tiny-engineer.local/anim?name=welcome"
 curl -X POST "http://tiny-engineer.local/anim?name=wakeup"
@@ -494,6 +495,7 @@ Durations and quoted lines below are the stock clips in [`assets/`](../assets/).
 | `typing` | **Continuous.** Alternating hands with randomness (15° band from hand limits). Head nods slowly on lowest 10° of head limits. Body sways ±5° around mid; neck counters opposite so head stays put. Runs until replaced, or until `continuous_timeout` triggers `attention`. Same-name re-`POST` refreshes that timeout without restarting motion. |
 | `reading` | **Continuous.** Hands/body park as in `none`. Head nods on same lowest 10° band as typing, but slower. Neck sweeps ±10° around mid; right (angle down) slower than left (angle up). Occasional right-hand down-arrow bursts (1–3 presses, same 15° band as typing). Runs until replaced, or until `continuous_timeout` triggers `attention`. Same-name re-`POST` refreshes that timeout without restarting motion. |
 | `thinking` | **Continuous.** Hands/body park as in `none`. Head (pitch) and neck (yaw) ease from the current pose into thinking poses (up + slight left/right). Move → pause → optional micro-adjust (sometimes chained) → pause; nearby pose drift with occasional larger shifts after ~2.2 s, more often over time. Axes stagger start/duration; no periodic sway. Runs until replaced, or until `continuous_timeout` triggers `attention`. Same-name re-`POST` refreshes that timeout without restarting motion. |
+| `talking` | **Continuous.** Speaking fidget with no sound of its own, used by [`POST /play`](#post-play) while a clip plays. Hands and body park as in `none` except for an occasional right-hand gesture. The head faces the user just above mid and nods quickly on random beats, then settles; the neck drifts slowly. **Classic eyes:** a little taller than idle, mostly on the user with short glances away. Runs until replaced, or until `continuous_timeout` triggers `attention`. |
 | `ring` | **One-shot** service-bell gesture; does not loop. Wind-up (body `min`, neck mid, head mid+10°, both hands `max`) → fast right-hand strike to `min+5°` with head to `min` → plays `bell.wav` once on strike (LittleFS; same `uploadfs` requirement as `/test/audio/bell`) → slower bounce to `min+20°` → return to `none` pose and stop. After completion, `GET /anim` reports `none`. |
 | `welcome` | **One-shot** hello gesture synced to `welcome.wav` (~2.7 s). Right hand raises during "Hello, human.", holds through the pause, wiggles during "What are we building today?", then lowers. Head nods to mid+10° and returns. Plays automatically after successful Wi-Fi connect at boot; also via API. Requires `welcome.wav` on LittleFS (same `uploadfs` flow as `bell.wav`). After completion, `GET /anim` reports `none`. |
 | `attention` | Friendly input-request gesture synced to `attention.wav` (~3.0 s, "pst... human.... you might want to take a look"). Moves into a calm prompt pose first (centered body/neck, head slightly up, right hand raised partway), waits until all servos stop, then plays audio with light neck/head/hand motion during playback (whisper hold → lean toward user → glance/point on "take a look"). **Classic eyes:** phased blink/look cues during audio. After audio ends (or if audio fails to start), holds a gentle waiting loop for **1 minute** (soft head/neck drifts plus occasional slight right-hand waves), then returns to `none`. Requires `attention.wav` on LittleFS (same `uploadfs` flow as `bell.wav`). |
@@ -513,7 +515,7 @@ When `eyes_style=kaomoji`, the OLED shows looping faces from the expression libr
 | `typing`, `thinking` | Thinking |
 | `reading`, `attention` | Curious |
 | `ring` | Surprise |
-| `welcome` | Happy |
+| `welcome`, `talking` | Happy |
 | `error` | Angry |
 | `abort` | Panic |
 | `wakeup` | Sleepy |
@@ -534,54 +536,36 @@ Wrong params return **400**:
 | `error` | When |
 | --- | --- |
 | `missing name` | Query param `name` absent |
-| `unknown animation` | `name` not `none`, `typing`, `reading`, `thinking`, `ring`, `welcome`, `attention`, `error`, `abort`, `dead`, `wakeup`, or `sleep` |
+| `unknown animation` | `name` not `none`, `typing`, `reading`, `thinking`, `talking`, `ring`, `welcome`, `attention`, `error`, `abort`, `dead`, `wakeup`, or `sleep` |
 
 ### `POST /play`
 
-Streams a WAV to the speaker and optionally drives the robot from a timeline while it plays. The body is played as it arrives, so clips of any length need no storage on the robot. The response comes when the clip ends.
+Streams a WAV to the speaker while one animation runs, then returns to the continuous animation (`typing`, `reading`, `thinking`, `talking`) that was running before the request, otherwise to `none`. The body is played as it arrives, so clips of any length need no storage on the robot. The response comes when the clip ends.
 
 | Part | Value |
 | --- | --- |
+| Path | `/play` runs `talking`; `/play/{name}` runs `talking`, `typing`, `reading`, `thinking`, or `none`. Animations with their own sound are rejected so two clips never overlap |
 | Body | WAV, 16-bit mono PCM at 22050 Hz (the firmware `SAMPLE_RATE`). `Content-Length` is required. Chunks other than `fmt ` and `data` are skipped |
-| `X-Anim` header | Optional JSON array of timeline steps, up to 8 KB and 256 steps |
 | `Authorization` | `Bearer <token>` when `access_token` is set |
 
-Timeline steps run in order. Only `sleep` advances the clock, so steps without a `sleep` between them start together. The clock is the audio playback position: if the network stalls, the timeline waits with the audio.
-
-| Step | Effect |
-| --- | --- |
-| `["sleep", ms]` | Wait `ms` (0–600000) of playback |
-| `["preset", name]` | Run an animation without its sound: `none`, `typing`, `reading`, `thinking`, or `wakeup`. Drives all joints and the eyes |
-| `["move", servo, to, ms?]` | Move `head`, `neck`, `hand_left`, `hand_right`, or `body` to pose position `to` (−1 = saved min, 1 = saved max) so it arrives after `ms`. Without `ms` it moves at the maximum speed (140°/s), which also caps short durations. Stops the running preset and switches to the `scripted` animation; other joints hold where they are and the eyes keep their mode |
-| `["eyes", mode]` | Switch the eye mode: `idle` or any `/anim` name |
-| `["look", x, y, ms?]` | Gaze offset reached after `ms`: `x` −1 screen left to 1 screen right, `y` −1 up to 1 down |
-| `["open", amount, ms?]` | Lid opening, 0 closed to 1 normal, reached after `ms` |
-| `["blink"]` | One blink |
-| `["face", name]` | Animated face from the expression library: `idle`, `happy`, `laugh`, `wink`, `curious`, `thinking`, `surprise`, `smug`, `sleepy`, `sleep`, `sad`, `cry`, `angry`, `panic`, `shy`, or `love` |
-
-`look` and `open` switch the eyes to a scripted mode and reshape them in the current `eyes_style`; `kaomoji` shows its idle face. A `face` replaces the eyes until the next `look`, `open`, `eyes`, or `preset` step. `eyes` and `preset` clear all scripted eye state.
-
-When the clip ends, steps that have not run are dropped. The robot returns to the continuous animation (`typing`, `reading`, `thinking`) that was running before the request, otherwise to `none`.
+The animation starts with the first audio sample, so a rejected request never moves the robot. While the clip plays the robot keeps its eyes, LED and sleep timer running, and the clip counts as activity.
 
 ```bash
-curl -X POST http://tiny-engineer.local/play \
-  -H 'Content-Type: audio/wav' \
-  -H 'X-Anim: [["preset","thinking"],["sleep",800],["move","head",0.6,300],["move","neck",-0.3,300],["face","happy"],["sleep",1200],["look",-1,0,150]]' \
-  --data-binary @clip.wav
+curl -X POST http://tiny-engineer.local/play -H 'Content-Type: audio/wav' --data-binary @clip.wav
+curl -X POST http://tiny-engineer.local/play/thinking -H 'Content-Type: audio/wav' --data-binary @hmm.wav
 ```
 
 ```json
 { "ok": true, "played_ms": 3000 }
 ```
 
-The Claude Code CLI wraps this for agents: `tiny-engineer-claude-code play clip.wav --anim '[...]'` ([integration.md](integration.md#4-claude-code-dedicated-script)). [`scripts/say.py`](../packages/tiny-engineer-claude-code/skills/tiny-engineer-play/scripts/say.py) makes a speech clip in this format and prints when each word starts ([integration.md](integration.md#speech-for-post-play)).
+The Claude Code CLI wraps this for agents: `tiny-engineer-claude-code play clip.wav [--name thinking]` ([integration.md](integration.md#4-claude-code-dedicated-script)).
 
 Errors arrive before any audio plays:
 
 | Status | `error` | When |
 | --- | --- | --- |
-| `400` | `step N: ...` | Timeline step `N` (0-based) is invalid, names an unknown servo, eye mode or face, or a preset that plays its own sound |
-| `400` | `X-Anim is not a JSON array` | Header is not a JSON array |
+| `400` | `name must be talking, typing, reading, thinking or none` | `{name}` is unknown or has its own sound |
 | `415` | `expected 16-bit mono PCM at 22050 Hz` | WAV format or sample rate differs |
 | `415` | `not a WAV file`, `no audio data` | Body is not a RIFF/WAVE file, or has no `data` chunk |
 
@@ -589,7 +573,7 @@ Errors arrive before any audio plays:
 
 | Status | Body | When |
 | --- | --- | --- |
-| `400` | `{"ok":false,"error":"..."}` | Bad `/test/servo`, `/setup/servo`, `/setup/led`, `/setup/audio`, `/setup/oled`, or `/anim` params, or a bad `/play` timeline (see tables above) |
+| `400` | `{"ok":false,"error":"..."}` | Bad `/test/servo`, `/setup/servo`, `/setup/led`, `/setup/audio`, `/setup/oled`, `/anim`, or `/play` params (see tables above) |
 | `401` | `{"ok":false,"error":"unauthorized"}` | Access token configured and `Authorization: Bearer` missing or wrong |
 | `404` | `{"ok":false,"error":"not found"}` | Unknown path |
 | `415` | `{"ok":false,"error":"..."}` | `/play` body is not a supported WAV |
@@ -601,7 +585,7 @@ Test routes are **POST**. GET/prefetch would move hardware. `/anim` allows **GET
 
 Test handlers **block** until the test finishes. The client waits. After each test, OLED returns to `ROBOT READY` plus IP (or `WIFI FAIL`).
 
-`/anim` responses return immediately; typing motion runs in the main loop via non-blocking servo updates. Animation switches may defer up to 1s so the active animation holds its minimum duration; only the latest pending request is applied. Continuous animations (`typing`, `reading`, `thinking`) that stay active longer than `continuous_timeout` minutes switch to `attention`, which holds ~1 minute then finishes to `none`. Re-`POST`ing the same continuous animation (e.g. `typing` while already `typing`) does not restart motion, but resets the continuous-timeout clock.
+`/anim` responses return immediately; typing motion runs in the main loop via non-blocking servo updates. Animation switches may defer up to 1s so the active animation holds its minimum duration; only the latest pending request is applied. Continuous animations (`typing`, `reading`, `thinking`, `talking`) that stay active longer than `continuous_timeout` minutes switch to `attention`, which holds ~1 minute then finishes to `none`. Re-`POST`ing the same continuous animation (e.g. `typing` while already `typing`) does not restart motion, but resets the continuous-timeout clock.
 
 The onboard RGB LED follows the active animation (see [RGB LED](#rgb-led)).
 
