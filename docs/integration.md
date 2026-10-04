@@ -249,6 +249,14 @@ node packages/tiny-engineer-claude-code/bin/tiny-engineer-claude-code.js play he
 
 `--anim-file dance.json` reads the timeline from a file. `--help` lists every step.
 
+To let Claude use it on its own in any project, install the bundled skill. It explains how to make a clip with text-to-speech, write the timeline, and fix errors:
+
+```bash
+ln -s "$PWD/packages/tiny-engineer-claude-code/skills/tiny-engineer-play" ~/.claude/skills/tiny-engineer-play
+```
+
+Then ask Claude something like "have the robot congratulate me on the green build".
+
 ### Smoke test
 
 ```bash

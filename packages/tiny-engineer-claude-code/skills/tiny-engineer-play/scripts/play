@@ -1,0 +1,3 @@
+#!/bin/sh
+# Resolve the real path so the CLI is found when the skill directory is symlinked.
+exec node "$(dirname "$(readlink -f "$0")")/../../../bin/tiny-engineer-claude-code.js" play "$@"
