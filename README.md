@@ -14,7 +14,7 @@
 **Works with**
 
 - **Ready integrations:** [Claude Code](docs/integration.md#4-claude-code-dedicated-script) · [Cursor](docs/hooks.md) · [Antigravity](docs/integration.md#3-antigravity-cli-dedicated-script)
-- **Any agent with HTTP:** Codex, Windsurf, custom scripts, `POST /anim` on your LAN ([integration guide](docs/integration.md))
+- **Any agent with HTTP:** Codex, Windsurf, custom scripts, `POST /anim` on your LAN ([integration guide](docs/integration.md)), or `POST /play` to stream speech with custom moves, gaze and faces ([HTTP API](docs/api.md#post-play))
 
 ## What it feels like
 

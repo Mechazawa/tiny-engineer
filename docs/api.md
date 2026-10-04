@@ -536,14 +536,64 @@ Wrong params return **400**:
 | `missing name` | Query param `name` absent |
 | `unknown animation` | `name` not `none`, `typing`, `reading`, `thinking`, `ring`, `welcome`, `attention`, `error`, `abort`, `dead`, `wakeup`, or `sleep` |
 
+### `POST /play`
+
+Streams a WAV to the speaker and optionally drives the robot from a timeline while it plays. The body is played as it arrives, so clips of any length need no storage on the robot. The response comes when the clip ends.
+
+| Part | Value |
+| --- | --- |
+| Body | WAV, 16-bit mono PCM at 44100 Hz (the firmware `SAMPLE_RATE`). `Content-Length` is required. Chunks other than `fmt ` and `data` are skipped |
+| `X-Anim` header | Optional JSON array of timeline steps, up to 8 KB and 256 steps |
+| `Authorization` | `Bearer <token>` when `access_token` is set |
+
+Timeline steps run in order. Only `sleep` advances the clock, so steps without a `sleep` between them start together. The clock is the audio playback position: if the network stalls, the timeline waits with the audio.
+
+| Step | Effect |
+| --- | --- |
+| `["sleep", ms]` | Wait `ms` (0–600000) of playback |
+| `["preset", name]` | Run an animation without its sound: `none`, `typing`, `reading`, `thinking`, or `wakeup`. Drives all joints and the eyes |
+| `["move", servo, to, ms?]` | Move `head`, `neck`, `hand_left`, `hand_right`, or `body` to pose position `to` (−1 = saved min, 1 = saved max) so it arrives after `ms`. Without `ms` it moves at the maximum speed (140°/s), which also caps short durations. Stops the running preset; other joints hold where they are |
+| `["eyes", mode]` | Switch the eye mode: `idle` or any `/anim` name |
+| `["look", x, y, ms?]` | Gaze offset reached after `ms`: `x` −1 screen left to 1 screen right, `y` −1 up to 1 down |
+| `["open", amount, ms?]` | Lid opening, 0 closed to 1 normal, reached after `ms` |
+| `["blink"]` | One blink |
+| `["face", name]` | Animated face from the expression library: `idle`, `happy`, `laugh`, `wink`, `curious`, `thinking`, `surprise`, `smug`, `sleepy`, `sleep`, `sad`, `cry`, `angry`, `panic`, `shy`, or `love` |
+
+`look` and `open` reshape the eyes in the current `eyes_style`; `kaomoji` ignores them. A `face` replaces the eyes until the next `look`, `open`, `eyes`, or `preset` step. `eyes` and `preset` clear all scripted eye state.
+
+When the clip ends, steps that have not run are dropped. The robot returns to the continuous animation (`typing`, `reading`, `thinking`) that was running before the request, otherwise to `none`.
+
+```bash
+curl -X POST http://tiny-engineer.local/play \
+  -H 'Content-Type: audio/wav' \
+  -H 'X-Anim: [["preset","thinking"],["sleep",800],["move","head",0.6,300],["move","neck",-0.3,300],["face","happy"],["sleep",1200],["look",-1,0,150]]' \
+  --data-binary @clip.wav
+```
+
+```json
+{ "ok": true, "played_ms": 3000 }
+```
+
+The Claude Code CLI wraps this for agents: `tiny-engineer-claude-code play clip.wav --anim '[...]'` ([integration.md](integration.md#4-claude-code-dedicated-script)).
+
+Errors arrive before any audio plays:
+
+| Status | `error` | When |
+| --- | --- | --- |
+| `400` | `step N: ...` | Timeline step `N` (0-based) is invalid, names an unknown servo, eye mode or face, or a preset that plays its own sound |
+| `400` | `X-Anim is not a JSON array` | Header is not a JSON array |
+| `415` | `expected 16-bit mono PCM at 44100 Hz` | WAV format or sample rate differs |
+| `415` | `not a WAV file`, `no audio data` | Body is not a RIFF/WAVE file, or has no `data` chunk |
+
 ## Errors
 
 | Status | Body | When |
 | --- | --- | --- |
-| `400` | `{"ok":false,"error":"..."}` | Bad `/test/servo`, `/setup/servo`, `/setup/led`, `/setup/audio`, `/setup/oled`, or `/anim` params (see tables above) |
+| `400` | `{"ok":false,"error":"..."}` | Bad `/test/servo`, `/setup/servo`, `/setup/led`, `/setup/audio`, `/setup/oled`, or `/anim` params, or a bad `/play` timeline (see tables above) |
 | `401` | `{"ok":false,"error":"unauthorized"}` | Access token configured and `Authorization: Bearer` missing or wrong |
 | `404` | `{"ok":false,"error":"not found"}` | Unknown path |
-| `405` | `{"ok":false,"error":"method not allowed"}` | Wrong method on a `/test/*`, `/setup/servo`, `/setup/led`, `/setup/audio`, `/setup/oled`, `/settings`, `/settings/reset`, `/anim`, or `/auth` path |
+| `415` | `{"ok":false,"error":"..."}` | `/play` body is not a supported WAV |
+| `405` | `{"ok":false,"error":"method not allowed"}` | Wrong method on a `/test/*`, `/setup/servo`, `/setup/led`, `/setup/audio`, `/setup/oled`, `/settings`, `/settings/reset`, `/anim`, `/play`, or `/auth` path |
 
 Test routes are **POST**. GET/prefetch would move hardware. `/anim` allows **GET** (read) and **POST** (set). `/auth` is **GET** only and always public.
 
@@ -555,7 +605,9 @@ Test handlers **block** until the test finishes. The client waits. After each te
 
 The onboard RGB LED follows the active animation (see [RGB LED](#rgb-led)).
 
-One request at a time — the Arduino `WebServer` is single-threaded.
+`/play` holds the connection until the clip ends.
+
+One request at a time — the Arduino `WebServer` is single-threaded. While `/play` streams, other requests wait.
 
 ## RGB LED
 
