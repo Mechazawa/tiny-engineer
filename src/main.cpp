@@ -165,17 +165,8 @@ void setup() {
   initSleep();
 }
 
-void tickRobot(uint32_t now) {
-  pollWifi();
-  updateProvisioningOled(now);
-  updateAnimation();
-  // After HTTP/anim so idle timestamp from this frame is not compared to a stale `now`.
-  updateSleep(millis());
-  updateRgb(now);
-}
-
 void loop() {
   pollHttpServer();
   pollOta();
-  tickRobot(millis());
+  tickRobot();
 }

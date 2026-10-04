@@ -16,9 +16,10 @@ namespace expressions = tiny_engineer::expressions;
 constexpr float kLookRangeX = 16.0f;
 constexpr float kLookRangeY = 8.0f;
 
+// Set by startScriptedEyes() whenever EyeMode::Scripted begins.
 anim::EasedMove g_lookX = {};
 anim::EasedMove g_lookY = {};
-anim::EasedMove g_open = {1.0f, 1.0f, 0, 0, false};
+anim::EasedMove g_open = {};
 
 bool g_faceShowing = false;
 expressions::Expression g_face = expressions::Expression::Idle;
@@ -37,7 +38,7 @@ Eye scriptedEye(const Eye& base, uint32_t now) {
 }
 
 void enterScriptedEyes(uint32_t now) {
-  if (eyes::currentEyeMode() != EyeMode::Scripted) {
+  if (eyeMode() != EyeMode::Scripted) {
     setEyeMode(EyeMode::Scripted, now);
   }
 }

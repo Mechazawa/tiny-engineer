@@ -101,7 +101,7 @@ public:
     }
 
     noteActivity(millis());
-    tickRobot(millis());
+    tickRobot();
   }
 
 private:

@@ -23,7 +23,7 @@ uint8_t g_blinksInSequence = 1;
 uint8_t g_blinksDone = 0;
 
 void scheduleNextBlink(uint32_t now) {
-  switch (eyes::currentEyeMode()) {
+  switch (eyeMode()) {
     case EyeMode::Typing:
       g_nextBlinkMs = now + anim::randRangeMs(1800, 4000);
       break;

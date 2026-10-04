@@ -146,10 +146,6 @@ void setModeStartedMs(uint32_t ms) {
   g_modeStartedMs = ms;
 }
 
-EyeMode currentEyeMode() {
-  return g_eyeMode;
-}
-
 void setCurrentEyeMode(EyeMode mode) {
   g_eyeMode = mode;
 }

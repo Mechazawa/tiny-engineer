@@ -69,7 +69,7 @@ void noteActivity(uint32_t now) {
 
 void onAnimationApplied(AnimationId id, uint32_t now) {
   if (id == AnimationId::None) {
-    g_idleSinceMs = now;
+    noteActivity(now);
     return;
   }
 
