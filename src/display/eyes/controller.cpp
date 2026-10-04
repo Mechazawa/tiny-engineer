@@ -14,7 +14,7 @@
 #include "display/eyes/core/impact.h"
 #include "display/eyes/core/internal.h"
 #include "display/eyes/core/util.h"
-#include "display/eyes/script.h"
+#include "display/eyes/modes/scripted.h"
 #include "display/eyes/styles/eye_style.h"
 #include "display/eyes/styles/kaomoji.h"
 #include "settings/settings.h"
@@ -59,7 +59,7 @@ EyeStyleSleepPhase currentSleepPhase() {
 void updateModePose(uint32_t now) {
   const ModeEntry* entry = modeByEyeMode(g_eyeMode);
 
-  if (!eyes::applyScriptPose(g_leftEye, g_rightEye, now) && entry->updateEyes != nullptr) {
+  if (entry->updateEyes != nullptr) {
     entry->updateEyes(now);
   }
 
@@ -184,8 +184,12 @@ void setEyesRunning(bool active) {
 
 }  // namespace eyes
 
+EyeMode eyeMode() {
+  return g_eyeMode;
+}
+
 void setEyeMode(EyeMode mode, uint32_t now) {
-  eyes::clearScript();
+  eyes::clearScriptFace();
   g_eyeMode = mode;
   g_modeStartedMs = now;
   resetImpactState();

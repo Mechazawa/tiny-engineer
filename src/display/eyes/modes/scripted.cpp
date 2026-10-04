@@ -1,6 +1,7 @@
-#include "display/eyes/script.h"
+#include "display/eyes/modes/scripted.h"
 
 #include "animation/util.h"
+#include "display/eyes.h"
 #include "display/eyes/core/blink.h"
 #include "display/eyes/core/constants.h"
 #include "display/eyes/core/internal.h"
@@ -19,7 +20,6 @@ anim::EasedMove g_lookX = {};
 anim::EasedMove g_lookY = {};
 anim::EasedMove g_open = {1.0f, 1.0f, 0, 0, false};
 
-bool g_posing = false;
 bool g_faceShowing = false;
 expressions::Expression g_face = expressions::Expression::Idle;
 uint32_t g_faceStartedMs = 0;
@@ -36,22 +36,33 @@ Eye scriptedEye(const Eye& base, uint32_t now) {
   return eye;
 }
 
-void beginPosing() {
-  g_posing = true;
-  g_faceShowing = false;
-  eyes::requestForceRedraw();
+void enterScriptedEyes(uint32_t now) {
+  if (eyes::currentEyeMode() != EyeMode::Scripted) {
+    setEyeMode(EyeMode::Scripted, now);
+  }
 }
 
 }  // namespace
 
+void startScriptedEyes(uint32_t /*now*/) {
+  g_lookX = {};
+  g_lookY = {};
+  g_open = {1.0f, 1.0f, 0, 0, false};
+}
+
+void updateScriptedEyes(uint32_t now) {
+  mutableLeftEye() = scriptedEye(eyes::DEFAULT_LEFT, now);
+  mutableRightEye() = scriptedEye(eyes::DEFAULT_RIGHT, now);
+}
+
 void eyesLookAt(float x, float y, uint32_t durationMs, uint32_t now) {
-  beginPosing();
+  enterScriptedEyes(now);
   retarget(g_lookX, x, durationMs, now);
   retarget(g_lookY, y, durationMs, now);
 }
 
 void eyesSetOpen(float amount, uint32_t durationMs, uint32_t now) {
-  beginPosing();
+  enterScriptedEyes(now);
   retarget(g_open, amount, durationMs, now);
 }
 
@@ -68,16 +79,6 @@ void eyesShowFace(uint8_t expression, uint32_t now) {
 }
 
 namespace eyes {
-
-bool applyScriptPose(Eye& left, Eye& right, uint32_t now) {
-  if (!g_posing) {
-    return false;
-  }
-
-  left = scriptedEye(DEFAULT_LEFT, now);
-  right = scriptedEye(DEFAULT_RIGHT, now);
-  return true;
-}
 
 bool drawScriptFace(uint32_t now) {
   if (!g_faceShowing) {
@@ -96,11 +97,7 @@ bool drawScriptFace(uint32_t now) {
   return true;
 }
 
-void clearScript() {
-  g_lookX = {0.0f, 0.0f, 0, 0, false};
-  g_lookY = {0.0f, 0.0f, 0, 0, false};
-  g_open = {1.0f, 1.0f, 0, 0, false};
-  g_posing = false;
+void clearScriptFace() {
   g_faceShowing = false;
 }
 

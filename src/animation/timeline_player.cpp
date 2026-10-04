@@ -10,7 +10,6 @@
 #include "animation/registry.h"
 #include "display/eyes.h"
 #include "hardware/servo_wrapper.h"
-#include "network/wifi_connect.h"
 
 namespace {
 
@@ -77,19 +76,6 @@ void TimelinePlayer::advance(uint32_t playedMs) {
   }
 }
 
-void TimelinePlayer::update() {
-  if (!manualServos_) {
-    updateAnimation();
-    return;
-  }
-
-  updateAllServos();
-
-  if (!wifiProvisioningMode()) {
-    updateEyes(millis());
-  }
-}
-
 void TimelinePlayer::finish() {
   setAnimationImmediately(animationIsContinuous(previous_) ? previous_ : AnimationId::None);
 }
@@ -97,7 +83,6 @@ void TimelinePlayer::finish() {
 void TimelinePlayer::run(const Timeline::Step& step) {
   switch (step.kind) {
     case Timeline::Kind::Preset:
-      manualServos_ = false;
       setAnimationImmediately(static_cast<AnimationId>(step.target));
       break;
 
@@ -122,7 +107,12 @@ void TimelinePlayer::run(const Timeline::Step& step) {
       break;
 
     case Timeline::Kind::Move: {
-      manualServos_ = true;
+      if (getAnimation() != AnimationId::Scripted) {
+        // Hand the joints to the script but keep whatever the eyes are doing.
+        const EyeMode eyes = eyeMode();
+        setAnimationImmediately(AnimationId::Scripted);
+        setEyeMode(eyes, millis());
+      }
       ensureAllServoOutputs();
 
       ServoWrapper& servo = servoAt(step.target);

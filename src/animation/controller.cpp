@@ -140,7 +140,7 @@ const char* animationName(AnimationId id) {
 bool parseAnimationName(const char* name, AnimationId& out) {
   const ModeEntry* entry = modeByName(name);
 
-  if (entry == nullptr) {
+  if (entry == nullptr || entry->animId == AnimationId::Scripted) {
     return false;
   }
 

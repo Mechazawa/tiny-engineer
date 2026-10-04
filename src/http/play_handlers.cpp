@@ -5,21 +5,21 @@
 #include <cstdio>
 #include <optional>
 
-#include "animation.h"
 #include "animation/timeline.h"
 #include "animation/timeline_player.h"
 #include "audio/audio.h"
 #include "audio/wav_parser.h"
-#include "hardware/rgb.h"
 #include "http/json.h"
 #include "pins.h"
+#include "robot_tick.h"
+#include "sleep.h"
 #include "settings/settings.h"
 #include "serial_log.h"
 
 namespace {
 
 // One POST /play request. loop() is blocked while the body streams, so the
-// session keeps animation, eyes and LED moving between speaker writes.
+// session runs tickRobot() between speaker writes.
 class PlaySession : public WavStreamParser::Sink {
 public:
   void begin(WebServer& server) {
@@ -98,12 +98,10 @@ public:
 
     if (player_) {
       player_->advance(playedMs());
-      player_->update();
-    } else {
-      updateAnimation();
     }
 
-    updateRgb(millis());
+    noteActivity(millis());
+    tickRobot(millis());
   }
 
 private:

@@ -455,7 +455,7 @@ curl http://tiny-engineer.local/anim
 
 | Field | Meaning |
 | --- | --- |
-| `animation` | `none`, `typing`, `reading`, `thinking`, `ring`, `welcome`, `attention`, `error`, `abort`, `dead`, `wakeup`, or `sleep` |
+| `animation` | `none`, `typing`, `reading`, `thinking`, `ring`, `welcome`, `attention`, `error`, `abort`, `dead`, `wakeup`, or `sleep`; `scripted` while a [`POST /play`](#post-play) timeline moves the joints (not accepted by `POST /anim`) |
 
 ### `POST /anim`
 
@@ -552,14 +552,14 @@ Timeline steps run in order. Only `sleep` advances the clock, so steps without a
 | --- | --- |
 | `["sleep", ms]` | Wait `ms` (0–600000) of playback |
 | `["preset", name]` | Run an animation without its sound: `none`, `typing`, `reading`, `thinking`, or `wakeup`. Drives all joints and the eyes |
-| `["move", servo, to, ms?]` | Move `head`, `neck`, `hand_left`, `hand_right`, or `body` to pose position `to` (−1 = saved min, 1 = saved max) so it arrives after `ms`. Without `ms` it moves at the maximum speed (140°/s), which also caps short durations. Stops the running preset; other joints hold where they are |
+| `["move", servo, to, ms?]` | Move `head`, `neck`, `hand_left`, `hand_right`, or `body` to pose position `to` (−1 = saved min, 1 = saved max) so it arrives after `ms`. Without `ms` it moves at the maximum speed (140°/s), which also caps short durations. Stops the running preset and switches to the `scripted` animation; other joints hold where they are and the eyes keep their mode |
 | `["eyes", mode]` | Switch the eye mode: `idle` or any `/anim` name |
 | `["look", x, y, ms?]` | Gaze offset reached after `ms`: `x` −1 screen left to 1 screen right, `y` −1 up to 1 down |
 | `["open", amount, ms?]` | Lid opening, 0 closed to 1 normal, reached after `ms` |
 | `["blink"]` | One blink |
 | `["face", name]` | Animated face from the expression library: `idle`, `happy`, `laugh`, `wink`, `curious`, `thinking`, `surprise`, `smug`, `sleepy`, `sleep`, `sad`, `cry`, `angry`, `panic`, `shy`, or `love` |
 
-`look` and `open` reshape the eyes in the current `eyes_style`; `kaomoji` ignores them. A `face` replaces the eyes until the next `look`, `open`, `eyes`, or `preset` step. `eyes` and `preset` clear all scripted eye state.
+`look` and `open` switch the eyes to a scripted mode and reshape them in the current `eyes_style`; `kaomoji` shows its idle face. A `face` replaces the eyes until the next `look`, `open`, `eyes`, or `preset` step. `eyes` and `preset` clear all scripted eye state.
 
 When the clip ends, steps that have not run are dropped. The robot returns to the continuous animation (`typing`, `reading`, `thinking`) that was running before the request, otherwise to `none`.
 
@@ -574,7 +574,7 @@ curl -X POST http://tiny-engineer.local/play \
 { "ok": true, "played_ms": 3000 }
 ```
 
-The Claude Code CLI wraps this for agents: `tiny-engineer-claude-code play clip.wav --anim '[...]'` ([integration.md](integration.md#4-claude-code-dedicated-script)). [`scripts/say.py`](../scripts/say.py) makes a speech clip in this format and prints when each word starts ([integration.md](integration.md#speech-for-post-play)).
+The Claude Code CLI wraps this for agents: `tiny-engineer-claude-code play clip.wav --anim '[...]'` ([integration.md](integration.md#4-claude-code-dedicated-script)). [`scripts/say.py`](../packages/tiny-engineer-claude-code/skills/tiny-engineer-play/scripts/say.py) makes a speech clip in this format and prints when each word starts ([integration.md](integration.md#speech-for-post-play)).
 
 Errors arrive before any audio plays:
 

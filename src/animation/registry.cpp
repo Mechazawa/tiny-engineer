@@ -19,6 +19,7 @@
 #include "display/eyes/modes/abort.h"
 #include "display/eyes/modes/attention.h"
 #include "display/eyes/modes/dead.h"
+#include "display/eyes/modes/scripted.h"
 #include "display/eyes/modes/error.h"
 #include "display/eyes/modes/idle.h"
 #include "display/eyes/modes/reading.h"
@@ -257,6 +258,17 @@ constexpr ModeEntry kModes[] = {
     updateDead,
     startDeadEyes,
     updateDeadEyes,
+  },
+  {
+    AnimationId::Scripted,
+    EyeMode::Scripted,
+    "scripted",
+    false,
+    -1,
+    nullptr,
+    nullptr,
+    startScriptedEyes,
+    updateScriptedEyes,
   },
 };
 

@@ -12,7 +12,9 @@ enum class AnimationId {
   Abort,
   Wakeup,
   Sleep,
-  Dead
+  Dead,
+  // Joints follow POST /play move steps; not selectable through /anim.
+  Scripted
 };
 
 void setAnimation(AnimationId id);
