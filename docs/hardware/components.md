@@ -128,7 +128,7 @@ Print [`3d_models/parts/hd1370a/3mf/`](../../3d_models/parts/hd1370a/3mf/).
 | Operating voltage | **Vin** 2.5–5.5 V. Drawing: USB **5V** → **Vin** |
 | I2S logic | 3.3 V from ESP32 (compatible) |
 | Interface | I2S: **BCLK**, **WS/LRC**, **DIN**. No MCLK |
-| Sample rates | Chip: 8–96 kHz. Firmware: **44100 Hz**, 16-bit, stereo slot mode |
+| Sample rates | Chip: 8–96 kHz. Firmware: **22050 Hz**, 16-bit, stereo slot mode |
 | Output power (typical) | ~1.8 W into 8 Ω @ 5 V / 10% THD (datasheet-class figure) |
 | Important pins | Drawn: **Vin**, **GND**, **BCLK**, **LRC**, **DIN**. **SPK+** / **SPK-** not drawn. **GAIN** / **SD** not wired (breakout defaults: GAIN floating ≈ 9 dB, SD pulled up ≈ left channel) |
 | Limits | Output is **BTL**. Do not connect SPK- to GND. Do not feed SPK+/SPK- into another amplifier. Do not drive the speaker from ESP32 GPIO |

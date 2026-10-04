@@ -29,6 +29,11 @@ def write_wav(path, duration_ms, rate=44100, channels=1, width=2):
         wav.writeframes(b"\x00" * (frames * channels * width))
 
 
+def frames_and_rate(path):
+    with wave.open(str(path), "rb") as wav:
+        return wav.getnframes(), wav.getframerate()
+
+
 def welcome_cue(end_ms):
     return (
         "greeting_end_ms=100\n"
@@ -56,6 +61,10 @@ class AudioPackTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
+    def assertPackedFrom(self, packed, source):
+        source_frames, _ = frames_and_rate(source)
+        self.assertEqual(frames_and_rate(packed), (source_frames // 2, 22050))
+
     def test_stock_rebuild_drops_old_cue(self):
         (self.dest / "welcome.cue").write_text("end_ms=1\n")
         pack_audio(self.assets, self.dest, 2_000_000)
@@ -66,26 +75,26 @@ class AudioPackTests(unittest.TestCase):
         for name in STOCK_WAVS:
             self.assertTrue((self.dest / name).is_file(), name)
         self.assertFalse(list(self.dest.glob("*.cue")))
-        self.assertEqual(
-            (self.dest / "bell.wav").read_bytes(),
-            (self.assets / "bell.wav").read_bytes(),
+        self.assertPackedFrom(
+            self.dest / "bell.wav",
+            self.assets / "bell.wav",
         )
 
     def test_partial_overlay_keeps_omitted_clips(self):
         write_wav(self.mod / "welcome.wav", 800)
         (self.mod / "welcome.cue").write_text(welcome_cue(800))
         pack_audio(self.assets, self.dest, 2_000_000, self.mod)
-        self.assertEqual(
-            (self.dest / "welcome.wav").read_bytes(),
-            (self.mod / "welcome.wav").read_bytes(),
+        self.assertPackedFrom(
+            self.dest / "welcome.wav",
+            self.mod / "welcome.wav",
         )
-        self.assertEqual(
-            (self.dest / "bell.wav").read_bytes(),
-            (self.assets / "bell.wav").read_bytes(),
+        self.assertPackedFrom(
+            self.dest / "bell.wav",
+            self.assets / "bell.wav",
         )
-        self.assertEqual(
-            (self.dest / "dead.wav").read_bytes(),
-            (self.assets / "dead.wav").read_bytes(),
+        self.assertPackedFrom(
+            self.dest / "dead.wav",
+            self.assets / "dead.wav",
         )
         self.assertTrue((self.dest / "welcome.cue").is_file())
         self.assertFalse((self.dest / "dead.cue").exists())
@@ -128,22 +137,35 @@ class AudioPackTests(unittest.TestCase):
         )
         for name in STOCK_WAVS:
             self.assertTrue((dest / name).is_file(), name)
-        self.assertEqual(
-            (dest / "bell.wav").read_bytes(),
-            (ROOT / "assets" / "bell.wav").read_bytes(),
+        self.assertPackedFrom(
+            dest / "bell.wav",
+            ROOT / "assets" / "bell.wav",
         )
-        self.assertEqual(
-            (dest / "dead.wav").read_bytes(),
-            (ROOT / "assets" / "dead.wav").read_bytes(),
+        self.assertPackedFrom(
+            dest / "dead.wav",
+            ROOT / "assets" / "dead.wav",
         )
         for clip in ("welcome", "attention", "error", "abort"):
-            self.assertEqual(
-                (dest / f"{clip}.wav").read_bytes(),
-                (ROOT / "mods" / "halloween" / "assets" / f"{clip}.wav").read_bytes(),
+            self.assertPackedFrom(
+                dest / f"{clip}.wav",
+                ROOT / "mods" / "halloween" / "assets" / f"{clip}.wav",
             )
             self.assertTrue((dest / f"{clip}.cue").is_file())
         self.assertFalse((dest / "bell.cue").exists())
         self.assertFalse((dest / "dead.cue").exists())
+
+    def test_halloween_overlay_fits_ota_partition(self):
+        pack_audio(
+            ROOT / "assets",
+            self.dest,
+            spiffs_size_bytes(ROOT / "partitions_ota.csv"),
+            ROOT / "mods" / "halloween" / "assets",
+        )
+
+    def test_stock_wav_at_packed_rate_fails(self):
+        write_wav(self.assets / "bell.wav", 500, rate=22050)
+        with self.assertRaises(AudioPackError):
+            pack_audio(self.assets, self.dest, 2_000_000)
 
 
 if __name__ == "__main__":
