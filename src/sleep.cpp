@@ -63,9 +63,13 @@ void requestSleep(uint32_t now) {
   beginSleepClosing(now);
 }
 
+void noteActivity(uint32_t now) {
+  g_idleSinceMs = now;
+}
+
 void onAnimationApplied(AnimationId id, uint32_t now) {
   if (id == AnimationId::None) {
-    g_idleSinceMs = now;
+    noteActivity(now);
     return;
   }
 

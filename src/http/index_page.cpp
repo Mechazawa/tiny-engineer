@@ -27,6 +27,7 @@ nav a.active{background:var(--accent);color:#fff}
 .hero h1{font-size:1.75rem;margin:0 0 .5rem;font-weight:700}
 .hero p{color:var(--muted);margin:0;font-size:1.05rem}
 .info-strip{background:var(--card);border:1px solid var(--border);border-radius:.5rem;padding:.6rem 1rem;margin:1rem 0;font-size:.85rem;color:var(--muted)}
+#fw-version{margin:.4rem 0 0;font-size:.8rem;font-variant-numeric:tabular-nums}
 .cards{display:grid;gap:.85rem;margin:1.5rem 0;grid-template-columns:1fr}
 @media(min-width:480px){.cards{grid-template-columns:1fr 1fr}}
 .card{display:block;background:var(--card);border:1px solid var(--border);border-radius:.6rem;padding:1.1rem 1.25rem;text-decoration:none;color:inherit;transition:box-shadow .15s,border-color .15s,transform .15s}
@@ -237,7 +238,7 @@ body:not(.setup-mode) #setup-wizard{display:none!important}
 <tr><td>POST</td><td><code>/settings/reset</code></td><td>Factory reset all settings to defaults</td></tr>
 <tr><td>GET</td><td><code>/anim</code></td><td>Current animation name</td></tr>
 <tr><td>POST</td><td><code>/anim</code></td><td>Set animation (see parameters below)</td></tr>
-<tr><td>POST</td><td><code>/play</code></td><td>Stream a WAV with an optional animation timeline (see parameters below)</td></tr>
+<tr><td>POST</td><td><code>/play</code></td><td>Stream a WAV while an animation runs (see parameters below)</td></tr>
 <tr><td>POST</td><td><code>/test/audio</code></td><td>Play tone test</td></tr>
 <tr><td>POST</td><td><code>/test/audio/bell</code></td><td>Play bell WAV from LittleFS</td></tr>
 <tr><td>POST</td><td><code>/test/screen</code></td><td>OLED demo</td></tr>
@@ -276,6 +277,7 @@ body:not(.setup-mode) #setup-wizard{display:none!important}
 <tr><td><code>typing</code></td><td>Typing gesture</td></tr>
 <tr><td><code>reading</code></td><td>Reading gesture</td></tr>
 <tr><td><code>thinking</code></td><td>Thinking gesture</td></tr>
+<tr><td><code>talking</code></td><td>Speaking gesture</td></tr>
 <tr><td><code>ring</code></td><td>One-shot bell gesture</td></tr>
 <tr><td><code>welcome</code></td><td>One-shot hello gesture</td></tr>
 <tr><td><code>attention</code></td><td>Input-request gesture + audio</td></tr>
@@ -285,17 +287,14 @@ body:not(.setup-mode) #setup-wizard{display:none!important}
 <tr><td><code>wakeup</code></td><td>One-shot sleep-inertia wake</td></tr>
 <tr><td><code>sleep</code></td><td>Close eyes and sleep</td></tr>
 </table>
-<p>POST <code>/play</code> &mdash; body: 16-bit mono PCM WAV at 22050 Hz. Optional header <code>X-Anim</code>: JSON array of steps, run in order; only <code>sleep</code> advances time:</p>
+<p>POST <code>/play</code> or <code>/play/{name}</code> &mdash; body: 16-bit mono PCM WAV at 22050 Hz. <code>name</code> runs while the clip plays:</p>
 <table>
-<tr><th>Step</th><th>Values</th></tr>
-<tr><td><code>["sleep", ms]</code></td><td>0&ndash;600000 ms of playback</td></tr>
-<tr><td><code>["preset", name]</code></td><td><code>none</code>, <code>typing</code>, <code>reading</code>, <code>thinking</code>, <code>wakeup</code></td></tr>
-<tr><td><code>["move", servo, to, ms?]</code></td><td><code>head</code>, <code>neck</code>, <code>hand_left</code>, <code>hand_right</code>, <code>body</code>; <code>to</code> &minus;1&ndash;1</td></tr>
-<tr><td><code>["eyes", mode]</code></td><td><code>idle</code> or a <code>/anim</code> name</td></tr>
-<tr><td><code>["look", x, y, ms?]</code></td><td><code>x</code> &minus;1 left to 1 right, <code>y</code> &minus;1 up to 1 down</td></tr>
-<tr><td><code>["open", amount, ms?]</code></td><td>0&ndash;1</td></tr>
-<tr><td><code>["blink"]</code></td><td></td></tr>
-<tr><td><code>["face", name]</code></td><td><code>idle</code>, <code>happy</code>, <code>laugh</code>, <code>wink</code>, <code>curious</code>, <code>thinking</code>, <code>surprise</code>, <code>smug</code>, <code>sleepy</code>, <code>sleep</code>, <code>sad</code>, <code>cry</code>, <code>angry</code>, <code>panic</code>, <code>shy</code>, <code>love</code></td></tr>
+<tr><th>Value</th><th>Description</th></tr>
+<tr><td><code>talking</code></td><td>Default</td></tr>
+<tr><td><code>typing</code></td><td>Typing gesture</td></tr>
+<tr><td><code>reading</code></td><td>Reading gesture</td></tr>
+<tr><td><code>thinking</code></td><td>Thinking gesture</td></tr>
+<tr><td><code>none</code></td><td>Idle pose</td></tr>
 </table>
 <p>POST <code>/test/servo</code> &mdash; query params:</p>
 <table>
@@ -632,6 +631,7 @@ body:not(.setup-mode) #setup-wizard{display:none!important}
 
 <footer>
 <a href="https://github.com/jamro/tiny-engineer" target="_blank" rel="noopener">github.com/jamro/tiny-engineer</a>
+<p id="fw-version">Firmware &hellip;</p>
 </footer>
 
 <script>
@@ -729,9 +729,15 @@ function enterApp(){
     loadSettings();
   });
 }
+function setFwVersion(j){
+  var el=document.getElementById("fw-version");
+  if(!el)return;
+  if(j&&j.ok&&j.version)el.textContent="Firmware "+j.version;
+}
 function syncSetupUi(done){
-  fetch("/health").then(function(r){return r.json();}).then(function(j){
+  apiFetch("/health").then(function(r){return r.json();}).then(function(j){
     if(j.ok){
+      setFwVersion(j);
       provisioningMode=!!j.provisioning;
       wifiConfigured=!!j.wifi_configured;
       var inSetup=provisioningMode||!wifiConfigured;
@@ -1031,11 +1037,13 @@ function loadHealth(){
   apiFetch("/health").then(function(r){return r.json();}).then(function(j){
     var el=document.getElementById("health-info");
     if(!j.ok){el.textContent="Could not load status.";return;}
+    setFwVersion(j);
     if(j.uptime_ms!=null)lastHealthUptimeMs=j.uptime_ms;
     var ip=j.wifi&&j.wifi.connected?j.wifi.ip:"offline";
     var heapPct=j.heap_size?Math.round((1-j.free_heap/j.heap_size)*100):0;
     var line="IP: "+ip+" \u00b7 Uptime: "+formatUptime(j.uptime_ms)+" \u00b7 Heap: "+heapPct+"% used ("+formatBytes(j.free_heap)+" free)";
     if(typeof j.cpu_temp_c==="number")line+=" \u00b7 Temp: "+j.cpu_temp_c.toFixed(1)+" \u00b0C";
+    if(j.version)line+=" \u00b7 "+j.version;
     el.textContent=line;
   }).catch(function(){
     document.getElementById("health-info").textContent="Could not load status.";

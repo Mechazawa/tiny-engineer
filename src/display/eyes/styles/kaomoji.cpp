@@ -42,6 +42,7 @@ expressions::Expression expressionFor(
     case EyeMode::Ring:
       return expressions::Expression::Surprise;
     case EyeMode::Welcome:
+    case EyeMode::Talking:
       return expressions::Expression::Happy;
     case EyeMode::Error:
       return expressions::Expression::Angry;
@@ -74,14 +75,14 @@ void drawKaomoji(
     g_expressionArmed = true;
   }
 
-  drawKaomojiFrame(expression, now - g_expressionStartedMs);
-}
+  const uint32_t elapsed = now - g_expressionStartedMs;
 
-}  // namespace
-
-void drawKaomojiFrame(tiny_engineer::expressions::Expression expression, uint32_t elapsedMs) {
-  if (!oledAvailable ||
-      !expressions::render(expression, elapsedMs, g_kaomojiFrame, sizeof(g_kaomojiFrame))) {
+  if (!expressions::render(
+        expression,
+        elapsed,
+        g_kaomojiFrame,
+        sizeof(g_kaomojiFrame)
+      )) {
     return;
   }
 
@@ -96,6 +97,8 @@ void drawKaomojiFrame(tiny_engineer::expressions::Expression expression, uint32_
   );
   display.display();
 }
+
+}  // namespace
 
 void kaomojiResetPlayback(uint32_t now) {
   g_expressionArmed = false;

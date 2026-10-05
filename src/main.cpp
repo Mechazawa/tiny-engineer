@@ -3,6 +3,7 @@
 #include <ESP_I2S.h>
 
 #include "pins.h"
+#include "firmware_version.h"
 #include "hardware/rgb.h"
 #include "hardware/chip_temp.h"
 #include "display/oled.h"
@@ -18,6 +19,7 @@
 #include "settings/settings.h"
 #include "serial_log.h"
 #include "sleep.h"
+#include "robot_tick.h"
 #include "boot/boot_loading.h"
 
 namespace {
@@ -40,6 +42,7 @@ void setup() {
   serialLogPrintln();
   serialLogPrintln("==========================");
   serialLogPrintln("TINY ENGINEER");
+  serialLogPrintln(FW_VERSION);
   serialLogPrintln("==========================");
 
   setRgb(0, 32, 0);
@@ -165,13 +168,7 @@ void setup() {
 }
 
 void loop() {
-  const uint32_t now = millis();
-  pollWifi();
   pollHttpServer();
   pollOta();
-  updateProvisioningOled(now);
-  updateAnimation();
-  // After HTTP/anim so idle timestamp from this frame is not compared to a stale `now`.
-  updateSleep(millis());
-  updateRgb(now);
+  tickRobot();
 }

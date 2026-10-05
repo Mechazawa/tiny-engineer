@@ -24,6 +24,21 @@ pio device monitor      # serial (115200)
 
 After firmware upload, a post-script also uploads **LittleFS** ([`scripts/upload_fs_after_upload.py`](../scripts/upload_fs_after_upload.py)) so WAV assets (`welcome`, `bell`, and friends) land on the board. If animations move but stay silent, run `pio run -t uploadfs` once.
 
+Cloning a tagged commit and running `pio run -t upload` remains the usual path.
+
+## Download release binaries
+
+Tagged releases publish stock default-layout bins on [GitHub Releases](https://github.com/jamro/tiny-engineer/releases):
+
+| Asset | Flash offset |
+| --- | --- |
+| `tiny-engineer-<tag>-bootloader.bin` | `0x0` |
+| `tiny-engineer-<tag>-partitions.bin` | `0x8000` |
+| `tiny-engineer-<tag>-firmware.bin` | `0x10000` |
+| `tiny-engineer-<tag>-littlefs.bin` | `0x220000` |
+
+All **four** files are required for a clean first flash or web install. App + LittleFS alone is enough only when bootloader and partition table are already on the chip. With esptool, write each file at the offset above. CI attaches the same four paths as the `firmware-<sha>` Actions artifact on PR and `main` builds (90-day retention).
+
 ## Audio mods
 
 Leave `custom_audio_mod` empty in [`platformio.ini`](../platformio.ini) for the stock clips in [`assets/`](../assets/). Set it to a mod folder name to overlay that mod's WAVs, then flash firmware and the filesystem together:

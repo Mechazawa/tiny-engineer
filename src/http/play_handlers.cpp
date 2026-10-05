@@ -6,27 +6,27 @@
 #include <optional>
 
 #include "animation.h"
-#include "animation/timeline.h"
-#include "animation/timeline_player.h"
 #include "audio/audio.h"
 #include "audio/wav_parser.h"
-#include "hardware/rgb.h"
 #include "http/json.h"
 #include "pins.h"
+#include "robot_tick.h"
 #include "settings/settings.h"
 #include "serial_log.h"
+#include "sleep.h"
 
 namespace {
 
+constexpr size_t kPlayPrefixLen = sizeof("/play/") - 1;
+
 // One POST /play request. loop() is blocked while the body streams, so the
-// session keeps animation, eyes and LED moving between speaker writes.
+// session runs tickRobot() between speaker writes.
 class PlaySession : public WavStreamParser::Sink {
 public:
   void begin(WebServer& server) {
     parser_.reset();
-    player_.reset();
     rejectCode_ = 0;
-    samplesWritten_ = 0;
+    started_ = false;
 
     if (!settingsWifiConfigured()) {
       reject(503, "wifi not configured");
@@ -38,33 +38,39 @@ public:
       return;
     }
 
+    // "/play" or "/play/<name>"; pathArg() would assert on the route without a name.
+    const String uri = server.uri();
+    const char* name = uri.length() > kPlayPrefixLen ? uri.c_str() + kPlayPrefixLen : "talking";
+
+    // Continuous animations and none play no sound of their own, so they cannot talk over the clip.
+    if (!parseAnimationName(name, animation_) ||
+        (animation_ != AnimationId::None && !animationIsContinuous(animation_))) {
+      reject(400, "name must be talking, typing, reading, thinking or none");
+      return;
+    }
+
     stopAllWavPlayback();
     parser_.emplace(SAMPLE_RATE, *this);
     serialLogPrintln("[play] start");
-
-    const String& header = server.header("X-Anim");
-
-    if (header.length() > 0 && acceptTimeline(header.c_str(), header.length()) != nullptr) {
-      reject(400, error_);
-    }
   }
 
   void feed(const uint8_t* bytes, size_t length) {
-    if (rejectCode_ == 0 && parser_ && !parser_->failed()) {
+    if (parser_) {
       parser_->feed(bytes, length);
     }
   }
 
   void end() {
-    if (parser_) {
-      parser_->finish();
-      serialLogPrint("[play] end ms=");
-      serialLogPrintln(playedMs());
+    if (!parser_) {
+      return;
     }
 
-    if (player_) {
-      player_->finish();
-      player_.reset();
+    parser_->finish();
+    serialLogPrint("[play] end ms=");
+    serialLogPrintln(playedMs());
+
+    if (started_) {
+      setAnimationImmediately(animationIsContinuous(previous_) ? previous_ : AnimationId::None);
     }
   }
 
@@ -85,38 +91,25 @@ public:
   }
 
   void onPcm(const int16_t* samples, size_t count) override {
-    writeMonoToSpeaker(samples, count);
-    samplesWritten_ += count;
-
-    if (player_) {
-      player_->advance(playedMs());
-      player_->update();
-    } else {
-      updateAnimation();
+    if (!started_) {
+      // The format is known good by now, so the robot only moves for clips it can play.
+      started_ = true;
+      previous_ = getAnimation();
+      setAnimationImmediately(animation_);
     }
 
-    updateRgb(millis());
+    writeMonoToSpeaker(samples, count);
+    noteActivity(millis());
+    tickRobot();
   }
 
 private:
   std::optional<WavStreamParser> parser_;
-  std::optional<TimelinePlayer> player_;
+  AnimationId animation_ = AnimationId::Talking;
+  AnimationId previous_ = AnimationId::None;
+  bool started_ = false;
   int rejectCode_ = 0;
-  uint32_t samplesWritten_ = 0;
-  char error_[96] = {};
-  char body_[128] = {};
-
-  const char* acceptTimeline(const char* json, size_t length) {
-    std::optional<Timeline> timeline = Timeline::parse(json, length, TimelinePlayer::names(), error_, sizeof(error_));
-
-    if (!timeline) {
-      return error_;
-    }
-
-    player_.emplace(std::move(*timeline));
-    player_->advance(0);
-    return nullptr;
-  }
+  char body_[96] = {};
 
   void reject(int code, const char* message) {
     rejectCode_ = code;
@@ -128,7 +121,7 @@ private:
   }
 
   uint32_t playedMs() const {
-    return static_cast<uint32_t>(samplesWritten_ * 1000ULL / SAMPLE_RATE);
+    return static_cast<uint32_t>(parser_->samplesDelivered() * 1000ULL / SAMPLE_RATE);
   }
 };
 

@@ -1,33 +1,23 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { parsePlayArgs, postPlay } from "../src/play.js";
 
-test("a timeline file is squashed onto one header line", () => {
-  const dir = mkdtempSync(join(tmpdir(), "te-claude-code-play-"));
-  const file = join(dir, "dance.json");
-  writeFileSync(file, '[\n  ["preset", "typing"],\n  ["sleep", 500]\n]\n');
-
-  assert.deepEqual(parsePlayArgs(["clip.wav", "--anim-file", file]), {
+test("play reads the WAV, animation name and URL", () => {
+  assert.deepEqual(parsePlayArgs(["clip.wav", "--name", "thinking", "--url", "http://robot"]), {
     wavPath: "clip.wav",
-    anim: '[["preset","typing"],["sleep",500]]',
+    name: "thinking",
+    url: "http://robot",
   });
 });
 
 test("play rejects bad arguments before contacting the robot", () => {
-  assert.equal(parsePlayArgs(["--anim", "[]"]).error, "play needs a WAV file");
-  assert.equal(parsePlayArgs(["clip.wav", "--anim", "[[\"sleep\""]).error, "the timeline is not valid JSON");
-  assert.equal(
-    parsePlayArgs(["clip.wav", "--anim", "[]", "--anim-file", "x.json"]).error,
-    "use --anim or --anim-file, not both",
-  );
+  assert.equal(parsePlayArgs(["--name", "talking"]).error, "play needs a WAV file");
+  assert.equal(parsePlayArgs(["clip.wav", "--name"]).error, "--name requires a value");
   assert.equal(parsePlayArgs(["a.wav", "b.wav"]).error, "Unknown argument: b.wav");
 });
 
-test("postPlay streams the WAV with the timeline and token headers", async () => {
+test("postPlay streams the WAV to the named animation's route with the token", async () => {
   let received;
   const server = createServer((req, res) => {
     const chunks = [];
@@ -45,13 +35,12 @@ test("postPlay streams the WAV with the timeline and token headers", async () =>
     const reply = await postPlay({
       baseUrl: `http://127.0.0.1:${port}/`,
       wav: Buffer.from("RIFFdata"),
-      anim: '[["blink"]]',
+      name: "thinking",
       token: "secret",
     });
 
-    assert.deepEqual(reply, { ok: true, status: 200, body: '{"ok":true,"played_ms":10}' });
-    assert.equal(received.url, "/play");
-    assert.equal(received.headers["x-anim"], '[["blink"]]');
+    assert.deepEqual(reply, { ok: true, body: '{"ok":true,"played_ms":10}' });
+    assert.equal(received.url, "/play/thinking");
     assert.equal(received.headers.authorization, "Bearer secret");
     assert.equal(received.body.toString(), "RIFFdata");
   } finally {

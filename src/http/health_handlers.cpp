@@ -5,6 +5,7 @@
 #include <cstdio>
 
 #include "display/oled.h"
+#include "firmware_version.h"
 #include "hardware/chip_temp.h"
 #include "http/json.h"
 #include "http/server_context.h"
@@ -42,13 +43,14 @@ void handleHealth(WebServer& server) {
     snprintf(tempFrag, sizeof(tempFrag), "null");
   }
 
-  char body[512];
+  char body[768];
 
   snprintf(
     body,
     sizeof(body),
     "{"
     "\"ok\":true,"
+    "\"version\":\"%s\","
     "\"uptime_ms\":%lu,"
     "\"free_heap\":%u,"
     "\"heap_size\":%u,"
@@ -65,6 +67,7 @@ void handleHealth(WebServer& server) {
     "\"setup_ap_ip\":\"%s\","
     "\"oled\":%s"
     "}",
+    FW_VERSION,
     (unsigned long)millis(),
     (unsigned)ESP.getFreeHeap(),
     (unsigned)ESP.getHeapSize(),

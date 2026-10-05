@@ -17,8 +17,8 @@ void startHttpServer() {
 
   refreshMdnsHostname();
 
-  static const char* kCollectHeaders[] = {"Authorization", "X-Anim"};
-  server.collectHeaders(kCollectHeaders, 2);
+  static const char* kCollectHeaders[] = {"Authorization"};
+  server.collectHeaders(kCollectHeaders, 1);
 
   registerHttpRoutes();
   server.begin();

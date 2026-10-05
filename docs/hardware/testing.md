@@ -45,7 +45,7 @@ silent, which makes the LED the only signal a first-boot board gives you.
 
 ## Expected boot sequence
 
-1. Serial banner `TINY ENGINEER`
+1. Serial banner `TINY ENGINEER`, then the firmware version string (`v0.1.0`, or a `git describe` form such as `v0.1.0-82-g7c79b83`)
 2. `Starting I2C` / `SDA = GP0` / `SCL = GP1`
 3. `Checking PCA9685 at 0x40...` → **must** succeed; all channels parked at mid
 4. `Checking OLED at 0x3C...` → found or `ERROR: OLED not found` (continues)
@@ -109,7 +109,7 @@ curl -X POST "http://tiny-engineer.local/test/servo?index=0&angle=90"
 | `GET` | `/auth` | Auth status (`ok`, `required`, `wifi_configured`, `provisioning`) — always public |
 | `GET` | `/health` | Health JSON — full field list in [api.md](../api.md#get-health) |
 | `GET` / `POST` | `/anim` | Current animation / start one (`name`, optional `interrupt`) — full params in [api.md](../api.md#post-anim) |
-| `POST` | `/play` | Stream a WAV with an optional `X-Anim` timeline; answers when the clip ends — full params in [api.md](../api.md#post-play) |
+| `POST` | `/play` | Stream a WAV while `talking` (or `/play/{name}`) runs; answers when the clip ends — full params in [api.md](../api.md#post-play) |
 | `GET` | `/settings` | Persistent settings (`sleep_timeout`, `hostname`, `volume`, `welcome`, `serial_log`, `continuous_timeout`, `loading`, `eyes_style`, `access_token_set`, `wifi_configured`, `wifi_ssid`, `wifi_password_set`, `servo_mins`, `servo_maxs`, `rgb_order`, `oled_rotate_180`) |
 | `POST` | `/settings?...&wifi_ssid=&wifi_password=` | Update NVS settings; WiFi params setup-AP-only and tested before save; `reboot_required` if hostname changed |
 | `POST` | `/settings?...&servo_mins=&servo_maxs=` | Servo min/max comma lists; setup-AP-only |

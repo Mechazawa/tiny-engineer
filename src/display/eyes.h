@@ -20,7 +20,8 @@ enum class EyeMode {
   Error,
   Abort,
   Wakeup,
-  Dead
+  Dead,
+  Talking
 };
 
 enum class SleepEyeResult {
@@ -40,14 +41,7 @@ void requestSleepEyeOpen(uint32_t now);
 void clearSleepEyeAnim();
 SleepEyeResult updateSleepEyes(uint32_t now);
 
-// Also clears the scripted overrides below.
 void setEyeMode(EyeMode mode, uint32_t now);
-
-// Scripted overrides for POST /play timelines. x/y and amount are -1..1 and 0..1.
-void eyesLookAt(float x, float y, uint32_t durationMs, uint32_t now);
-void eyesSetOpen(float amount, uint32_t durationMs, uint32_t now);
-void eyesBlink(uint32_t now);
-void eyesShowFace(uint8_t expression, uint32_t now);
 void triggerEyeImpact(uint32_t now);
 
 const Eye& leftEye();

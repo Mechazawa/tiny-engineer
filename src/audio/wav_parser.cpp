@@ -80,8 +80,6 @@ void WavStreamParser::feed(const uint8_t* bytes, size_t length) {
     bytes += used;
     length -= used;
   }
-
-  flush();
 }
 
 void WavStreamParser::finish() {
@@ -100,10 +98,6 @@ bool WavStreamParser::failed() const {
 
 const char* WavStreamParser::error() const {
   return failed() ? message_ : nullptr;
-}
-
-bool WavStreamParser::reachedPcm() const {
-  return reachedPcm_;
 }
 
 uint32_t WavStreamParser::samplesDelivered() const {
@@ -161,13 +155,9 @@ void WavStreamParser::parseFormat() {
   }
 
   if (format != kFormatPcm || channels != 1 || bits != 16 || rate != sampleRate_) {
-    snprintf(
-      message_,
-      sizeof(message_),
-      "expected 16-bit mono PCM at %lu Hz",
-      static_cast<unsigned long>(sampleRate_)
-    );
-    state_ = State::Failed;
+    char expected[48];
+    snprintf(expected, sizeof(expected), "expected 16-bit mono PCM at %lu Hz", static_cast<unsigned long>(sampleRate_));
+    fail(expected);
     return;
   }
 
@@ -226,8 +216,8 @@ void WavStreamParser::flush() {
     return;
   }
 
-  sink_.onPcm(batch_, batchFill_);
   samplesDelivered_ += batchFill_;
+  sink_.onPcm(batch_, batchFill_);
   batchFill_ = 0;
 }
 

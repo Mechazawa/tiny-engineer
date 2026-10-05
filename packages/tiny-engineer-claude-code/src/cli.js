@@ -7,7 +7,7 @@ import { postAnim } from "./post.js";
 
 function printHelp() {
   console.log(`Usage: tiny-engineer-claude-code [options]
-       tiny-engineer-claude-code play <clip.wav> [--anim <json> | --anim-file <path>] [--url <base>]
+       tiny-engineer-claude-code play <clip.wav> [--name <animation>] [--url <base>]
 
 Claude Code hook helper: read event JSON from stdin, pick an animation, POST to the robot.
 
@@ -50,22 +50,13 @@ Event map:
 
 Play mode:
   Streams a 16-bit mono PCM WAV (at the robot's sample rate) to POST /play and
-  runs an optional timeline alongside it. Steps run in order; only "sleep"
-  advances time, so steps without a sleep between them start together:
-    ["sleep", ms]                 wait ms of playback
-    ["preset", name]              none, typing, reading, thinking or wakeup
-    ["move", servo, to, ms?]      head, neck, hand_left, hand_right or body to -1..1
-    ["eyes", mode]                idle, thinking, error, ... (an /anim name)
-    ["look", x, y, ms?]           gaze: x -1 screen left..1 right, y -1 up..1 down
-    ["open", amount, ms?]         eyelids, 0 closed to 1 open
-    ["blink"]
-    ["face", name]                idle, happy, laugh, wink, curious, thinking,
-                                  surprise, smug, sleepy, sleep, sad, cry, angry,
-                                  panic, shy or love
+  runs one animation while it plays: talking (default), typing, reading,
+  thinking or none. The robot then returns to the loop it was in.
   Prints the robot's JSON reply when the clip ends; exits 1 on any error.
 
 Examples:
-  tiny-engineer-claude-code play hello.wav --anim '[["preset","thinking"],["sleep",800],["move","head",0.6,300],["face","happy"]]'
+  tiny-engineer-claude-code play hello.wav
+  tiny-engineer-claude-code play hmm.wav --name thinking
   echo '{"hook_event_name":"Stop"}' | tiny-engineer-claude-code
   echo '{"hook_event_name":"PreToolUse","tool_name":"Read"}' | tiny-engineer-claude-code --url http://192.168.1.10
 `);
@@ -140,7 +131,7 @@ async function runPlay(argv) {
     const reply = await postPlay({
       baseUrl: opts.url ?? getBaseUrl(),
       wav,
-      anim: opts.anim,
+      name: opts.name,
       token: getToken(),
     });
     (reply.ok ? console.log : console.error)(reply.body);
