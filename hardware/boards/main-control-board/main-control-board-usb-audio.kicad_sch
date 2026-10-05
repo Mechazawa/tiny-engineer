@@ -2157,6 +2157,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" ""
+			(at 115.57 63.5 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "2"
 			(uuid "97c6a916-dcfe-42b6-ae45-68823e658e0f")
 		)
@@ -2237,6 +2248,39 @@
 			)
 		)
 		(property "LCSC Part #" "C22935"
+			(at 121.92 59.69 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" ""
+			(at 121.92 59.69 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "0603WAF1004T5E"
+			(at 121.92 59.69 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer" "UNI-ROYAL(Uniroyal Elec)"
 			(at 121.92 59.69 90)
 			(hide yes)
 			(show_name no)
@@ -2483,6 +2527,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" ""
+			(at 99.06 78.74 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "2"
 			(uuid "7cd74024-ad5a-417d-b616-939ff4aa7468")
 		)
@@ -2565,6 +2620,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" ""
+			(at 172.72 87.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "ea779373-2b31-4816-87f6-aa55f009d551")
 		)
@@ -2633,6 +2699,17 @@
 			)
 		)
 		(property "Description" "test point"
+			(at 162.56 87.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" ""
 			(at 162.56 87.63 0)
 			(hide yes)
 			(show_name no)
@@ -2811,6 +2888,39 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" ""
+			(at 166.37 99.06 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "HC-1.25-2PWT"
+			(at 166.37 99.06 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer" "HCTL"
+			(at 166.37 99.06 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "2"
 			(uuid "96d24fad-8b91-47a3-9013-aa3b238c8ed2")
 		)
@@ -2904,6 +3014,39 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" ""
+			(at 115.57 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "CC0603KRX7R9BB104"
+			(at 115.57 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer" "YAGEO"
+			(at 115.57 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "2"
 			(uuid "3f182d90-afa1-4516-bf7b-e0a6cdb0d6e0")
 		)
@@ -2984,7 +3127,7 @@
 				)
 			)
 		)
-		(property "Manufacturer" "ADI(亚德诺)/MAXIM(美信)"
+		(property "Manufacturer" "Analog Devices Inc./Maxim Integrated"
 			(at 142.24 87.63 0)
 			(hide yes)
 			(show_name no)
@@ -3017,8 +3160,19 @@
 				)
 			)
 		)
-		(property "LCSC Part" "C910544"
+		(property "LCSC Part" ""
 			(at 142.24 92.71 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" ""
+			(at 142.24 62.23 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)

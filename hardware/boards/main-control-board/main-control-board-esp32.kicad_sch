@@ -2046,7 +2046,7 @@
 				)
 			)
 		)
-		(property "Value" "Conn_ESP32_L"
+		(property "Value" "Conn_ESP32"
 			(at 99.06 52.07 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2101,6 +2101,39 @@
 			)
 		)
 		(property "FT Rotation Offset" "90"
+			(at 99.06 54.61 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" ""
+			(at 99.06 54.61 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "PM254-1-09-Z-8.5"
+			(at 99.06 54.61 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer" "HCTL"
 			(at 99.06 54.61 90)
 			(hide yes)
 			(show_name no)
@@ -2169,7 +2202,7 @@
 				)
 			)
 		)
-		(property "Value" "Conn_ESP32_R"
+		(property "Value" "Conn_ESP32"
 			(at 177.8 52.07 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2224,6 +2257,39 @@
 			)
 		)
 		(property "FT Rotation Offset" "90"
+			(at 177.8 54.61 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" ""
+			(at 177.8 54.61 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "PM254-1-09-Z-8.5"
+			(at 177.8 54.61 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer" "HCTL"
 			(at 177.8 54.61 90)
 			(hide yes)
 			(show_name no)
@@ -2405,6 +2471,17 @@
 			)
 		)
 		(property "Description" "Waveshare ESP32-C3-Zero module header, pads numbered anticlockwise from USB"
+			(at 137.16 85.09 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" ""
 			(at 137.16 85.09 0)
 			(hide yes)
 			(show_name no)
