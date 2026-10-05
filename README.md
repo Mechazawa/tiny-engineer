@@ -30,7 +30,9 @@ Open source. Print the body, plug the ESP32, servos, OLED, and speaker into the 
 
 [![Main control board](docs/pcb_banner.jpg)](https://github.com/jamro/tiny-engineer/discussions/50)
 
-The default build uses the open-source main control board. Order it from any fab ([how to order](docs/hardware/order-main-control-board.md) · [KiCad](hardware/boards/main-control-board/)). A ~$15–20 assembled board would be easier to buy. [Vote here 👍 →](https://github.com/jamro/tiny-engineer/discussions/50)
+The default build uses the open-source main control board. Order it from any fab ([how to order](docs/hardware/order-main-control-board.md) · [KiCad](hardware/boards/main-control-board/)). 
+
+If a ~$15–20 assembled board like this would be useful to you, [Vote here 👍 →](https://github.com/jamro/tiny-engineer/discussions/50) → I’m using the interest to decide whether it’s worth developing further.
 
 **Print → Connect → Flash → Assemble** - step-by-step: **[Getting started](docs/getting-started.md)**.
 
