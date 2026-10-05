@@ -11668,6 +11668,28 @@
 		(layer "Edge.Cuts")
 		(uuid "b2416b72-bd55-4c5c-8715-290cd906aaa9")
 	)
+	(gr_text "K"
+		(at 142 118.05 270)
+		(layer "F.SilkS")
+		(uuid "9b2136f7-88c6-49be-a33e-9c2244c0162e")
+		(effects
+			(font
+				(size 0.6 0.6)
+				(thickness 0.12)
+			)
+		)
+	)
+	(gr_text "K"
+		(at 190.9 116.35 270)
+		(layer "F.SilkS")
+		(uuid "22975507-e0e5-457b-82c4-547cbe6b0f14")
+		(effects
+			(font
+				(size 0.6 0.6)
+				(thickness 0.12)
+			)
+		)
+	)
 	(gr_text "TINY SOFTWARE ENGINEER\nMain Control Board\nHW REV #2 | 2026-09-24\ngithub.com/jamro/tiny-engineer"
 		(at 162 113.2 0)
 		(layer "F.SilkS")
