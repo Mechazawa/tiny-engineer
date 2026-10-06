@@ -2,11 +2,13 @@
 
 #include <Arduino.h>
 #include <WebServer.h>
+#include <uri/UriBraces.h>
 
 #include "http/anim_handlers.h"
 #include "http/health_handlers.h"
 #include "http/index_page.h"
 #include "http/json.h"
+#include "http/play_handlers.h"
 #include "http/server_context.h"
 #include "http/settings_handlers.h"
 #include "http/setup_handlers.h"
@@ -83,6 +85,19 @@ void registerHttpRoutes() {
   server.on("/anim", HTTP_POST, []() {
     httpWithWifiAndApiAuth(httpServer(), handleAnimPost);
   });
+  // /play runs `talking`; /play/<name> picks another animation for the clip.
+  server.on(
+    "/play",
+    HTTP_POST,
+    []() { handlePlayDone(httpServer()); },
+    []() { handlePlayBody(httpServer()); }
+  );
+  server.on(
+    UriBraces("/play/{}"),
+    HTTP_POST,
+    []() { handlePlayDone(httpServer()); },
+    []() { handlePlayBody(httpServer()); }
+  );
   server.on("/settings", HTTP_GET, []() {
     httpWithApiAuth(httpServer(), handleSettingsGet);
   });

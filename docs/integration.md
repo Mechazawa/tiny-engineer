@@ -238,6 +238,27 @@ Inside this firmware repository, [`.claude/settings.json`](../.claude/settings.j
 
 To use it in every project, copy the `hooks` block into `~/.claude/settings.json` and replace `$CLAUDE_PROJECT_DIR/packages/…` with the absolute path to this repo's bin.
 
+### Speaking through the robot
+
+The same CLI has a `play` command an agent can run to speak through the robot. It streams a WAV (16-bit mono PCM at 22050 Hz, from any text-to-speech) to [`POST /play`](api.md#post-play) while the robot runs `talking`, prints the robot's reply when the clip ends, and exits 1 with the reason on any error:
+
+```bash
+espeak-ng -w /tmp/raw.wav "Build passed." && ffmpeg -y -loglevel error -i /tmp/raw.wav -ar 22050 -ac 1 -c:a pcm_s16le /tmp/clip.wav
+node packages/tiny-engineer-claude-code/bin/tiny-engineer-claude-code.js play /tmp/clip.wav
+```
+
+`--name thinking` (or `typing`, `reading`, `none`) runs another animation for the clip.
+
+To let an agent do this on its own, install the shared [`tiny-engineer-play`](../skills/tiny-engineer-play/SKILL.md) skill. It needs only `curl` and works the same in Claude Code, Cursor and Antigravity:
+
+```bash
+mkdir -p ~/.claude/skills && ln -s "$PWD/skills/tiny-engineer-play" ~/.claude/skills/                         # Claude Code
+mkdir -p ~/.cursor/skills && ln -s "$PWD/skills/tiny-engineer-play" ~/.cursor/skills/                         # Cursor
+mkdir -p ~/.gemini/antigravity/skills && ln -s "$PWD/skills/tiny-engineer-play" ~/.gemini/antigravity/skills/  # Antigravity
+```
+
+Then ask the agent something like "have the robot tell me the build passed".
+
 ### Smoke test
 
 ```bash
