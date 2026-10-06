@@ -28,7 +28,7 @@ The `expression-demo` environment builds a separate OLED-only application withou
 
 ## Web UI
 
-The control panel in [`ui/`](../ui/) is linted with [html-validate](https://html-validate.org/), ESLint and Prettier. Node 20.19+.
+The control panel in [`ui/`](../ui/) is linted with [html-validate](https://html-validate.org/), ESLint, [Stylelint](https://stylelint.io/) (`stylelint-config-standard`) and Prettier. Node 20.19+.
 
 ```bash
 npm ci --prefix ui

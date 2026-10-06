@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "html-validate index.html && eslint . && prettier --check .",
+    "lint": "html-validate index.html && eslint . && stylelint \"src/**/*.css\" && prettier --check .",
     "format": "prettier --write ."
   },
   "devDependencies": {
@@ -19,6 +19,8 @@
     "html-minifier-terser": "^7.2.0",
     "html-validate": "^11.16.2",
     "prettier": "^3.9.9",
+    "stylelint": "^17.16.0",
+    "stylelint-config-standard": "^40.0.0",
     "vite": "^8.3.3"
   }
 }

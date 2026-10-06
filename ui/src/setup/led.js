@@ -71,7 +71,7 @@ export const ledMapping = {
         const chip = element("div", "led-chip-wrap");
 
         chip.append(
-          element("div", `led-chip ${channel}`),
+          element("div", `led-chip led-${channel.toLowerCase()}`),
           element("span", "led-chip-letter", channel),
         );
 
