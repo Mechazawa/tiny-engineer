@@ -128,7 +128,7 @@ These are the same variables the agent integrations read ([integration.md](integ
 
 An update is written to the inactive slot and booted once; it becomes permanent only after it connects to Wi-Fi and starts its OTA listener. Firmware that never gets that far is rolled back to the previous slot on the next reset or power cycle. A firmware that hangs needs that power cycle to recover.
 
-A filesystem update that fails midway reboots the robot; re-run `pio run -e ota -t otafs` or fall back to `pio run -e ota -t uploadfs` over USB.
+A filesystem update that fails midway reboots the robot; re-run `pio run -e ota -t ota` or fall back to `pio run -e ota -t upload` over USB.
 
 Partition changes, including a switch back to the default build, cannot be applied over the air. Flash those with `pio run -t upload` over USB.
 
