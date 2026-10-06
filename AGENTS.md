@@ -34,6 +34,7 @@ npm test --prefix packages/tiny-engineer-cursor
 npm test --prefix packages/tiny-engineer-antigravity
 npm test --prefix packages/tiny-engineer-claude-code
 npm run lint --prefix ui
+npm test --prefix ui
 python3 scripts/check_pcb.py
 ```
 

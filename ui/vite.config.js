@@ -28,6 +28,9 @@ export default defineConfig(({ command }) => ({
     outDir: "dist",
     emptyOutDir: true,
   },
+  test: {
+    environment: "jsdom",
+  },
   server: {
     host: "127.0.0.1",
     proxy: Object.fromEntries(apiRoutes.map((route) => [route, robot])),

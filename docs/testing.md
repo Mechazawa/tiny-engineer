@@ -33,8 +33,11 @@ The control panel in [`ui/`](../ui/) is linted with [html-validate](https://html
 ```bash
 npm ci --prefix ui
 npm run lint --prefix ui
+npm test --prefix ui
 npm run format --prefix ui   # apply Prettier
 ```
+
+`npm test` runs [Vitest](https://vitest.dev/) in jsdom: each test loads the real `index.html`, imports the UI modules, and drives them against a fake robot that stubs `fetch` and records requests ([`ui/test/robot.js`](../ui/test/robot.js)). The tests cover the auth gate, config saving and access-token handling, the servo page range hint, and the setup wizard (step order, what each step saves, step-only calibration moves, LED order validation).
 
 ## Packages
 

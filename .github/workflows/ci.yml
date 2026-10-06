@@ -73,10 +73,11 @@ jobs:
         run: |
           node scripts/expressions/generate.js --check
           node scripts/expressions/test-assets.js
-      - name: Lint web UI
+      - name: Lint and test web UI
         run: |
           npm ci --prefix ui
           npm run lint --prefix ui
+          npm test --prefix ui
       - name: Cursor package tests
         run: npm test --prefix packages/tiny-engineer-cursor
       - name: Antigravity package tests
