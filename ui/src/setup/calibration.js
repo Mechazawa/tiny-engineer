@@ -12,7 +12,7 @@ const JOINT_COPY = [
 const BODY_JOINT = 4;
 const CENTER = 90;
 
-const slider = $("#setup-calib-slider");
+const marker = $("#setup-calib-marker");
 const readout = $("#setup-calib-angle");
 
 async function postSetupServo(params) {
@@ -54,17 +54,15 @@ export const calibration = {
 
   showAngle() {
     readout.textContent = String(this.angle);
-    slider.value = this.angle;
+    marker.style.left = `${(this.angle / 180) * 100}%`;
   },
 
-  async moveTo(target) {
+  async nudge(delta) {
     const { joint } = this;
     const previous = this.angle;
-    const next = Math.max(0, Math.min(180, target));
+    const next = Math.max(0, Math.min(180, previous + delta));
 
     if (isBusy() || next === previous) {
-      this.showAngle();
-
       return;
     }
 
@@ -142,15 +140,8 @@ for (const tab of $$("#setup-joint-tabs [data-joint]")) {
 }
 
 for (const button of $$(".calib-nudge [data-nudge]")) {
-  button.addEventListener("click", () =>
-    calibration.moveTo(calibration.angle + Number(button.dataset.nudge)),
-  );
+  button.addEventListener("click", () => calibration.nudge(Number(button.dataset.nudge)));
 }
-
-slider.addEventListener("input", () => {
-  readout.textContent = slider.value;
-});
-slider.addEventListener("change", () => calibration.moveTo(Number(slider.value)));
 
 $("#setup-set-min").addEventListener("click", () => calibration.setLimit("min"));
 $("#setup-set-max").addEventListener("click", () => calibration.setLimit("max"));

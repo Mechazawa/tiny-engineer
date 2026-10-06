@@ -19,7 +19,7 @@ export function clearStatus() {
 function setBusy(on) {
   busy = on;
 
-  for (const control of $$(".btn, [type=submit], .servo-slider")) {
+  for (const control of $$(".btn, [type=submit]")) {
     control.disabled = on;
   }
 }

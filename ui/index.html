@@ -663,9 +663,9 @@
             <div class="config-section">
               <h3>Find safe ranges</h3>
               <p class="setup-copy">
-                Move one joint at a time with the slider or the buttons. The servo moves when you
-                release the slider. Stop before cables pull taut or parts collide. Stock limits are
-                pre-filled. Switching tabs leaves the other joints where they are.
+                Move one joint at a time with the buttons. Stop before cables pull taut or parts
+                collide. The bar is a guide only. Stock limits are pre-filled. Switching tabs leaves
+                the other joints where they are.
               </p>
               <div class="joint-tabs" id="setup-joint-tabs">
                 <button type="button" class="btn active" data-joint="0">Head</button>
@@ -678,21 +678,13 @@
               <p id="setup-body-sym" class="hint" hidden></p>
               <div class="form-group">
                 <div class="calib-angle-readout"><span id="setup-calib-angle">90</span>&deg;</div>
-                <div class="calib-guide">
+                <div class="calib-guide" aria-hidden="true">
                   <div class="servo-slider-wrap">
                     <div class="servo-slider-track">
                       <div class="servo-slider-bg">
                         <div id="setup-calib-band" class="servo-safe-band"></div>
+                        <div id="setup-calib-marker" class="calib-marker"></div>
                       </div>
-                      <input
-                        type="range"
-                        id="setup-calib-slider"
-                        class="servo-slider"
-                        min="0"
-                        max="180"
-                        value="90"
-                        aria-label="Servo angle"
-                      />
                     </div>
                     <div class="servo-scale">
                       <span>0&deg;</span><span>90&deg;</span><span>180&deg;</span>
