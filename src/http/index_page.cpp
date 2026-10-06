@@ -1112,7 +1112,6 @@ document.getElementById("servo-slider").addEventListener("input",function(){
   document.getElementById("servo-angle").value=this.value;
   updateServoRangeHint();
 });
-document.getElementById("servo-slider").addEventListener("change",moveServo);
 document.getElementById("servo-angle").addEventListener("input",function(){
   document.getElementById("servo-slider").value=this.value;
   updateServoRangeHint();
