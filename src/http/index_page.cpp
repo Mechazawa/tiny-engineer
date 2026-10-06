@@ -77,11 +77,12 @@ nav a.active{background:var(--accent);color:#fff}
 .servo-slider-track{position:relative;height:2rem}
 .servo-slider-bg{position:absolute;left:.625rem;right:.625rem;top:50%;height:.4rem;margin-top:-.2rem;background:#e8e4df;border-radius:99px;pointer-events:none}
 .servo-safe-band{position:absolute;top:0;bottom:0;background:#f4c9a8;border-radius:99px}
-#servo-slider{-webkit-appearance:none;appearance:none;background:transparent;position:relative;z-index:1;width:100%;height:2rem;margin:0}
-#servo-slider::-webkit-slider-runnable-track{height:2rem;background:transparent;border:none}
-#servo-slider::-moz-range-track{height:.4rem;background:transparent;border:none}
-#servo-slider::-webkit-slider-thumb{-webkit-appearance:none;width:1.25rem;height:1.25rem;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25);margin-top:.375rem;cursor:pointer}
-#servo-slider::-moz-range-thumb{width:1.25rem;height:1.25rem;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer}
+.servo-slider{-webkit-appearance:none;appearance:none;background:transparent;position:relative;z-index:1;width:100%;height:2rem;margin:0}
+.servo-slider::-webkit-slider-runnable-track{height:2rem;background:transparent;border:none}
+.servo-slider::-moz-range-track{height:.4rem;background:transparent;border:none}
+.servo-slider::-webkit-slider-thumb{-webkit-appearance:none;width:1.25rem;height:1.25rem;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25);margin-top:.375rem;cursor:pointer}
+.servo-slider::-moz-range-thumb{width:1.25rem;height:1.25rem;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer}
+.servo-slider:disabled{opacity:.6}
 .servo-scale{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);padding:0 .625rem;margin-top:.1rem}
 .servo-range{align-items:flex-start}
 .servo-range input[type=number]{margin-top:.2rem;height:2rem;padding:.25rem .4rem}
@@ -137,8 +138,7 @@ body:not(.setup-mode) #setup-wizard{display:none!important}
 .joint-tabs{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:0 0 1rem}
 .joint-tabs .btn{width:100%;min-height:2.85rem;padding:.65rem .5rem;font-size:.95rem;text-align:center;font-weight:600}
 .joint-tabs .btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.calib-guide{pointer-events:none;user-select:none;margin:.25rem 0 .5rem}
-.calib-marker{position:absolute;top:50%;width:1.25rem;height:1.25rem;margin-top:-.625rem;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transform:translateX(-50%);z-index:1}
+.calib-guide{margin:.25rem 0 .5rem}
 .calib-angle-readout{text-align:center;font-size:2rem;font-weight:700;margin:.35rem 0 .85rem;letter-spacing:-.02em}
 .calib-nudge{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin:0 0 1rem}
 .calib-nudge .btn{width:100%;min-height:3.1rem;text-align:center;font-weight:700;font-size:1.05rem;padding:.7rem .35rem}
@@ -354,7 +354,7 @@ body:not(.setup-mode) #setup-wizard{display:none!important}
 <div class="servo-slider-wrap">
 <div class="servo-slider-track">
 <div class="servo-slider-bg"><div id="servo-safe-band" class="servo-safe-band"></div></div>
-<input type="range" id="servo-slider" min="0" max="180" value="90">
+<input type="range" id="servo-slider" class="servo-slider" min="0" max="180" value="90">
 </div>
 <div class="servo-scale"><span id="servo-scale-min">0&deg;</span><span id="servo-scale-mid">90&deg;</span><span id="servo-scale-max">180&deg;</span></div>
 </div>
@@ -398,7 +398,7 @@ body:not(.setup-mode) #setup-wizard{display:none!important}
 <div id="setup-phase-ranges" hidden>
 <div class="config-section">
 <h3>Find safe ranges</h3>
-<p class="setup-copy">Move one joint at a time with the buttons. Stop before cables pull taut or parts collide. The bar is a guide only. Stock limits are pre-filled. Switching tabs leaves the other joints where they are.</p>
+<p class="setup-copy">Move one joint at a time with the slider or the buttons. The servo moves when you release the slider. Stop before cables pull taut or parts collide. Stock limits are pre-filled. Switching tabs leaves the other joints where they are.</p>
 <div class="joint-tabs" id="setup-joint-tabs">
 <button type="button" class="btn active" data-joint="0">Head</button>
 <button type="button" class="btn" data-joint="1">Neck</button>
@@ -410,10 +410,11 @@ body:not(.setup-mode) #setup-wizard{display:none!important}
 <p id="setup-body-sym" class="hint" hidden></p>
 <div class="form-group">
 <div class="calib-angle-readout"><span id="setup-calib-angle">90</span>&deg;</div>
-<div class="calib-guide" aria-hidden="true">
+<div class="calib-guide">
 <div class="servo-slider-wrap">
 <div class="servo-slider-track">
-<div class="servo-slider-bg"><div id="setup-calib-band" class="servo-safe-band"></div><div id="setup-calib-marker" class="calib-marker"></div></div>
+<div class="servo-slider-bg"><div id="setup-calib-band" class="servo-safe-band"></div></div>
+<input type="range" id="setup-calib-slider" class="servo-slider" min="0" max="180" value="90" aria-label="Servo angle">
 </div>
 <div class="servo-scale"><span>0&deg;</span><span>90&deg;</span><span>180&deg;</span></div>
 </div>
@@ -683,7 +684,7 @@ function clearStatus(){
 }
 function setBusy(on){
   busy=on;
-  document.querySelectorAll(".btn,[type=submit]").forEach(function(b){b.disabled=on;});
+  document.querySelectorAll(".btn,[type=submit],.servo-slider").forEach(function(b){b.disabled=on;});
 }
 function showAuthGate(show){
   document.getElementById("auth-gate").classList.toggle("show",show);
@@ -905,15 +906,18 @@ function setSetupCalibAngle(v){
   setupCalibDeg=n;
   setupCalibDegs[setupCalibJoint]=n;
   document.getElementById("setup-calib-angle").textContent=String(n);
-  document.getElementById("setup-calib-marker").style.left=(n/180*100)+"%";
+  document.getElementById("setup-calib-slider").value=n;
 }
 function nudgeCalib(delta){
-  if(busy)return;
+  moveCalib(setupCalibDeg+delta);
+}
+function moveCalib(target){
   var prev=setupCalibDeg;
-  var next=prev+delta;
-  if(next<0)next=0;
-  if(next>180)next=180;
-  if(next===prev)return;
+  var next=Math.max(0,Math.min(180,target));
+  if(busy||next===prev){
+    setSetupCalibAngle(prev);
+    return;
+  }
   setSetupCalibAngle(next);
   setupPostServo("index="+setupCalibJoint+"&angle="+next).then(function(res){
     if(!res.ok||res.data.ok===false)setSetupCalibAngle(prev);
@@ -1411,6 +1415,12 @@ document.querySelectorAll(".calib-nudge [data-nudge]").forEach(function(btn){
   btn.addEventListener("click",function(){
     nudgeCalib(parseInt(this.getAttribute("data-nudge"),10));
   });
+});
+document.getElementById("setup-calib-slider").addEventListener("input",function(){
+  document.getElementById("setup-calib-angle").textContent=this.value;
+});
+document.getElementById("setup-calib-slider").addEventListener("change",function(){
+  moveCalib(parseInt(this.value,10));
 });
 document.getElementById("setup-set-min").addEventListener("click",function(){
   var a=setupCalibAngle();
