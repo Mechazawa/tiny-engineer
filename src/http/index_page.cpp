@@ -19,6 +19,8 @@ const char kMissingUiHtml[] =
 }  // namespace
 
 void registerUiAssetRoutes(WebServer& server) {
+  // Bundler output under /ui/assets/ is content-hashed, so it never changes in place.
+  server.serveStatic("/ui/assets/", LittleFS, "/ui/assets/", "max-age=31536000, immutable");
   server.serveStatic("/ui/", LittleFS, "/ui/", "no-cache");
 }
 

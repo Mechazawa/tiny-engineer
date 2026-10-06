@@ -11,7 +11,7 @@ Tiny Engineer is an open-source ESP32-C3 Wi-Fi desk robot: 3D-printed mechanics,
 | Path | Role |
 | --- | --- |
 | `src/`, `include/`, `lib/`, `data/` | Firmware (PlatformIO) |
-| `ui/` | Web control panel (HTML/CSS/JS), gzipped onto LittleFS by `pio run` |
+| `ui/` | Web control panel (Vite + ES modules); `pio run` builds, minifies and gzips it onto LittleFS |
 | `packages/` | HTTP / hook CLIs (Cursor, Antigravity, Claude Code, …) — scope `integrations` |
 | `3d_models/` | CAD and printables (CERN-OHL-S) |
 | `mods/` | Optional mods; models under `mods/<name>/3d_models/` (CERN-OHL-S) |
@@ -22,7 +22,7 @@ Physical module: **Waveshare ESP32-C3-Zero**. PlatformIO `board = esp32-c3-devki
 
 ## Commands
 
-From the repo root (Node 18+ for packages). Host only — CI never flashes.
+From the repo root (Node 18+ for packages, Node 20.19+ for `ui/` and therefore `pio run`). Host only — CI never flashes.
 
 ```bash
 pio run
@@ -33,7 +33,7 @@ node scripts/expressions/test-assets.js
 npm test --prefix packages/tiny-engineer-cursor
 npm test --prefix packages/tiny-engineer-antigravity
 npm test --prefix packages/tiny-engineer-claude-code
-npx --yes html-validate@11 ui/index.html
+npm run lint --prefix ui
 python3 scripts/check_pcb.py
 ```
 

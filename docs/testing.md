@@ -28,10 +28,12 @@ The `expression-demo` environment builds a separate OLED-only application withou
 
 ## Web UI
 
-Lints the control panel markup in [`ui/`](../ui/) with [html-validate](https://html-validate.org/) (config: [`ui/.htmlvalidate.json`](../ui/.htmlvalidate.json)). Node 18+.
+The control panel in [`ui/`](../ui/) is linted with [html-validate](https://html-validate.org/), ESLint and Prettier. Node 20.19+.
 
 ```bash
-npx --yes html-validate@11 ui/index.html
+npm ci --prefix ui
+npm run lint --prefix ui
+npm run format --prefix ui   # apply Prettier
 ```
 
 ## Packages

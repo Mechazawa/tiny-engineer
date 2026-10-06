@@ -28,7 +28,7 @@ Returns `Content-Type: text/html; charset=utf-8`, gzip-encoded. The page is serv
 
 ### `GET /ui/*`
 
-Web UI assets (`/ui/style.css`, `/ui/app.js`) from LittleFS, gzip-encoded, `Cache-Control: no-cache`. Always public. Source lives in [`ui/`](../ui/); `pio run` gzips it into `data/ui/`.
+Web UI assets from LittleFS, gzip-encoded. Bundled files under `/ui/assets/` have content-hashed names and are sent with `Cache-Control: max-age=31536000, immutable`; anything else under `/ui/` is `no-cache`. Always public. Source lives in [`ui/`](../ui/); `pio run` builds it with Vite and gzips the output into `data/ui/`.
 
 ### `GET /auth`
 
