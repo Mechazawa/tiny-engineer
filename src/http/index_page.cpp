@@ -2,19 +2,37 @@
 
 #include <LittleFS.h>
 
+#include "firmware_version.h"
 #include "http/json.h"
 
 namespace {
 
 const char kIndexPath[] = "/ui/index.html.gz";
+const char kVersionPath[] = "/ui/version.txt";
 
-const char kMissingUiHtml[] =
-  "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">"
-  "<title>Tiny Engineer</title></head><body>"
-  "<h1>Web UI missing</h1>"
-  "<p>The control panel lives on LittleFS. Upload the filesystem image: "
-  "<code>pio run -t uploadfs</code> (or <code>pio run -e ota -t otafs</code>).</p>"
-  "</body></html>";
+String uiVersion() {
+  File file = LittleFS.open(kVersionPath, "r");
+
+  if (!file) {
+    return "unknown";
+  }
+
+  String version = file.readString();
+  file.close();
+  version.trim();
+  return version;
+}
+
+void sendUiUnavailable(WebServer& server, const String& heading, const String& detail) {
+  const String html =
+    String("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">") +
+    "<title>Tiny Engineer</title></head><body><h1>" + heading + "</h1><p>" + detail +
+    "</p><p>Flash firmware and filesystem from the same build: "
+    "<code>pio run -t upload</code> over USB, or <code>pio run -e ota -t ota</code> over Wi-Fi.</p>"
+    "</body></html>";
+
+  httpSendHtml(server, 503, html.c_str());
+}
 
 }  // namespace
 
@@ -28,7 +46,20 @@ void sendIndexPage(WebServer& server) {
   File page = LittleFS.open(kIndexPath, "r");
 
   if (!page) {
-    httpSendHtml(server, 503, kMissingUiHtml);
+    sendUiUnavailable(server, "Web UI missing", "The control panel lives on LittleFS and was not found.");
+    return;
+  }
+
+  // A UI from another build may call routes or params this firmware does not have.
+  const String version = uiVersion();
+
+  if (version != FW_VERSION) {
+    page.close();
+    sendUiUnavailable(
+      server,
+      "Web UI does not match firmware",
+      String("Firmware <code>") + FW_VERSION + "</code>, web UI <code>" + version + "</code>."
+    );
     return;
   }
 

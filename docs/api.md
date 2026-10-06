@@ -24,7 +24,7 @@ Open in a browser:
 curl http://tiny-engineer.local/
 ```
 
-Returns `Content-Type: text/html; charset=utf-8`, gzip-encoded. The page is served from LittleFS (`/ui/index.html.gz`); if the filesystem image is missing it returns **503** with upload instructions.
+Returns `Content-Type: text/html; charset=utf-8`, gzip-encoded. The page is served from LittleFS (`/ui/index.html.gz`); if the filesystem image is missing, or its `/ui/version.txt` does not match the firmware version, it returns **503** with flashing instructions.
 
 ### `GET /ui/*`
 

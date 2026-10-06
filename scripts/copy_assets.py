@@ -20,7 +20,7 @@ if mod_name:
     print(f"Audio mod overlay: {mod_name}")
 
 # Before pack_audio so its size check covers the UI files too.
-pack_ui(build_ui(project_dir / "ui"), project_dir / "data" / "ui")
+pack_ui(build_ui(project_dir / "ui"), project_dir / "data" / "ui", env["TE_FW_VERSION"])
 
 pack_audio(
     project_dir / "assets",

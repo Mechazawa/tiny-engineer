@@ -119,9 +119,10 @@ After that, with the robot on your home Wi-Fi:
 ```bash
 export TINY_ENGINEER_URL=http://192.168.x.x   # default: tiny-engineer.local
 export TINY_ENGINEER_TOKEN=...                # only if access_token is set
-pio run -e ota -t ota       # firmware
-pio run -e ota -t otafs     # LittleFS (web UI, WAV assets)
+pio run -e ota -t ota       # LittleFS (web UI, WAV assets), then firmware
 ```
+
+Firmware and filesystem are one release: the web UI is stamped with the firmware version it was built with, and the firmware refuses to serve a UI from another build (`/` returns **503** naming both versions). `-t ota` therefore uploads the filesystem first, waits for the robot to reboot, then uploads the firmware. `pio run -e ota -t otafs` uploads the filesystem alone, for recovery.
 
 These are the same variables the agent integrations read ([integration.md](integration.md)). OTA listens on UDP/TCP port 3232 and only runs while connected to home Wi-Fi, not in setup AP mode. When `access_token` is set it is also the OTA password; changing it applies to OTA without a reboot.
 
