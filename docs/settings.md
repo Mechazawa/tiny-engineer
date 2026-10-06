@@ -52,7 +52,7 @@ Call the getter wherever the value affects behavior (e.g. `settingsVolume()` in 
    - Pass pointer into `saveSettings`
 4. Update the “missing …” **400** message to list the new param.
 
-### 4. Web UI — [`src/http/index_page.cpp`](../src/http/index_page.cpp)
+### 4. Web UI — [`ui/`](../ui/)
 
 1. Config form control (`#config-foo`). Use `.range-row` + range/number for 0–N scales (see volume).
 2. `loadSettings()` reads `j.foo`; save POST includes `&foo=…`.
@@ -91,7 +91,7 @@ Flash only when you want to try it on hardware (`pio run -t upload`).
 - **JSON buffer:** `sendSettingsJson` uses a fixed `char` buffer — bump size when adding fields.
 - **Factory reset:** `factoryResetSettings()` in [`reset.cpp`](../src/settings/reset.cpp) clears NVS namespace `te` and writes defaults, including WiFi credentials. Servo min/max (`sranges`), RGB LED mapping (`rgb_ord`), and OLED rotation (`oled_rot`) are written back unchanged. Exposed as `POST /settings/reset`. After reset, power-cycle into setup AP mode to configure WiFi again (WiFi is not editable on the normal Config page). Servo ranges, LED mapping, and screen rotation can be retuned in that wizard.
 - **Hostname-style settings:** freeze the boot value separately if live change cannot apply (see `settingsBootHostname()` / `reboot_required`).
-- **HTML string size:** the panel is a big string literal in `index_page.cpp`; keep controls compact.
+- **UI size:** the panel ships gzipped on LittleFS next to the WAVs; keep controls compact.
 - **Doc drift:** HTML param tables must match `api.md` exactly.
 
 ## Related

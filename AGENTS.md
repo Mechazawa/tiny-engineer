@@ -11,6 +11,7 @@ Tiny Engineer is an open-source ESP32-C3 Wi-Fi desk robot: 3D-printed mechanics,
 | Path | Role |
 | --- | --- |
 | `src/`, `include/`, `lib/`, `data/` | Firmware (PlatformIO) |
+| `ui/` | Web control panel (HTML/CSS/JS), gzipped onto LittleFS by `pio run` |
 | `packages/` | HTTP / hook CLIs (Cursor, Antigravity, Claude Code, …) — scope `integrations` |
 | `3d_models/` | CAD and printables (CERN-OHL-S) |
 | `mods/` | Optional mods; models under `mods/<name>/3d_models/` (CERN-OHL-S) |
@@ -32,6 +33,7 @@ node scripts/expressions/test-assets.js
 npm test --prefix packages/tiny-engineer-cursor
 npm test --prefix packages/tiny-engineer-antigravity
 npm test --prefix packages/tiny-engineer-claude-code
+npx --yes html-validate@11 ui/index.html
 python3 scripts/check_pcb.py
 ```
 
@@ -50,7 +52,7 @@ Significant: logic, types, APIs, headers, firmware under `src/` / `include/` / `
 
 When adding, removing, or changing method, path, or query params of any HTTP route, update in the **same** change:
 
-1. **HTML index** — [`src/http/index_page.cpp`](src/http/index_page.cpp): endpoint table and param lists for `/anim`, `/settings`, `/test/servo`
+1. **HTML index** — [`ui/index.html`](ui/index.html): endpoint table and param lists for `/anim`, `/settings`, `/test/servo`
 2. **API reference** — [`docs/api.md`](docs/api.md)
 3. **Summaries** — if the endpoint list, params, or boot URLs changed: [`README.md`](README.md) and [`docs/hardware/testing.md`](docs/hardware/testing.md)
 4. **405 paths** — if needed: `isHttpTestPath()` / `handleNotFound` in `src/http/`

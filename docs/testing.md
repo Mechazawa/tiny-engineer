@@ -26,6 +26,14 @@ pio run -e expression-demo
 
 The `expression-demo` environment builds a separate OLED-only application without changing the default robot build. For a later bench test, follow its [wiring and upload notes](../lib/TinyEngineerExpressions/README.md#standalone-oled-demo), leave the separate servo supply off, and observe all 16 faces through a complete 48-second cycle. Report physical display results separately from host tests and compilation.
 
+## Web UI
+
+Lints the control panel markup in [`ui/`](../ui/) with [html-validate](https://html-validate.org/) (config: [`ui/.htmlvalidate.json`](../ui/.htmlvalidate.json)). Node 18+.
+
+```bash
+npx --yes html-validate@11 ui/index.html
+```
+
 ## Packages
 
 Node 18+. No robot.

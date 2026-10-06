@@ -66,6 +66,8 @@ jobs:
         run: |
           node scripts/expressions/generate.js --check
           node scripts/expressions/test-assets.js
+      - name: Lint web UI HTML
+        run: npx --yes html-validate@11 ui/index.html
       - name: Cursor package tests
         run: npm test --prefix packages/tiny-engineer-cursor
       - name: Antigravity package tests

@@ -54,7 +54,7 @@ pio run -t upload       # flash firmware + LittleFS
 pio device monitor      # serial (115200)
 ```
 
-After firmware upload, a post-script also uploads **LittleFS** ([`scripts/upload_fs_after_upload.py`](../scripts/upload_fs_after_upload.py)) so WAV assets (`welcome`, `bell`, and friends) land on the board. If animations move but stay silent, run `pio run -t uploadfs` once.
+After firmware upload, a post-script also uploads **LittleFS** ([`scripts/upload_fs_after_upload.py`](../scripts/upload_fs_after_upload.py)) so the web UI and WAV assets (`welcome`, `bell`, and friends) land on the board. If the web page says the UI is missing, or animations move but stay silent, run `pio run -t uploadfs` once.
 
 Several serial ports:
 
@@ -119,7 +119,7 @@ After that, with the robot on your home Wi-Fi:
 export TINY_ENGINEER_URL=http://192.168.x.x   # default: tiny-engineer.local
 export TINY_ENGINEER_TOKEN=...                # only if access_token is set
 pio run -e ota -t ota       # firmware
-pio run -e ota -t otafs     # LittleFS (WAV assets)
+pio run -e ota -t otafs     # LittleFS (web UI, WAV assets)
 ```
 
 These are the same variables the agent integrations read ([integration.md](integration.md)). OTA listens on UDP/TCP port 3232 and only runs while connected to home Wi-Fi, not in setup AP mode. When `access_token` is set it is also the OTA password; changing it applies to OTA without a reboot.
