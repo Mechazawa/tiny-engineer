@@ -77,7 +77,7 @@ nav a.active{background:var(--accent);color:#fff}
 .servo-slider-track{position:relative;height:2rem}
 .servo-slider-bg{position:absolute;left:.625rem;right:.625rem;top:50%;height:.4rem;margin-top:-.2rem;background:#e8e4df;border-radius:99px;pointer-events:none}
 .servo-safe-band{position:absolute;top:0;bottom:0;background:#f4c9a8;border-radius:99px}
-.servo-slider{-webkit-appearance:none;appearance:none;background:transparent;position:relative;z-index:1;width:100%;height:2rem;margin:0}
+input[type=range].servo-slider{-webkit-appearance:none;appearance:none;background:transparent;position:relative;z-index:1;width:100%;height:2rem;margin:0}
 .servo-slider::-webkit-slider-runnable-track{height:2rem;background:transparent;border:none}
 .servo-slider::-moz-range-track{height:.4rem;background:transparent;border:none}
 .servo-slider::-webkit-slider-thumb{-webkit-appearance:none;width:1.25rem;height:1.25rem;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25);margin-top:.375rem;cursor:pointer}
