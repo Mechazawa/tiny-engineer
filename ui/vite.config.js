@@ -3,7 +3,14 @@ import { defineConfig } from "vite";
 
 const robot = process.env.TINY_ENGINEER_URL || "http://tiny-engineer.local";
 // Anchored so page routes such as /animations and /tests stay on the dev server.
-const apiRoutes = ["^/auth$", "^/health$", "^/settings(/|$)", "^/anim$", "^/test/", "^/setup/"];
+const apiRoutes = [
+  "^/auth([?]|$)",
+  "^/health([?]|$)",
+  "^/settings([/?]|$)",
+  "^/anim([?]|$)",
+  "^/test/",
+  "^/setup/",
+];
 
 const minifyHtml = {
   name: "minify-html",
