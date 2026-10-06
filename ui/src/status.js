@@ -18,21 +18,33 @@ export function clearStatus() {
 
 function setBusy(on) {
   busy = on;
-  for (const control of $$(".btn, [type=submit], .servo-slider")) control.disabled = on;
+
+  for (const control of $$(".btn, [type=submit], .servo-slider")) {
+    control.disabled = on;
+  }
 }
 
 // POSTs with the controls locked, reporting progress and failures in the status bar.
 // Resolves to the apiPost result, or null when already busy or the request failed to send.
 export async function perform({ path, params, pending, failure }) {
-  if (busy) return null;
+  if (busy) {
+    return null;
+  }
+
   setBusy(true);
   setStatus(pending, "loading");
+
   try {
     const result = await apiPost(path, params);
-    if (!result.ok) setStatus(result.data.error || failure, "err");
+
+    if (!result.ok) {
+      setStatus(result.data.error || failure, "err");
+    }
+
     return result;
   } catch {
     setStatus("Network error", "err");
+
     return null;
   } finally {
     setBusy(false);

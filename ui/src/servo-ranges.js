@@ -12,7 +12,11 @@ export const servoRanges = cloneRanges(DEFAULT_SERVO_RANGES);
 
 export function applyServoRanges(settings) {
   const { servo_mins: mins, servo_maxs: maxs } = settings;
-  if (mins?.length !== servoRanges.length || maxs?.length !== servoRanges.length) return;
+
+  if (mins?.length !== servoRanges.length || maxs?.length !== servoRanges.length) {
+    return;
+  }
+
   mins.forEach((min, index) => {
     servoRanges[index] = [min, maxs[index]];
   });

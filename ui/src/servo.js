@@ -11,6 +11,7 @@ const currentRange = () => servoRanges[Number(servoSelect.value)] ?? servoRanges
 
 function currentMid() {
   const [min, max] = currentRange();
+
   return (min + max) / 2;
 }
 
@@ -18,6 +19,7 @@ function updateRangeHint() {
   const [min, max] = currentRange();
   const angle = parseFloat(angleInput.value);
   const inRange = angle >= min && angle <= max;
+
   rangeHint.textContent = inRange
     ? `Safe range: ${min}–${max}°`
     : `Outside safe range — firmware clamps to ${min}–${max}°`;
@@ -32,11 +34,14 @@ function setAngle(angle) {
 
 export function refreshServoPage() {
   const [min, max] = currentRange();
+
   for (const input of [slider, angleInput]) {
     input.min = min;
     input.max = max;
   }
+
   const angle = parseFloat(angleInput.value);
+
   setAngle(angle >= min && angle <= max ? angle : currentMid());
   $("#servo-scale-min").textContent = `${min}°`;
   $("#servo-scale-mid").textContent = `${Math.round(currentMid())}°`;
@@ -52,7 +57,10 @@ async function moveServo() {
     pending: "Moving servo…",
     failure: "Move failed",
   });
-  if (result?.ok) setStatus(`Servo ${index} moved to ${angle}°.`, "ok");
+
+  if (result?.ok) {
+    setStatus(`Servo ${index} moved to ${angle}°.`, "ok");
+  }
 }
 
 slider.addEventListener("input", () => {

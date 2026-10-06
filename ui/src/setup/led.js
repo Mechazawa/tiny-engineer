@@ -8,8 +8,12 @@ const DEFAULT_ORDER = "GRB";
 async function preview(params) {
   try {
     const result = await apiPost("/setup/led", params);
-    if (result.ok) clearStatus();
-    else setStatus(result.data.error || "LED preview failed", "err");
+
+    if (result.ok) {
+      clearStatus();
+    } else {
+      setStatus(result.data.error || "LED preview failed", "err");
+    }
   } catch {
     setStatus("Network error", "err");
   }
@@ -30,7 +34,10 @@ export const ledMapping = {
   },
 
   applySavedOrder(order) {
-    if (RGB_ORDERS.includes(order)) this.savedOrder = order;
+    if (RGB_ORDERS.includes(order)) {
+      this.savedOrder = order;
+    }
+
     this.looks = [...this.savedOrder];
   },
 
@@ -46,20 +53,28 @@ export const ledMapping = {
 
   render() {
     $("#setup-led-remap").hidden = !this.remapOpen;
-    if (!this.remapOpen) return;
+
+    if (!this.remapOpen) {
+      return;
+    }
+
     for (const row of $$(".led-looks")) {
       const picked = this.looks[Number(row.dataset.ledByte)];
+
       for (const button of $$("[data-look]", row)) {
         button.classList.toggle("active", button.dataset.look === picked);
       }
     }
+
     $("#setup-led-map").replaceChildren(
       ...this.looks.map((channel) => {
         const chip = element("div", "led-chip-wrap");
+
         chip.append(
           element("div", `led-chip ${channel}`),
           element("span", "led-chip-letter", channel),
         );
+
         return chip;
       }),
     );
@@ -68,8 +83,12 @@ export const ledMapping = {
 
 for (const button of $$("[data-led-color]")) {
   button.addEventListener("click", () => {
-    if (isBusy()) return;
+    if (isBusy()) {
+      return;
+    }
+
     const order = ledMapping.valid ? ledMapping.order : ledMapping.savedOrder;
+
     preview({ color: button.dataset.ledColor, rgb_order: order });
   });
 }
@@ -81,7 +100,10 @@ $("#setup-led-remap-toggle").addEventListener("click", () => {
 
 for (const button of $$(".led-light[data-led-byte]")) {
   button.addEventListener("click", () => {
-    if (isBusy()) return;
+    if (isBusy()) {
+      return;
+    }
+
     preview({ byte: button.dataset.ledByte });
   });
 }
@@ -89,6 +111,7 @@ for (const button of $$(".led-light[data-led-byte]")) {
 for (const button of $$(".led-looks [data-look]")) {
   button.addEventListener("click", () => {
     const byte = Number(button.closest(".led-looks").dataset.ledByte);
+
     ledMapping.looks[byte] = button.dataset.look;
     ledMapping.render();
     $("#setup-next").disabled = !ledMapping.valid;

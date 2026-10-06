@@ -9,7 +9,11 @@ import { setStatus } from "./status.js";
 export async function loadSettings() {
   try {
     const settings = await apiGetJson("/settings");
-    if (!settings.ok) return;
+
+    if (!settings.ok) {
+      return;
+    }
+
     device.wifiConfigured = Boolean(settings.wifi_configured);
     applyConfigSettings(settings);
     applyServoRanges(settings);

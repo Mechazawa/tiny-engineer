@@ -22,7 +22,11 @@ async function postSetupServo(params) {
     pending: "Moving servos…",
     failure: "Move failed",
   });
-  if (result?.ok) clearStatus();
+
+  if (result?.ok) {
+    clearStatus();
+  }
+
   return result;
 }
 
@@ -57,28 +61,40 @@ export const calibration = {
     const { joint } = this;
     const previous = this.angle;
     const next = Math.max(0, Math.min(180, target));
+
     if (isBusy() || next === previous) {
       this.showAngle();
+
       return;
     }
+
     this.angles[joint] = next;
     this.showAngle();
     const result = await postSetupServo({ index: joint, angle: next });
-    if (result?.ok) return;
+
+    if (result?.ok) {
+      return;
+    }
+
     this.angles[joint] = previous;
     this.showAngle();
   },
 
   setLimit(bound) {
     const range = this.ranges[this.joint];
+
     if (bound === "min" && this.angle >= range[1]) {
       setStatus("Min must be less than max.", "err");
+
       return;
     }
+
     if (bound === "max" && this.angle <= range[0]) {
       setStatus("Max must be greater than min.", "err");
+
       return;
     }
+
     range[bound === "min" ? 0 : 1] = this.angle;
     this.render();
   },
@@ -86,15 +102,19 @@ export const calibration = {
   render() {
     const [min, max] = this.ranges[this.joint];
     const band = $("#setup-calib-band");
+
     band.style.left = `${(min / 180) * 100}%`;
     band.style.width = `${((max - min) / 180) * 100}%`;
     $("#setup-min-label").textContent = min;
     $("#setup-max-label").textContent = max;
     $("#setup-joint-copy").textContent = JOINT_COPY[this.joint];
+
     for (const tab of $$("#setup-joint-tabs [data-joint]")) {
       tab.classList.toggle("active", Number(tab.dataset.joint) === this.joint);
     }
+
     const symmetry = $("#setup-body-sym");
+
     symmetry.hidden = this.joint !== BODY_JOINT;
     symmetry.textContent = `Distance below 90°: ${CENTER - min}° · above 90°: ${max - CENTER}°`;
     $("#setup-next").disabled = !this.valid;
@@ -104,12 +124,18 @@ export const calibration = {
 
 $("#setup-move-90").addEventListener("click", async () => {
   const result = await postSetupServo({ all: CENTER });
-  if (result?.ok) calibration.angles.fill(CENTER);
+
+  if (result?.ok) {
+    calibration.angles.fill(CENTER);
+  }
 });
 
 for (const tab of $$("#setup-joint-tabs [data-joint]")) {
   tab.addEventListener("click", () => {
-    if (isBusy()) return;
+    if (isBusy()) {
+      return;
+    }
+
     calibration.joint = Number(tab.dataset.joint);
     calibration.render();
   });

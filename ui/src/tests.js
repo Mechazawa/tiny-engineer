@@ -8,6 +8,9 @@ for (const button of $$("[data-test]")) {
       pending: "Running…",
       failure: "Request failed",
     });
-    if (result?.ok) setStatus("Done.", "ok");
+
+    if (result?.ok) {
+      setStatus("Done.", "ok");
+    }
   });
 }

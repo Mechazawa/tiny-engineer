@@ -11,8 +11,11 @@ export const token = {
   },
   set(value) {
     try {
-      if (value) sessionStorage.setItem(TOKEN_KEY, value);
-      else sessionStorage.removeItem(TOKEN_KEY);
+      if (value) {
+        sessionStorage.setItem(TOKEN_KEY, value);
+      } else {
+        sessionStorage.removeItem(TOKEN_KEY);
+      }
     } catch {
       // Ignored, see above.
     }
@@ -27,12 +30,17 @@ const withQuery = (path, params) => (params ? `${path}?${new URLSearchParams(par
 export function apiFetch(path, options = {}) {
   const headers = { ...options.headers };
   const stored = token.get();
-  if (stored) headers.Authorization = `Bearer ${stored}`;
+
+  if (stored) {
+    headers.Authorization = `Bearer ${stored}`;
+  }
+
   return fetch(path, { ...options, headers });
 }
 
 export async function apiGetJson(path) {
   const response = await apiFetch(path);
+
   return response.json();
 }
 
@@ -40,6 +48,7 @@ export async function apiGetJson(path) {
 export async function apiPost(path, params) {
   const response = await apiFetch(withQuery(path, params), { method: "POST" });
   const data = await response.json();
+
   return { ok: response.ok && data.ok !== false, data };
 }
 

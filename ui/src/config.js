@@ -35,27 +35,41 @@ const accessToken = {
 
   // Value for the access_token param: "" clears, undefined leaves the saved token alone.
   get pendingValue() {
-    if (this.clearPending) return "";
-    if (!this.masked && this.field.value) return this.field.value;
+    if (this.clearPending) {
+      return "";
+    }
+
+    if (!this.masked && this.field.value) {
+      return this.field.value;
+    }
+
     return undefined;
   },
 
   render() {
     const { field, toggle, status } = this;
+
     field.disabled = this.clearPending;
     toggle.hidden = !this.configured && !this.clearPending;
+
     if (this.clearPending) {
       field.value = "";
       field.placeholder = "Token will be removed on Save";
       toggle.textContent = "Undo";
       status.textContent = "Will remove on save";
     } else if (this.configured) {
-      if (this.masked) field.value = this.MASK;
+      if (this.masked) {
+        field.value = this.MASK;
+      }
+
       field.placeholder = "Enter a new token to replace";
       toggle.textContent = "Remove token";
       status.textContent = "Auth enabled — click field to replace";
     } else {
-      if (!this.masked) field.value = "";
+      if (!this.masked) {
+        field.value = "";
+      }
+
       field.placeholder = "Enter access token";
       status.textContent = "Auth disabled";
     }
@@ -65,6 +79,7 @@ const accessToken = {
 function setVolume(value) {
   const parsed = parseInt(value, 10);
   const volume = Number.isNaN(parsed) ? DEFAULT_VOLUME : Math.min(100, Math.max(0, parsed));
+
   volumeField.value = volume;
   volumeSlider.value = volume;
   $("#config-volume-label").textContent = `${volume}%`;
@@ -100,10 +115,19 @@ function saveMessage(previousHost, previousLoading, saved) {
   const hostChanged =
     (saved.hostname || previousHost) !== previousHost || Boolean(saved.reboot_required);
   const loadingChanged = loadingMode(saved) !== previousLoading;
-  if (hostChanged && loadingChanged)
+
+  if (hostChanged && loadingChanged) {
     return "Saved. Hostname and loading screen apply after reboot.";
-  if (hostChanged) return "Saved. Hostname applies after reboot.";
-  if (loadingChanged) return "Saved. Loading screen applies after reboot.";
+  }
+
+  if (hostChanged) {
+    return "Saved. Hostname applies after reboot.";
+  }
+
+  if (loadingChanged) {
+    return "Saved. Loading screen applies after reboot.";
+  }
+
   return "Settings saved.";
 }
 
@@ -121,7 +145,10 @@ async function saveConfig() {
     loading: loadingSelect.value,
     eyes_style: eyesStyleSelect.value,
   };
-  if (newToken !== undefined) params.access_token = newToken;
+
+  if (newToken !== undefined) {
+    params.access_token = newToken;
+  }
 
   const result = await perform({
     path: "/settings",
@@ -129,13 +156,21 @@ async function saveConfig() {
     pending: "Saving…",
     failure: "Save failed",
   });
-  if (!result?.ok) return;
+
+  if (!result?.ok) {
+    return;
+  }
+
   applyConfigSettings(result.data, {
     hostname: host,
     continuous_timeout: params.continuous_timeout,
     volume: params.volume,
   });
-  if (newToken !== undefined) token.set(newToken);
+
+  if (newToken !== undefined) {
+    token.set(newToken);
+  }
+
   setStatus(saveMessage(host, previousLoading, result.data), "ok");
 }
 
@@ -143,13 +178,21 @@ async function factoryReset() {
   const confirmed = confirm(
     "Reset settings to factory defaults? WiFi credentials will be cleared. Servo ranges, RGB LED mapping, and screen rotation stay. Power-cycle the device to reopen setup AP mode and configure WiFi again.",
   );
-  if (!confirmed) return;
+
+  if (!confirmed) {
+    return;
+  }
+
   const result = await perform({
     path: "/settings/reset",
     pending: "Resetting…",
     failure: "Factory reset failed",
   });
-  if (!result?.ok) return;
+
+  if (!result?.ok) {
+    return;
+  }
+
   token.clear();
   accessToken.loadFromServer(false);
   clearStatus();
@@ -162,13 +205,22 @@ loadingSelect.addEventListener("change", updateWelcomeMotionHint);
 welcomeToggle.addEventListener("change", updateWelcomeMotionHint);
 
 accessToken.field.addEventListener("focus", () => {
-  if (!accessToken.masked) return;
+  if (!accessToken.masked) {
+    return;
+  }
+
   accessToken.field.value = "";
   accessToken.masked = false;
 });
 accessToken.field.addEventListener("blur", () => {
-  if (accessToken.clearPending || !accessToken.configured) return;
-  if (accessToken.field.value.trim() !== "") return;
+  if (accessToken.clearPending || !accessToken.configured) {
+    return;
+  }
+
+  if (accessToken.field.value.trim() !== "") {
+    return;
+  }
+
   accessToken.masked = true;
   accessToken.render();
 });
