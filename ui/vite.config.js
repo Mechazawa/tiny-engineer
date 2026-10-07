@@ -8,6 +8,7 @@ const apiRoutes = [
   "^/health([?]|$)",
   "^/settings([/?]|$)",
   "^/anim([?]|$)",
+  "^/play([/?]|$)",
   "^/test/",
   "^/setup/",
 ];

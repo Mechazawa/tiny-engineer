@@ -662,6 +662,7 @@ void handleSettingsReset(WebServer& server) {
 }
 
 bool isSettingsOrAnimPath(const String& uri) {
-  return uri == "/anim" || uri == "/settings" || uri == "/settings/reset" ||
+  return uri == "/anim" || uri == "/play" || uri.startsWith("/play/") ||
+         uri == "/settings" || uri == "/settings/reset" ||
          uri == "/auth" || uri == "/setup/servo";
 }

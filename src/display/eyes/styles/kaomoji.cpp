@@ -42,6 +42,7 @@ expressions::Expression expressionFor(
     case EyeMode::Ring:
       return expressions::Expression::Surprise;
     case EyeMode::Welcome:
+    case EyeMode::Talking:
       return expressions::Expression::Happy;
     case EyeMode::Error:
       return expressions::Expression::Angry;

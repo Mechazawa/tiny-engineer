@@ -26,6 +26,11 @@ constexpr float TYPING_HEAD_HIGH = TYPING_HEAD_LOW + TYPING_HEAD_BAND;
 constexpr float TYPING_BODY_MID = 0.0f;
 constexpr float TYPING_NECK_MID = 0.0f;
 
+// Talking faces the user: head just above mid, nodding on emphasis, neck drifting.
+constexpr float TALKING_HEAD_MID = 1.0f / 7.0f;
+constexpr float TALKING_HEAD_NOD = 2.0f / 7.0f;
+constexpr float TALKING_NECK_SWAY = 1.0f / 6.0f;
+
 constexpr float READING_HEAD_LOW = -1.0f;
 constexpr float READING_HEAD_HIGH = READING_HEAD_LOW + READING_HEAD_BAND;
 constexpr float READING_NECK_MID = 0.0f;

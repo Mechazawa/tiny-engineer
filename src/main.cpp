@@ -19,6 +19,7 @@
 #include "settings/settings.h"
 #include "serial_log.h"
 #include "sleep.h"
+#include "robot_tick.h"
 #include "boot/boot_loading.h"
 
 namespace {
@@ -167,13 +168,7 @@ void setup() {
 }
 
 void loop() {
-  const uint32_t now = millis();
-  pollWifi();
   pollHttpServer();
   pollOta();
-  updateProvisioningOled(now);
-  updateAnimation();
-  // After HTTP/anim so idle timestamp from this frame is not compared to a stale `now`.
-  updateSleep(millis());
-  updateRgb(now);
+  tickRobot();
 }

@@ -96,6 +96,39 @@ bool initAudioStorage() {
   return true;
 }
 
+void writeMonoToSpeaker(const int16_t* samples, size_t count) {
+  constexpr size_t FRAMES = 256;
+
+  int16_t buffer[FRAMES * 2];
+
+  const uint8_t volume = settingsVolume();
+
+  while (count > 0) {
+    const size_t framesThisTime = count < FRAMES ? count : FRAMES;
+
+    for (size_t i = 0; i < framesThisTime; i++) {
+      int32_t scaled = (static_cast<int32_t>(samples[i]) * volume) / 100;
+
+      if (scaled > 32767) {
+        scaled = 32767;
+      } else if (scaled < -32768) {
+        scaled = -32768;
+      }
+
+      buffer[i * 2] = static_cast<int16_t>(scaled);
+      buffer[i * 2 + 1] = static_cast<int16_t>(scaled);
+    }
+
+    I2S.write(
+      reinterpret_cast<uint8_t*>(buffer),
+      framesThisTime * 2 * sizeof(int16_t)
+    );
+
+    samples += framesThisTime;
+    count -= framesThisTime;
+  }
+}
+
 void playTone(
   float frequency,
   int durationMs
