@@ -41,7 +41,7 @@ Firmware is Arduino on [PlatformIO](https://platformio.org/) ([pioarduino](https
 ### Install and connect
 
 1. Install [PlatformIO Core](https://docs.platformio.org/en/latest/core/installation.html) (or the PlatformIO IDE extension).
-   Also install [Node.js](https://nodejs.org/) 20.19+: `pio run` builds the web UI in [`ui/`](../ui/) with npm.
+   Also install [Node.js](https://nodejs.org/) 20.19+ on 20.x, or 22.12+: `pio run` builds the web UI in [`ui/`](../ui/) with npm.
 2. Use a USB-C **data** cable. Charge-only cables fail upload and serial.
 3. Plug the data cable into the **main control board USB-C** once the ESP32 is seated on its headers. Advanced breakout build: use the Adafruit 5993, or the C3-Zero onboard USB-C before that breakout is wired — [hardware/wiring.md](hardware/wiring.md).
 

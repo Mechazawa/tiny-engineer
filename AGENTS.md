@@ -23,7 +23,7 @@ Physical module: **Waveshare ESP32-C3-Zero**. PlatformIO `board = esp32-c3-devki
 
 ## Commands
 
-From the repo root (Node 18+ for packages, Node 20.19+ for `ui/` and therefore `pio run`). Host only — CI never flashes.
+From the repo root (Node 18+ for packages, Node 20.19+ on 20.x or 22.12+ for `ui/` and therefore `pio run`). Host only — CI never flashes.
 
 ```bash
 pio run

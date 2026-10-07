@@ -11,7 +11,7 @@ class UiPackError(Exception):
 def _npm(ui_dir, *args):
     npm = shutil.which("npm")
     if npm is None:
-        raise UiPackError("npm not found; building the web UI needs Node 20.19+")
+        raise UiPackError("npm not found; building the web UI needs Node 20.19+ on 20.x, or 22.12+")
     subprocess.run([npm, *args], cwd=ui_dir, check=True)
 
 
