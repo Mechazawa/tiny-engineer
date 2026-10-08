@@ -275,16 +275,16 @@ def pack_audio(assets_dir, dest_dir, partition_bytes, mod_dir=None):
 
     total = sum(
         path.stat().st_size
-        for path in dest_dir.iterdir()
+        for path in dest_dir.rglob("*")
         if path.is_file()
     )
     limit = partition_bytes - HEADROOM_BYTES
     if total > limit:
         raise AudioPackError(
-            f"Audio image is {total} bytes; "
+            f"Filesystem image is {total} bytes; "
             f"spiffs allows {limit} after {HEADROOM_BYTES} bytes headroom"
         )
-    print(f"Audio image {total} bytes (limit {limit})")
+    print(f"Filesystem image {total} bytes (limit {limit})")
 
 
 def _overlay_mod(mod_dir, dest_dir):

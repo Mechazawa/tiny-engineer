@@ -22,6 +22,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
       - uses: actions/cache@v4
         with:
           path: |
@@ -61,11 +66,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
       - name: Check OLED expression assets
         run: |
           node scripts/expressions/generate.js --check
           node scripts/expressions/test-assets.js
+      - name: Lint and test web UI
+        run: |
+          npm ci --prefix ui
+          npm run lint --prefix ui
+          npm test --prefix ui
       - name: Cursor package tests
         run: npm test --prefix packages/tiny-engineer-cursor
       - name: Antigravity package tests

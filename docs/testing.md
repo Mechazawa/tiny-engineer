@@ -26,6 +26,19 @@ pio run -e expression-demo
 
 The `expression-demo` environment builds a separate OLED-only application without changing the default robot build. For a later bench test, follow its [wiring and upload notes](../lib/TinyEngineerExpressions/README.md#standalone-oled-demo), leave the separate servo supply off, and observe all 16 faces through a complete 48-second cycle. Report physical display results separately from host tests and compilation.
 
+## Web UI
+
+The control panel in [`ui/`](../ui/) is linted with [html-validate](https://html-validate.org/), ESLint, [Stylelint](https://stylelint.io/) (`stylelint-config-standard`) and Prettier. Node 20.19+ on 20.x, or 22.12+.
+
+```bash
+npm ci --prefix ui
+npm run lint --prefix ui
+npm test --prefix ui
+npm run format --prefix ui   # apply Prettier
+```
+
+`npm test` runs [Vitest](https://vitest.dev/) in jsdom: each test loads the real `index.html`, imports the UI modules, and drives them against a fake robot that stubs `fetch` and records requests ([`ui/test/robot.js`](../ui/test/robot.js)). The tests cover the auth gate, config saving and access-token handling, the servo page range hint, and the setup wizard (step order, what each step saves, step-only calibration moves, LED order validation).
+
 ## Packages
 
 Node 18+. No robot.
