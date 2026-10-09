@@ -17,7 +17,7 @@ A small robot on your desk. It moves, changes its face, and rings a bell as your
 
 Open source. Print the body, plug the ESP32, servos, OLED, and speaker into the [main control board](docs/hardware/main-control-board.md), flash it, and it joins your Wi-Fi.
 
-**Works with** [Claude Code](docs/integration.md#4-claude-code-dedicated-script) · [Cursor](docs/hooks.md) · [Antigravity](docs/integration.md#3-antigravity-cli-dedicated-script) — or Codex, Windsurf, and any script that can POST ([integration guide](docs/integration.md)), including speech through [`POST /play`](docs/api.md#post-play).
+**Works with** Claude Code · Cursor · Antigravity — via [`npx -y tiny-engineer setup`](docs/integration.md) — or Codex, Windsurf, and any script that can POST ([integration guide](docs/integration.md) · [HTTP API](docs/api.md)), including speech through [`POST /play`](docs/api.md#post-play).
 
 ## Build your own
 
@@ -63,10 +63,8 @@ Your agent (or a hook script) sends poses over HTTP. The **ESP32-C3** is a small
 
 **Clients**
 
-- **Cursor** - hooks → `tiny-engineer-cursor` → Wi-Fi
-- **Antigravity** - lifecycle hooks → `tiny-engineer-antigravity` → Wi-Fi
-- **Claude Code** - project hooks → `tiny-engineer-claude-code` → Wi-Fi
-- **Bring your own** - any tool that can `POST` to `/anim`
+- **Default** — [`npx -y tiny-engineer`](https://www.npmjs.com/package/tiny-engineer) (`setup` / `hook`) for Cursor, Claude Code, Antigravity → Wi-Fi
+- **Advanced** — any tool that can `POST` to `/anim` ([HTTP API](docs/api.md))
 
 Details: [Integrations](docs/integration.md) · [HTTP API](docs/api.md) · [Cursor hooks](docs/hooks.md)
 
