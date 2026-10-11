@@ -1,15 +1,14 @@
-#include "http/play_handlers.h"
-
 #include <Arduino.h>
 
-#include <cstdio>
 #include <optional>
 
 #include "animation.h"
 #include "audio/audio.h"
 #include "audio/audio_motion.h"
 #include "audio/wav_parser.h"
-#include "http/json.h"
+#include "http/handlers.h"
+#include "http/middleware.h"
+#include "http/response.h"
 #include "pins.h"
 #include "robot_tick.h"
 #include "settings/settings.h"
@@ -27,6 +26,7 @@ public:
   void begin(WebServer& server) {
     parser_.reset();
     rejectCode_ = 0;
+    rejectMessage_ = nullptr;
     started_ = false;
 
     if (!settingsWifiConfigured()) {
@@ -80,18 +80,19 @@ public:
 
   void respond(WebServer& server) {
     if (rejectCode_ != 0) {
-      httpSendJson(server, rejectCode_, body_);
+      sendError(server, rejectCode_, rejectMessage_);
       return;
     }
 
     if (parser_->failed()) {
-      formatError(parser_->error());
-      httpSendJson(server, 415, body_);
+      sendError(server, 415, parser_->error());
       return;
     }
 
-    snprintf(body_, sizeof(body_), "{\"ok\":true,\"played_ms\":%lu}", static_cast<unsigned long>(playedMs()));
-    httpSendJson(server, 200, body_);
+    JsonDocument body;
+    body["ok"] = true;
+    body["played_ms"] = playedMs();
+    sendJson(server, 200, body);
   }
 
   void onPcm(const int16_t* samples, size_t count) override {
@@ -122,15 +123,11 @@ private:
   AnimationId previous_ = AnimationId::None;
   bool started_ = false;
   int rejectCode_ = 0;
-  char body_[96] = {};
+  const char* rejectMessage_ = nullptr;
 
   void reject(int code, const char* message) {
     rejectCode_ = code;
-    formatError(message);
-  }
-
-  void formatError(const char* message) {
-    snprintf(body_, sizeof(body_), "{\"ok\":false,\"error\":\"%s\"}", message);
+    rejectMessage_ = message;
   }
 
   uint32_t playedMs() const {

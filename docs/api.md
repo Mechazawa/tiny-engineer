@@ -1,6 +1,6 @@
 # HTTP API
 
-JSON HTTP server on the ESP32-C3. Source: [`src/http/http_server.cpp`](../src/http/http_server.cpp) and handlers under [`src/http/`](../src/http/), test routes in [`src/http/test_handlers.cpp`](../src/http/test_handlers.cpp).
+JSON HTTP server on the ESP32-C3. Source: [`src/http/`](../src/http/). Every route and its access rule is listed in [`src/http/routes.cpp`](../src/http/routes.cpp).
 
 Listens on **port 80** after STA Wi-Fi connects, or during setup AP mode at `http://192.168.4.1/`. Base URL is the board IP (OLED / serial) or `http://tiny-engineer.local` (mDNS, 2.4 GHz only).
 

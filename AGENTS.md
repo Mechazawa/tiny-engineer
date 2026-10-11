@@ -58,7 +58,7 @@ When adding, removing, or changing method, path, or query params of any HTTP rou
 1. **HTML index** — [`ui/index.html`](ui/index.html): endpoint table and param lists for `/anim`, `/settings`, `/test/servo`
 2. **API reference** — [`docs/api.md`](docs/api.md)
 3. **Summaries** — if the endpoint list, params, or boot URLs changed: [`README.md`](README.md) and [`docs/hardware/testing.md`](docs/hardware/testing.md)
-4. **405 paths** — if needed: `isHttpTestPath()` / `handleNotFound` in `src/http/`
+4. **Route table** — add the route to `kRoutes` in [`src/http/routes.cpp`](src/http/routes.cpp) with its access rule. 404 and 405 answers come from that table
 
 HTML index: one-line route descriptions only (except supported-parameter lists). Param values must match `docs/api.md` exactly.
 

@@ -1,5 +1,3 @@
-#include "http/settings_handlers.h"
-
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <cstdlib>
@@ -7,8 +5,8 @@
 #include <cstring>
 
 #include "display/oled.h"
-#include "http/json.h"
-#include "http/server_context.h"
+#include "http/handlers.h"
+#include "http/response.h"
 #include "network/wifi_connect.h"
 #include "settings/settings.h"
 #include "settings/wifi_network_list.h"
@@ -86,17 +84,14 @@ void sendSettingsJson(
   if (wifiConnectSuccess) {
     doc["wifi_connect_success"] = true;
     doc["wifi_ip"] = wifiIpText();
-    doc["wifi_hostname"] = httpMdnsHostname();
+    doc["wifi_hostname"] = String(settingsHostname()) + ".local";
   }
 
   if (rebootRequired) {
     doc["reboot_required"] = true;
   }
 
-  String body;
-  body.reserve(measureJson(doc));
-  serializeJson(doc, body);
-  httpSendJson(server, 200, body.c_str());
+  sendJson(server, 200, doc);
 }
 
 }  // namespace
@@ -124,11 +119,7 @@ void handleSettingsPost(WebServer& server) {
       !hasContTo && !hasLoading && !hasEyesStyle && !hasAccessToken &&
       !hasServoMins && !hasServoMaxs &&
       !hasRgbOrder && !hasOledRotate180) {
-    httpSendJson(
-      server,
-      400,
-      "{\"ok\":false,\"error\":\"missing sleep_timeout, hostname, volume, welcome, serial_log, continuous_timeout, loading, eyes_style, access_token, servo_mins, servo_maxs, rgb_order, or oled_rotate_180\"}"
-    );
+    sendError(server, 400, "missing sleep_timeout, hostname, volume, welcome, serial_log, continuous_timeout, loading, eyes_style, access_token, servo_mins, servo_maxs, rgb_order, or oled_rotate_180");
     return;
   }
 
@@ -166,22 +157,14 @@ void handleSettingsPost(WebServer& server) {
       strtoul(sleepArg.c_str(), &end, 10);
 
     if (end == sleepArg.c_str() || *end != '\0') {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"invalid sleep_timeout\"}"
-      );
+      sendError(server, 400, "invalid sleep_timeout");
       return;
     }
 
     sleepTimeoutMin = static_cast<uint32_t>(parsed);
 
     if (!settingsValidateSleepTimeout(sleepTimeoutMin)) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"sleep_timeout out of range\"}"
-      );
+      sendError(server, 400, "sleep_timeout out of range");
       return;
     }
 
@@ -193,11 +176,7 @@ void handleSettingsPost(WebServer& server) {
     hostPtr = hostnameArg.c_str();
 
     if (!settingsValidateHostname(hostPtr)) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"invalid hostname\"}"
-      );
+      sendError(server, 400, "invalid hostname");
       return;
     }
   }
@@ -209,22 +188,14 @@ void handleSettingsPost(WebServer& server) {
       strtoul(volumeArg.c_str(), &end, 10);
 
     if (end == volumeArg.c_str() || *end != '\0' || parsed > 255) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"invalid volume\"}"
-      );
+      sendError(server, 400, "invalid volume");
       return;
     }
 
     volume = static_cast<uint8_t>(parsed);
 
     if (!settingsValidateVolume(volume)) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"volume out of range\"}"
-      );
+      sendError(server, 400, "volume out of range");
       return;
     }
 
@@ -238,11 +209,7 @@ void handleSettingsPost(WebServer& server) {
       strtoul(welcomeArg.c_str(), &end, 10);
 
     if (end == welcomeArg.c_str() || *end != '\0' || parsed > 1) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"invalid welcome\"}"
-      );
+      sendError(server, 400, "invalid welcome");
       return;
     }
 
@@ -257,11 +224,7 @@ void handleSettingsPost(WebServer& server) {
       strtoul(serialLogArg.c_str(), &end, 10);
 
     if (end == serialLogArg.c_str() || *end != '\0' || parsed > 1) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"invalid serial_log\"}"
-      );
+      sendError(server, 400, "invalid serial_log");
       return;
     }
 
@@ -276,22 +239,14 @@ void handleSettingsPost(WebServer& server) {
       strtoul(contArg.c_str(), &end, 10);
 
     if (end == contArg.c_str() || *end != '\0') {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"invalid continuous_timeout\"}"
-      );
+      sendError(server, 400, "invalid continuous_timeout");
       return;
     }
 
     continuousTimeoutMin = static_cast<uint32_t>(parsed);
 
     if (!settingsValidateContinuousTimeout(continuousTimeoutMin)) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"continuous_timeout out of range\"}"
-      );
+      sendError(server, 400, "continuous_timeout out of range");
       return;
     }
 
@@ -303,11 +258,7 @@ void handleSettingsPost(WebServer& server) {
     loadingPtr = loadingArg.c_str();
 
     if (!settingsValidateLoading(loadingPtr)) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"invalid loading\"}"
-      );
+      sendError(server, 400, "invalid loading");
       return;
     }
   }
@@ -317,11 +268,7 @@ void handleSettingsPost(WebServer& server) {
     eyesStylePtr = eyesStyleArg.c_str();
 
     if (!settingsValidateEyesStyle(eyesStylePtr)) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"invalid eyes_style\"}"
-      );
+      sendError(server, 400, "invalid eyes_style");
       return;
     }
   }
@@ -331,50 +278,30 @@ void handleSettingsPost(WebServer& server) {
     accessTokenPtr = accessTokenArg.c_str();
 
     if (!settingsValidateAccessToken(accessTokenPtr)) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"invalid access_token\"}"
-      );
+      sendError(server, 400, "invalid access_token");
       return;
     }
   }
 
   if (hasServoMins || hasServoMaxs) {
     if (!wifiProvisioningMode()) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"servo setup only in AP mode\"}"
-      );
+      sendError(server, 400, "servo setup only in AP mode");
       return;
     }
 
     if (!hasServoMins || !hasServoMaxs) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"servo_mins and servo_maxs required together\"}"
-      );
+      sendError(server, 400, "servo_mins and servo_maxs required together");
       return;
     }
 
     if (!parseServoCsv(server.arg("servo_mins"), servoMins) ||
         !parseServoCsv(server.arg("servo_maxs"), servoMaxs)) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"invalid servo_mins or servo_maxs\"}"
-      );
+      sendError(server, 400, "invalid servo_mins or servo_maxs");
       return;
     }
 
     if (!settingsValidateServoRanges(servoMins, servoMaxs)) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"servo ranges out of range\"}"
-      );
+      sendError(server, 400, "servo ranges out of range");
       return;
     }
 
@@ -384,22 +311,14 @@ void handleSettingsPost(WebServer& server) {
 
   if (hasRgbOrder) {
     if (!wifiProvisioningMode()) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"rgb setup only in AP mode\"}"
-      );
+      sendError(server, 400, "rgb setup only in AP mode");
       return;
     }
 
     rgbOrderArg = server.arg("rgb_order");
 
     if (!settingsValidateRgbOrder(rgbOrderArg.c_str())) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"invalid rgb_order\"}"
-      );
+      sendError(server, 400, "invalid rgb_order");
       return;
     }
 
@@ -408,11 +327,7 @@ void handleSettingsPost(WebServer& server) {
 
   if (hasOledRotate180) {
     if (!wifiProvisioningMode()) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"oled setup only in AP mode\"}"
-      );
+      sendError(server, 400, "oled setup only in AP mode");
       return;
     }
 
@@ -422,11 +337,7 @@ void handleSettingsPost(WebServer& server) {
       strtoul(oledArg.c_str(), &end, 10);
 
     if (end == oledArg.c_str() || *end != '\0' || parsed > 1) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"invalid oled_rotate_180\"}"
-      );
+      sendError(server, 400, "invalid oled_rotate_180");
       return;
     }
 
@@ -452,15 +363,9 @@ void handleSettingsPost(WebServer& server) {
         oledRotate180Ptr,
         &rebootRequired
       )) {
-    httpSendJson(
-      server,
-      400,
-      "{\"ok\":false,\"error\":\"save failed\"}"
-    );
+    sendError(server, 400, "save failed");
     return;
   }
-
-  refreshMdnsHostname();
 
   if (oledRotate180Ptr != nullptr) {
     applyOledRotation();
@@ -475,11 +380,7 @@ void handleSettingsWifiPut(WebServer& server) {
 
   if (deserializeJson(body, server.arg("plain")) ||
       !body.is<JsonArrayConst>()) {
-    httpSendJson(
-      server,
-      400,
-      "{\"ok\":false,\"error\":\"body must be a JSON array of networks\"}"
-    );
+    sendError(server, 400, "body must be a JSON array of networks");
     return;
   }
 
@@ -488,11 +389,7 @@ void handleSettingsWifiPut(WebServer& server) {
   // An empty list would put the robot in setup AP mode at the next boot;
   // factory reset is the way to clear WiFi.
   if (entries.size() == 0) {
-    httpSendJson(
-      server,
-      400,
-      "{\"ok\":false,\"error\":\"send at least one wifi network\"}"
-    );
+    sendError(server, 400, "send at least one wifi network");
     return;
   }
 
@@ -506,11 +403,7 @@ void handleSettingsWifiPut(WebServer& server) {
 
     if (!entry["ssid"].is<const char*>() ||
         !(keepsPassword || passwordField.is<const char*>())) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"each network needs a string ssid and an optional string password\"}"
-      );
+      sendError(server, 400, "each network needs a string ssid and an optional string password");
       return;
     }
 
@@ -519,20 +412,12 @@ void handleSettingsWifiPut(WebServer& server) {
                                          : passwordField.as<const char*>();
 
     if (password == nullptr) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"password required for a new network\"}"
-      );
+      sendError(server, 400, "password required for a new network");
       return;
     }
 
     if (!next.add(ssid, password)) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"invalid ssid or password, duplicate ssid, or more than 5 networks\"}"
-      );
+      sendError(server, 400, "invalid ssid or password, duplicate ssid, or more than 5 networks");
       return;
     }
   }
@@ -543,14 +428,7 @@ void handleSettingsWifiPut(WebServer& server) {
 
   if (tested &&
       !wifiTestCredentials(next.at(0).ssid, next.at(0).password)) {
-    char error[96];
-    snprintf(
-      error,
-      sizeof(error),
-      "{\"ok\":false,\"error\":\"%s\"}",
-      wifiLastConnectError()
-    );
-    httpSendJson(server, 400, error);
+    sendError(server, 400, wifiLastConnectError());
     return;
   }
 
@@ -559,11 +437,7 @@ void handleSettingsWifiPut(WebServer& server) {
       wifiRestoreProvisioningAp();
     }
 
-    httpSendJson(
-      server,
-      400,
-      "{\"ok\":false,\"error\":\"save failed\"}"
-    );
+    sendError(server, 400, "save failed");
     return;
   }
 
@@ -580,20 +454,9 @@ void handleSettingsReset(WebServer& server) {
   bool rebootRequired = false;
 
   if (!factoryResetSettings(&rebootRequired)) {
-    httpSendJson(
-      server,
-      400,
-      "{\"ok\":false,\"error\":\"factory reset failed\"}"
-    );
+    sendError(server, 400, "factory reset failed");
     return;
   }
 
   sendSettingsJson(server, rebootRequired, false);
-}
-
-bool isSettingsOrAnimPath(const String& uri) {
-  return uri == "/anim" || uri == "/play" || uri.startsWith("/play/") ||
-         uri == "/settings" || uri == "/settings/reset" ||
-         uri == "/settings/wifi" ||
-         uri == "/auth" || uri == "/setup/servo";
 }

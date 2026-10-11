@@ -7,7 +7,7 @@ Firmware is [`src/main.cpp`](../../src/main.cpp). Boot **inits** hardware and st
 - [`src/network/wifi_connect.cpp`](../../src/network/wifi_connect.cpp)
 - [`src/audio/audio.cpp`](../../src/audio/audio.cpp)
 - [`src/hardware/pca9685_servos.cpp`](../../src/hardware/pca9685_servos.cpp)
-- [`src/http/http_server.cpp`](../../src/http/http_server.cpp), [`src/http/test_handlers.cpp`](../../src/http/test_handlers.cpp)
+- [`src/http/routes.cpp`](../../src/http/routes.cpp), [`src/http/test_handlers.cpp`](../../src/http/test_handlers.cpp)
 
 Constants: [`include/pins.h`](../../include/pins.h). Wi-Fi credentials are saved in NVS and configured only in setup AP mode (first boot, or after factory reset + power-cycle). Servo min/max, RGB LED mapping (`rgb_order`), and OLED rotation (`oled_rotate_180`) are also setup-AP-only; factory reset keeps them.
 
