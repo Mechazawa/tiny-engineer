@@ -21,6 +21,19 @@ describe("access token gate", () => {
     expect(sessionStorage.length).toBe(0);
   });
 
+  it("says when the robot cannot be reached instead of blaming the token", async () => {
+    const robot = fakeRobot({ authRequired: true, token: "secret" });
+    const { user } = renderApp("/config");
+    const field = await screen.findByLabelText("Access token");
+
+    robot.failing.add("/settings");
+    await user.type(field, "secret{Enter}");
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "Could not reach the robot. Try again.",
+    );
+  });
+
   it("unlocks with the right token and sends it on later requests", async () => {
     const robot = fakeRobot({ authRequired: true, token: "secret" });
     const { user } = renderApp("/config");

@@ -38,8 +38,8 @@ export function ApiReference() {
       <p className="page-desc">
         JSON HTTP API on port 80. Optional Bearer auth when an access token is configured. Test
         routes are POST only. <code>GET /auth</code> is always public. Fields go in a JSON body with{" "}
-        <code>Content-Type: application/json</code>, except the <code>name</code> of{" "}
-        <code>POST /anim</code>.
+        <code>Content-Type: application/json</code>, except <code>POST /anim</code> (query{" "}
+        <code>name</code>) and <code>POST /play</code> (WAV body).
       </p>
       <table>
         <thead>

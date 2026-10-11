@@ -1,20 +1,22 @@
 import type { TargetedSubmitEvent } from "preact";
 import { useState } from "preact/hooks";
 import { Button } from "../components/Button";
-import { useRobot } from "../robot";
+import { type SettingsLoad, useRobot } from "../robot";
+
+const ERRORS: Partial<Record<SettingsLoad, string>> = {
+  unauthorized: "Invalid access token.",
+  offline: "Could not reach the robot. Try again.",
+};
 
 export function AuthGate() {
   const { unlock } = useRobot();
   const [candidate, setCandidate] = useState("");
-  const [rejected, setRejected] = useState(false);
+  const [error, setError] = useState<string | undefined>();
 
   async function submit(event: TargetedSubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    setRejected(false);
-
-    if (!(await unlock(candidate))) {
-      setRejected(true);
-    }
+    setError(undefined);
+    setError(ERRORS[await unlock(candidate)]);
   }
 
   return (
@@ -35,9 +37,9 @@ export function AuthGate() {
               onInput={(event) => setCandidate(event.currentTarget.value)}
             />
           </div>
-          {rejected && (
+          {error && (
             <div id="auth-error" role="alert">
-              Invalid access token.
+              {error}
             </div>
           )}
           <Button type="submit" variant="primary">

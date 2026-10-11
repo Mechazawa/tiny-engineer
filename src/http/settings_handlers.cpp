@@ -51,7 +51,8 @@ String readPatch(JsonObjectConst body, SettingsPatch& patch) {
   const char* wrong = nullptr;
 
   auto read = [&](const char* key, auto& out) {
-    if (body[key].isNull()) {
+    // A missing key keeps the saved value; an explicit null is a wrong type.
+    if (body[key].isUnbound()) {
       return;
     }
 
@@ -90,9 +91,9 @@ String readPatch(JsonObjectConst body, SettingsPatch& patch) {
     return String("invalid ") + wrong;
   }
 
-  const bool hasMins = !body["servo_mins"].isNull();
+  const bool hasMins = !body["servo_mins"].isUnbound();
 
-  if (hasMins != !body["servo_maxs"].isNull()) {
+  if (hasMins != !body["servo_maxs"].isUnbound()) {
     return "servo_mins and servo_maxs go together";
   }
 

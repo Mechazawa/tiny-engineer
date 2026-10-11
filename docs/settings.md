@@ -31,7 +31,7 @@ Public API: [`settings.h`](../src/settings/settings.h). Values struct: [`values.
 2. Add the field to `SettingsValues` in [`values.h`](../src/settings/values.h), set its default in `SettingsValues::defaults()` and log it in `SettingsValues::log()` ([`values.cpp`](../src/settings/values.cpp)). For secrets like `access_token`, log set/unset only, never the raw value.
 3. Add the NVS key in [`nvs.h`](../src/settings/nvs.h) (e.g. `kKeyFoo = "foo"`). Read it in `SettingsValues::load()` (keep the default on bad or missing data) and write it in `writeValues()` ([`nvs.cpp`](../src/settings/nvs.cpp)).
 4. Add `settingsValidateFoo(...)` in [`validate.cpp`](../src/settings/validate.cpp) and the getter `settingsFoo()` in [`getters.cpp`](../src/settings/getters.cpp).
-5. Add the field to `SettingsPatch` in [`settings.h`](../src/settings/settings.h) (`std::optional<T>`, or `const char*` for text), check it in `SettingsPatch::invalidField()` and copy it in `SettingsValues::apply()`. `saveSettings()` rejects the whole patch when a field is invalid and writes every key together.
+5. Add the field to `SettingsPatch` in [`settings.h`](../src/settings/settings.h) (`std::optional<T>`, or `const char*` for text), check it in `SettingsPatch::invalidField()` and copy it in `SettingsValues::apply()`. `saveSettings()` rejects the whole patch when a field is invalid and writes only the keys whose value changed.
 
 ### 2. Consumers
 

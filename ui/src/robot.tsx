@@ -5,6 +5,7 @@ import type { AuthInfo, Settings } from "./api/types";
 import { useStatus } from "./status/status";
 
 type Gate = "booting" | "auth" | "reboot" | null;
+export type SettingsLoad = "loaded" | "unauthorized" | "offline";
 
 interface RobotApi {
   gate: Gate;
@@ -13,7 +14,7 @@ interface RobotApi {
   version: string | null;
   settings: Settings | null;
   applySettings: (settings: Settings) => void;
-  unlock: (candidate: string) => Promise<boolean>;
+  unlock: (candidate: string) => Promise<SettingsLoad>;
   showRebootGate: () => void;
   leaveSetup: () => void;
 }
@@ -44,7 +45,7 @@ export function RobotProvider({ children }: { children: ComponentChildren }) {
   }, []);
 
   // GET /settings also tells whether the current token is accepted.
-  const loadSettings = useCallback(async (): Promise<"loaded" | "unauthorized" | "offline"> => {
+  const loadSettings = useCallback(async (): Promise<SettingsLoad> => {
     try {
       const reply = await api<Settings>("/settings");
 
@@ -64,15 +65,17 @@ export function RobotProvider({ children }: { children: ComponentChildren }) {
     async (candidate: string) => {
       token.set(candidate);
 
-      if ((await loadSettings()) === "loaded") {
-        setGate(null);
+      const loaded = await loadSettings();
 
-        return true;
+      if (loaded === "loaded") {
+        setGate(null);
       }
 
-      token.set("");
+      if (loaded === "unauthorized") {
+        token.set("");
+      }
 
-      return false;
+      return loaded;
     },
     [loadSettings],
   );
