@@ -43,6 +43,12 @@ int WifiNetworkList::find(const char* ssid) const {
   return match == end ? -1 : static_cast<int>(match - networks_);
 }
 
+const char* WifiNetworkList::passwordFor(const char* ssid) const {
+  const int index = find(ssid);
+
+  return index < 0 ? nullptr : networks_[index].password;
+}
+
 bool WifiNetworkList::add(const char* ssid, const char* password) {
   if (!settingsValidateWifiSsid(ssid) ||
       !settingsValidateWifiPassword(password) ||

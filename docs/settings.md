@@ -43,7 +43,6 @@ Call the getter wherever the value affects behavior (e.g. `settingsVolume()` in 
 ### 3. HTTP — [`src/http/settings_handlers.cpp`](../src/http/settings_handlers.cpp)
 
 1. Include the field in both `snprintf` branches of `sendSettingsJson` (with and without `reboot_required`).
-2. Grow the JSON buffer if the payload no longer fits.
 3. In `handleSettingsPost`:
    - `server.hasArg("foo")`
    - Parse (same style as `sleep_timeout` / `volume`: `strtoul` + end-pointer check for integers)
@@ -87,7 +86,6 @@ Flash only when you want to try it on hardware (`pio run -t upload`).
 ## Pitfalls
 
 - **Partial writes:** validate first; never write NVS then fail validation mid-way.
-- **JSON buffer:** `sendSettingsJson` uses a fixed `char` buffer — bump size when adding fields.
 - **Factory reset:** `factoryResetSettings()` in [`reset.cpp`](../src/settings/reset.cpp) clears NVS namespace `te` and writes defaults, which clears every saved WiFi network. Servo min/max (`sranges`), RGB LED mapping (`rgb_ord`), and OLED rotation (`oled_rot`) are written back unchanged. Exposed as `POST /settings/reset`. After reset, power-cycle into setup AP mode to configure WiFi again. Servo ranges, LED mapping, and screen rotation can be retuned in that wizard.
 - **Hostname-style settings:** freeze the boot value separately if live change cannot apply (see `settingsBootHostname()` / `reboot_required`).
 - **UI size:** the panel is embedded gzipped in the firmware; keep controls compact.

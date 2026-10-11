@@ -94,6 +94,7 @@ void sendSettingsJson(
   }
 
   String body;
+  body.reserve(measureJson(doc));
   serializeJson(doc, body);
   httpSendJson(server, 200, body.c_str());
 }
@@ -486,11 +487,11 @@ void handleSettingsWifiPut(WebServer& server) {
 
   // An empty list would put the robot in setup AP mode at the next boot;
   // factory reset is the way to clear WiFi.
-  if (entries.size() == 0 || entries.size() > SETTINGS_WIFI_NETWORK_MAX) {
+  if (entries.size() == 0) {
     httpSendJson(
       server,
       400,
-      "{\"ok\":false,\"error\":\"send 1 to 5 wifi networks\"}"
+      "{\"ok\":false,\"error\":\"send at least one wifi network\"}"
     );
     return;
   }
@@ -499,12 +500,12 @@ void handleSettingsWifiPut(WebServer& server) {
   WifiNetworkList next;
 
   for (const JsonObjectConst entry : entries) {
-    const JsonVariantConst password = entry["password"];
+    const JsonVariantConst passwordField = entry["password"];
     // A missing key keeps the saved password; an explicit null is an error.
-    const bool keepsPassword = password.isUnbound();
+    const bool keepsPassword = passwordField.isUnbound();
 
     if (!entry["ssid"].is<const char*>() ||
-        !(keepsPassword || password.is<const char*>())) {
+        !(keepsPassword || passwordField.is<const char*>())) {
       httpSendJson(
         server,
         400,
@@ -514,9 +515,10 @@ void handleSettingsWifiPut(WebServer& server) {
     }
 
     const char* ssid = entry["ssid"];
-    const int savedIndex = saved.find(ssid);
+    const char* password = keepsPassword ? saved.passwordFor(ssid)
+                                         : passwordField.as<const char*>();
 
-    if (keepsPassword && savedIndex < 0) {
+    if (password == nullptr) {
       httpSendJson(
         server,
         400,
@@ -525,24 +527,11 @@ void handleSettingsWifiPut(WebServer& server) {
       return;
     }
 
-    if (next.find(ssid) >= 0) {
+    if (!next.add(ssid, password)) {
       httpSendJson(
         server,
         400,
-        "{\"ok\":false,\"error\":\"duplicate ssid\"}"
-      );
-      return;
-    }
-
-    if (!next.add(
-          ssid,
-          keepsPassword ? saved.at(savedIndex).password
-                        : password.as<const char*>()
-        )) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"invalid ssid or password\"}"
+        "{\"ok\":false,\"error\":\"invalid ssid or password, duplicate ssid, or more than 5 networks\"}"
       );
       return;
     }

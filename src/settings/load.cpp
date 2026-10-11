@@ -29,12 +29,16 @@ bool loadWifiNetworks() {
 }
 
 void migrateLegacyWifi() {
-  if (g_wifiNetworks.count() > 0 && !saveWifiNetworks(g_wifiNetworks)) {
+  if (!settingsNvsBeginWrite()) {
     return;
   }
 
-  if (!settingsNvsBeginWrite()) {
-    return;
+  if (g_wifiNetworks.count() > 0) {
+    g_settingsPrefs.putBytes(
+      kKeyWifiNets,
+      g_wifiNetworks.data(),
+      g_wifiNetworks.count() * sizeof(WifiNetwork)
+    );
   }
 
   g_settingsPrefs.remove(kKeyWifiSsid);

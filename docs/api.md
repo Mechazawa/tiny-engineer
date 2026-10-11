@@ -219,7 +219,7 @@ curl -X PUT "http://tiny-engineer.local/settings/wifi" \
 | `ssid` | string | 1–32 chars; unique in the list |
 | `password` | string | 0–63 chars; omit to keep the saved password of a saved `ssid` |
 
-The list must hold 1 to 5 networks, so the robot always has one to try; factory reset clears WiFi. Body not a JSON array → **400** `body must be a JSON array of networks`. An entry that is not an object, or has a non-string `ssid` or `password` (including `null`) → **400** `each network needs a string ssid and an optional string password`. Empty or more than 5 → **400** `send 1 to 5 wifi networks`. New SSID without `password` → **400** `password required for a new network`. Same SSID twice → **400** `duplicate ssid`. Bad length → **400** `invalid ssid or password`. WiFi test failure in setup AP mode → **400** with an error such as `SSID not found`, `Auth failed`, or `Timeout`.
+The list must hold 1 to 5 networks, so the robot always has one to try; factory reset clears WiFi. Body not a JSON array → **400** `body must be a JSON array of networks`. An entry that is not an object, or has a non-string `ssid` or `password` (including `null`) → **400** `each network needs a string ssid and an optional string password`. Empty → **400** `send at least one wifi network`. New SSID without `password` → **400** `password required for a new network`. Bad length, the same SSID twice, or more than 5 networks → **400** `invalid ssid or password, duplicate ssid, or more than 5 networks`. WiFi test failure in setup AP mode → **400** with an error such as `SSID not found`, `Auth failed`, or `Timeout`.
 
 ### `POST /settings/reset`
 

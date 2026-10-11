@@ -16,6 +16,7 @@ public:
   const WifiNetwork& at(size_t index) const;
   const WifiNetwork* data() const;
   int find(const char* ssid) const;
+  const char* passwordFor(const char* ssid) const;
 
   // Appends the network. False when the credentials are invalid, the SSID
   // is already listed, or the list is full.

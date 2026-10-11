@@ -38,7 +38,7 @@ bool saveSettings(
       servoMaxs == nullptr &&
       rgbOrder == nullptr &&
       oledRotate180 == nullptr) {
-    return true;
+    return false;
   }
 
   uint32_t nextSleep = g_sleepTimeoutMin;

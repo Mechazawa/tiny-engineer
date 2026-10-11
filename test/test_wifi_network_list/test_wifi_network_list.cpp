@@ -15,6 +15,8 @@ void test_add_keeps_order() {
   TEST_ASSERT_EQUAL_STRING("office", networks.at(1).ssid);
   TEST_ASSERT_EQUAL(1, networks.find("office"));
   TEST_ASSERT_EQUAL(-1, networks.find("cafe"));
+  TEST_ASSERT_EQUAL_STRING("secret", networks.passwordFor("home"));
+  TEST_ASSERT_NULL(networks.passwordFor("cafe"));
 }
 
 void test_add_rejects_duplicates() {

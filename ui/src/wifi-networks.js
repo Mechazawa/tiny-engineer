@@ -6,9 +6,12 @@ export const MAX_NETWORKS = 5;
 const ssidField = $("#wifi-network-ssid");
 const passwordField = $("#wifi-network-password");
 
-function networkRow(ssid, { note = "", action, label, enabled = true, removed = false }) {
+function networkRow(
+  ssid,
+  { note = "", action, label, enabled = true, removed = false, danger = false },
+) {
   const row = element("li", removed ? "wifi-network wifi-network-removed" : "wifi-network");
-  const button = element("button", label === "Remove" ? "btn btn-danger" : "btn", label);
+  const button = element("button", danger ? "btn btn-danger" : "btn", label);
 
   button.type = "button";
   button.disabled = !enabled;
@@ -70,9 +73,9 @@ export const wifiNetworks = {
       return;
     }
 
-    const listed = this.desired.some((network) => network.ssid === ssid);
+    const { desired } = this;
 
-    if (!listed && this.desired.length >= MAX_NETWORKS) {
+    if (!desired.some((network) => network.ssid === ssid) && desired.length >= MAX_NETWORKS) {
       setStatus(`The robot keeps up to ${MAX_NETWORKS} networks. Remove one first.`, "err");
 
       return;
@@ -87,6 +90,7 @@ export const wifiNetworks = {
 
   // The firmware keeps its last network; factory reset is the way to clear WiFi.
   render() {
+    const removable = this.desired.length > 1;
     const addedRows = [...this.added.keys()].map((ssid) =>
       networkRow(ssid, {
         note: this.saved.includes(ssid) ? "New password on save" : "Added on save",
@@ -107,7 +111,8 @@ export const wifiNetworks = {
           : networkRow(ssid, {
               action: () => this.removed.add(ssid),
               label: "Remove",
-              enabled: this.desired.length > 1,
+              enabled: removable,
+              danger: true,
             }),
       );
 

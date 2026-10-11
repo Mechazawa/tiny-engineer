@@ -125,13 +125,9 @@ void stopCaptiveDns() {
 bool connectSta(
   const char* ssid,
   const char* password,
-  const char* hostnameOverride = nullptr,
   bool stopWhenNotFound = false
 ) {
-  const char* hostname =
-    (hostnameOverride != nullptr && hostnameOverride[0] != '\0')
-      ? hostnameOverride
-      : settingsHostname();
+  const char* hostname = settingsHostname();
 
   serialLogPrint("SSID: ");
   serialLogPrintln(ssid);
@@ -220,7 +216,7 @@ bool connectSavedNetworks() {
       const WifiNetwork& network = networks.at(index);
       const bool missing = scanned && rssi[index] == INT32_MIN;
 
-      return connectSta(network.ssid, network.password, nullptr, missing);
+      return connectSta(network.ssid, network.password, missing);
     }
   );
 }
@@ -299,26 +295,7 @@ void wifiRestoreProvisioningAp() {
   startProvisioningAp();
 }
 
-bool wifiTestCredentials(
-  const char* ssid,
-  const char* password,
-  const char* hostname
-) {
-  if (ssid == nullptr || password == nullptr) {
-    setConnectError("Missing credentials");
-    return false;
-  }
-
-  if (!settingsValidateWifiSsid(ssid)) {
-    setConnectError("Invalid SSID");
-    return false;
-  }
-
-  if (!settingsValidateWifiPassword(password)) {
-    setConnectError("Password too long");
-    return false;
-  }
-
+bool wifiTestCredentials(const char* ssid, const char* password) {
   serialLogPrintln();
   serialLogPrintln("==========================");
   serialLogPrintln("WIFI TEST (provisioning)");
@@ -330,7 +307,7 @@ bool wifiTestCredentials(
   WiFi.softAP(apSsid);
   startCaptiveDns();
 
-  if (!connectSta(ssid, password, hostname)) {
+  if (!connectSta(ssid, password)) {
     wifiRestoreProvisioningAp();
     return false;
   }
