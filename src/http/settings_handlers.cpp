@@ -501,12 +501,7 @@ void handleSettingsPost(WebServer& server) {
   }
 
   bool rebootRequired = false;
-  const bool hasOtherSettings =
-    hasSleep || hasHost || hasVolume || hasWelcome || hasSerialLog ||
-    hasContTo || hasLoading || hasEyesStyle || hasAccessToken ||
-    hasServoMins || hasServoMaxs || hasRgbOrder || hasOledRotate180;
-  const bool settingsSaved =
-    !hasOtherSettings ||
+  const bool saved =
     saveSettings(
         sleepPtr,
         hostPtr,
@@ -522,11 +517,10 @@ void handleSettingsPost(WebServer& server) {
         rgbOrderPtr,
         oledRotate180Ptr,
         &rebootRequired
-      );
-  const bool wifiSaved =
-    settingsSaved && (!hasWifiSsid || saveWifiNetworks(wifiNetworks));
+      ) &&
+    (!hasWifiSsid || saveWifiNetworks(wifiNetworks));
 
-  if (!wifiSaved) {
+  if (!saved) {
     if (wifiConnectSuccess) {
       wifiRestoreProvisioningAp();
     }
@@ -566,8 +560,9 @@ void handleSettingsWifiRemove(WebServer& server) {
   }
 
   WifiNetworkList wifiNetworks = settingsWifiNetworks();
+  const String ssid = server.arg("wifi_ssid");
 
-  if (!wifiNetworks.remove(server.arg("wifi_ssid").c_str())) {
+  if (wifiNetworks.find(ssid.c_str()) < 0) {
     httpSendJson(
       server,
       404,
@@ -576,9 +571,7 @@ void handleSettingsWifiRemove(WebServer& server) {
     return;
   }
 
-  // Factory reset is the way to clear WiFi; an empty list would drop the
-  // robot into setup AP mode on the next boot.
-  if (wifiNetworks.count() == 0) {
+  if (!wifiNetworks.remove(ssid.c_str())) {
     httpSendJson(
       server,
       400,

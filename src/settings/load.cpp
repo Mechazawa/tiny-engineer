@@ -8,18 +8,38 @@
 
 namespace {
 
-void loadWifiNetworks() {
+// True when the networks came from the single-network keys of older firmware.
+bool loadWifiNetworks() {
   if (g_settingsPrefs.isKey(kKeyWifiNets)) {
     uint8_t blob[sizeof(WifiNetwork) * SETTINGS_WIFI_NETWORK_MAX] = {};
     const size_t length =
       g_settingsPrefs.getBytes(kKeyWifiNets, blob, sizeof(blob));
     g_wifiNetworks.load(blob, length);
-    return;
+    return false;
+  }
+
+  if (!g_settingsPrefs.isKey(kKeyWifiSsid)) {
+    return false;
   }
 
   const String ssid = g_settingsPrefs.getString(kKeyWifiSsid, "");
   const String password = g_settingsPrefs.getString(kKeyWifiPass, "");
   g_wifiNetworks.add(ssid.c_str(), password.c_str());
+  return true;
+}
+
+void migrateLegacyWifi() {
+  if (g_wifiNetworks.count() > 0 && !saveWifiNetworks(g_wifiNetworks)) {
+    return;
+  }
+
+  if (!settingsNvsBeginWrite()) {
+    return;
+  }
+
+  g_settingsPrefs.remove(kKeyWifiSsid);
+  g_settingsPrefs.remove(kKeyWifiPass);
+  settingsNvsEnd();
 }
 
 }  // namespace
@@ -108,7 +128,7 @@ void initSettings() {
     setAccessTokenCache(g_accessToken, SETTINGS_DEFAULT_ACCESS_TOKEN);
   }
 
-  loadWifiNetworks();
+  const bool legacyWifi = loadWifiNetworks();
 
   uint8_t servoBlob[kServoRangesLen] = {};
   const size_t servoBytes =
@@ -141,6 +161,10 @@ void initSettings() {
   settingsNvsEnd();
 
   setHostnameCache(g_bootHostname, g_hostname);
+
+  if (legacyWifi) {
+    migrateLegacyWifi();
+  }
 
   logSettingsSnapshot("Settings:");
 }

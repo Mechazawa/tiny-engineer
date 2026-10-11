@@ -100,6 +100,14 @@ void test_load_rejects_corrupt_blob() {
   TEST_ASSERT_EQUAL_STRING("home", networks.at(0).ssid);
 }
 
+void test_remove_keeps_the_last_network() {
+  WifiNetworkList networks;
+  networks.add("home", "");
+
+  TEST_ASSERT_FALSE(networks.remove("home"));
+  TEST_ASSERT_EQUAL(1, networks.count());
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_add_puts_newest_first);
@@ -107,6 +115,7 @@ int main() {
   RUN_TEST(test_full_list_only_accepts_known_ssids);
   RUN_TEST(test_add_rejects_invalid_credentials);
   RUN_TEST(test_remove_keeps_order_of_the_rest);
+  RUN_TEST(test_remove_keeps_the_last_network);
   RUN_TEST(test_load_round_trips_saved_blob);
   RUN_TEST(test_load_rejects_corrupt_blob);
   return UNITY_END();

@@ -38,7 +38,7 @@ bool saveSettings(
       servoMaxs == nullptr &&
       rgbOrder == nullptr &&
       oledRotate180 == nullptr) {
-    return false;
+    return true;
   }
 
   uint32_t nextSleep = g_sleepTimeoutMin;
@@ -200,22 +200,7 @@ bool saveWifiNetworks(const WifiNetworkList& networks) {
 
   const size_t length = networks.count() * sizeof(WifiNetwork);
   const bool written =
-    length == 0 ||
     g_settingsPrefs.putBytes(kKeyWifiNets, networks.data(), length) == length;
-
-  if (written) {
-    const char* staleKeys[] = {
-      kKeyWifiSsid,
-      kKeyWifiPass,
-      length == 0 ? kKeyWifiNets : nullptr,
-    };
-
-    for (const char* key : staleKeys) {
-      if (key != nullptr && g_settingsPrefs.isKey(key)) {
-        g_settingsPrefs.remove(key);
-      }
-    }
-  }
 
   settingsNvsEnd();
 

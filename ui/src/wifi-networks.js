@@ -49,7 +49,7 @@ export const wifiNetworks = {
 
   get remaining() {
     return (
-      this.saved.filter((ssid) => this.isKept(ssid) && !this.added.has(ssid)).length +
+      this.saved.filter((ssid) => !this.removed.has(ssid) && !this.added.has(ssid)).length +
       this.added.size
     );
   },

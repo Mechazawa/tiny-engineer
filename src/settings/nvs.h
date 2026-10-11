@@ -15,7 +15,7 @@ constexpr const char* kKeyContTo = "cont_to";
 constexpr const char* kKeyLoading = "loading";
 constexpr const char* kKeyEyesStyle = "eyes_sty";
 constexpr const char* kKeyAccessTok = "access_tok";
-// Single-network keys from older firmware; read once, then replaced by kKeyWifiNets.
+// Single-network keys from older firmware; moved into kKeyWifiNets at boot.
 constexpr const char* kKeyWifiSsid = "wifi_ssid";
 constexpr const char* kKeyWifiPass = "wifi_pass";
 constexpr const char* kKeyWifiNets = "wifi_nets";

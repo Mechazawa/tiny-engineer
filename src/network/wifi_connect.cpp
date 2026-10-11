@@ -181,16 +181,17 @@ bool connectSta(
   return true;
 }
 
-// Leaves INT32_MIN for networks the scan did not see. Skips the scan for a
-// single network, which is tried either way.
-void scanSignalStrengths(const WifiNetworkList& networks, int32_t* rssi) {
+// Strongest visible network first. Networks the scan missed keep their saved
+// order at the end, since a hidden SSID never shows up in a scan.
+bool connectSavedNetworks() {
+  const WifiNetworkList& networks = settingsWifiNetworks();
+  // A single network is tried with the full timeout, so it needs no scan.
+  const bool scanned = networks.count() > 1;
+  const int found = scanned ? WiFi.scanNetworks() : 0;
+  int32_t rssi[SETTINGS_WIFI_NETWORK_MAX];
+  size_t order[SETTINGS_WIFI_NETWORK_MAX];
+
   std::fill(rssi, rssi + networks.count(), INT32_MIN);
-
-  if (networks.count() < 2) {
-    return;
-  }
-
-  const int found = WiFi.scanNetworks();
 
   for (int i = 0; i < found; i++) {
     const int index = networks.find(WiFi.SSID(i).c_str());
@@ -201,16 +202,6 @@ void scanSignalStrengths(const WifiNetworkList& networks, int32_t* rssi) {
   }
 
   WiFi.scanDelete();
-}
-
-// Strongest visible network first. Networks the scan missed keep their saved
-// order at the end, since a hidden SSID never shows up in a scan.
-bool connectSavedNetworks() {
-  const WifiNetworkList& networks = settingsWifiNetworks();
-  int32_t rssi[SETTINGS_WIFI_NETWORK_MAX];
-  size_t order[SETTINGS_WIFI_NETWORK_MAX];
-
-  scanSignalStrengths(networks, rssi);
 
   for (size_t i = 0; i < networks.count(); i++) {
     order[i] = i;
@@ -227,7 +218,7 @@ bool connectSavedNetworks() {
     order + networks.count(),
     [&](size_t index) {
       const WifiNetwork& network = networks.at(index);
-      const bool missing = rssi[index] == INT32_MIN && networks.count() > 1;
+      const bool missing = scanned && rssi[index] == INT32_MIN;
 
       return connectSta(network.ssid, network.password, nullptr, missing);
     }

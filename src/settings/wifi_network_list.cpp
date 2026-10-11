@@ -73,7 +73,7 @@ bool WifiNetworkList::add(const char* ssid, const char* password) {
 bool WifiNetworkList::remove(const char* ssid) {
   const int index = find(ssid);
 
-  if (index < 0) {
+  if (index < 0 || count_ == 1) {
     return false;
   }
 

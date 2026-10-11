@@ -72,8 +72,8 @@ bool settingsValidateServoRanges(
 );
 bool settingsValidateRgbOrder(const char* rgbOrder);
 
-// Updates RAM cache and NVS for any non-null args. Returns false on validation
-// failure (no write). If hostname is set and differs from boot hostname,
+// Updates RAM cache and NVS for any non-null args; all null is a no-op that
+// returns true. Returns false on validation failure (no write). If hostname is set and differs from boot hostname,
 // *rebootRequired is set true when non-null.
 bool saveSettings(
   const uint32_t* sleepTimeoutMin,
