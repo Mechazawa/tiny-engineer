@@ -682,10 +682,6 @@ body.locked footer {
   background: #fde8e8;
 }
 
-#config-form {
-  margin-bottom: 1rem;
-}
-
 .wifi-network-list {
   list-style: none;
   margin: 0 0 1rem;
@@ -702,7 +698,22 @@ body.locked footer {
 }
 
 .wifi-network-ssid {
+  flex: 1;
   overflow-wrap: anywhere;
+}
+
+.wifi-network-removed .wifi-network-ssid {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.wifi-network-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+#wifi-network-add {
+  text-align: center;
 }
 
 .wifi-network .btn {
@@ -722,7 +733,6 @@ body.setup-mode footer {
 }
 
 body.setup-mode #config-form,
-body.setup-mode #wifi-networks-section,
 body.setup-mode .config-danger {
   display: none !important;
 }

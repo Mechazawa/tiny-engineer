@@ -1,49 +1,84 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { $, fakeRobot, loadApp, settle, submit } from "./robot.js";
+import { $, click, fakeRobot, loadApp, submit } from "./robot.js";
 
-const listedNetworks = () =>
-  [...document.querySelectorAll("#wifi-network-list .wifi-network-ssid")].map(
-    (node) => node.textContent,
-  );
+const rows = () =>
+  [...document.querySelectorAll("#wifi-network-list .wifi-network")].map((row) => ({
+    ssid: row.querySelector(".wifi-network-ssid").textContent,
+    note: row.querySelector(".wifi-network-note").textContent,
+    button: row.querySelector(".btn"),
+  }));
+
+const wifiPosts = (robot) =>
+  robot.requests
+    .filter((request) => request.method === "POST" && request.params.wifi_ssid !== undefined)
+    .map((request) => `${request.path} ${request.params.wifi_ssid}`);
+
+async function stage(ssid, password = "") {
+  $("#wifi-network-ssid").value = ssid;
+  $("#wifi-network-password").value = password;
+  await click("#wifi-network-add");
+}
 
 describe("wifi networks", () => {
   beforeEach(() => sessionStorage.clear());
 
-  it("lists the saved networks and keeps the last one", async () => {
+  it("keeps the last saved network", async () => {
     fakeRobot({ settings: { wifi_networks: ["home"] } });
     await loadApp("/config");
 
-    expect(listedNetworks()).toEqual(["home"]);
-    expect($("#wifi-network-list .btn").disabled).toBe(true);
+    expect(rows().map((row) => row.ssid)).toEqual(["home"]);
+    expect(rows()[0].button.disabled).toBe(true);
   });
 
-  it("adds a network in front of the saved ones", async () => {
+  it("sends staged changes only on save, adds before removals", async () => {
     const robot = fakeRobot({ settings: { wifi_networks: ["home"] } });
 
     await loadApp("/config");
+    await stage(" office ", "secret");
+    await click("#wifi-network-list .wifi-network:last-child .btn");
 
-    $("#wifi-network-ssid").value = " office ";
-    $("#wifi-network-password").value = "secret";
-    await submit("#wifi-network-form");
+    expect(rows().map((row) => row.note)).toEqual(["Added on save", "Removed on save"]);
+    expect(wifiPosts(robot)).toEqual([]);
 
-    expect(robot.lastPost("/settings").params).toEqual({
-      wifi_ssid: "office",
-      wifi_password: "secret",
-    });
-    expect(listedNetworks()).toEqual(["office", "home"]);
-    expect($("#wifi-network-password").value).toBe("");
+    await submit("#config-form");
+
+    expect(wifiPosts(robot)).toEqual(["/settings office", "/settings/wifi/remove home"]);
+    expect(robot.lastPost("/settings").params.wifi_password).toBe("secret");
+    expect(rows().map((row) => row.ssid)).toEqual(["office"]);
+    expect($("#status").textContent).toBe("Settings saved. WiFi networks apply after reboot.");
   });
 
-  it("removes a network", async () => {
-    const robot = fakeRobot({ settings: { wifi_networks: ["office", "home"] } });
+  it("drops a staged change on undo", async () => {
+    const robot = fakeRobot({ settings: { wifi_networks: ["home"] } });
 
     await loadApp("/config");
+    await stage("office");
+    await click("#wifi-network-list .wifi-network:first-child .btn");
+    await submit("#config-form");
 
-    document.querySelectorAll("#wifi-network-list .btn")[0].click();
-    await settle();
+    expect(wifiPosts(robot)).toEqual([]);
+    expect($("#status").textContent).toBe("Settings saved.");
+  });
 
-    expect(robot.lastPost("/settings/wifi/remove").params).toEqual({ wifi_ssid: "office" });
-    expect(listedNetworks()).toEqual(["home"]);
-    expect($("#status").textContent).toBe("Removed office.");
+  it("refuses a sixth network", async () => {
+    fakeRobot({ settings: { wifi_networks: ["a", "b", "c", "d", "e"] } });
+    await loadApp("/config");
+    await stage("f");
+
+    expect(rows()).toHaveLength(5);
+    expect($("#status").textContent).toBe("The robot keeps up to 5 networks. Remove one first.");
+  });
+
+  it("names the network a failed request was for", async () => {
+    const robot = fakeRobot({ settings: { wifi_networks: ["home", "office"] } });
+
+    await loadApp("/config");
+    await click("#wifi-network-list .wifi-network:first-child .btn");
+    robot.failing.add("/settings/wifi/remove");
+    await submit("#config-form");
+
+    expect($("#status").textContent).toBe(
+      "Settings saved. WiFi changes failed: home: robot said no",
+    );
   });
 });

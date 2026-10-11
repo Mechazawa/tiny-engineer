@@ -2,6 +2,7 @@ import { token } from "./api.js";
 import { $ } from "./dom.js";
 import { showRebootGate } from "./shell.js";
 import { clearStatus, perform, setStatus } from "./status.js";
+import { wifiNetworks } from "./wifi-networks.js";
 
 const EYES_STYLES = ["classic", "kaomoji", "cover", "dots"];
 const DEFAULT_VOLUME = 70;
@@ -171,7 +172,18 @@ async function saveConfig() {
     token.set(newToken);
   }
 
-  setStatus(saveMessage(host, previousLoading, result.data), "ok");
+  const wifiChanged = wifiNetworks.pending;
+  const wifiErrors = await wifiNetworks.save();
+
+  if (wifiErrors.length > 0) {
+    setStatus(`Settings saved. WiFi changes failed: ${wifiErrors.join("; ")}`, "err");
+
+    return;
+  }
+
+  const wifiNote = wifiChanged ? " WiFi networks apply after reboot." : "";
+
+  setStatus(saveMessage(host, previousLoading, result.data) + wifiNote, "ok");
 }
 
 async function factoryReset() {
