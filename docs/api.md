@@ -243,6 +243,12 @@ curl -X POST "http://tiny-engineer.local/settings/reset"
   "loading": "progress",
   "eyes_style": "classic",
   "access_token_set": false,
+  "wifi_configured": false,
+  "servo_mins": [60, 40, 45, 35, 40],
+  "servo_maxs": [130, 130, 135, 125, 130],
+  "rgb_order": "GRB",
+  "oled_rotate_180": false,
+  "wifi_networks": [],
   "reboot_required": true
 }
 ```

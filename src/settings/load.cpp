@@ -33,16 +33,18 @@ void migrateLegacyWifi() {
     return;
   }
 
-  if (g_wifiNetworks.count() > 0) {
-    g_settingsPrefs.putBytes(
-      kKeyWifiNets,
-      g_wifiNetworks.data(),
-      g_wifiNetworks.count() * sizeof(WifiNetwork)
-    );
+  // An invalid legacy SSID loads as an empty list; its keys go too.
+  const size_t length = g_wifiNetworks.count() * sizeof(WifiNetwork);
+  const bool moved =
+    length == 0 ||
+    g_settingsPrefs.putBytes(kKeyWifiNets, g_wifiNetworks.data(), length) ==
+      length;
+
+  if (moved) {
+    g_settingsPrefs.remove(kKeyWifiSsid);
+    g_settingsPrefs.remove(kKeyWifiPass);
   }
 
-  g_settingsPrefs.remove(kKeyWifiSsid);
-  g_settingsPrefs.remove(kKeyWifiPass);
   settingsNvsEnd();
 }
 

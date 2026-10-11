@@ -14,6 +14,10 @@
 namespace {
 
 constexpr unsigned long WIFI_TIMEOUT_MS = 20000;
+// Long enough for the core's retries after "AP not found", which a hidden
+// SSID can need, but short enough that out-of-range networks do not stall
+// boot for the full timeout each.
+constexpr unsigned long WIFI_UNSEEN_TIMEOUT_MS = 8000;
 constexpr unsigned long WIFI_POLL_MS = 500;
 constexpr unsigned long IPV6_TIMEOUT_MS = 2000;
 constexpr size_t AP_SSID_MAX = 20;
@@ -120,12 +124,10 @@ void stopCaptiveDns() {
   dnsStarted = false;
 }
 
-// stopWhenNotFound ends the wait early once the radio reports the SSID
-// missing; use it only for networks the boot scan did not see.
 bool connectSta(
   const char* ssid,
   const char* password,
-  bool stopWhenNotFound = false
+  unsigned long timeoutMs = WIFI_TIMEOUT_MS
 ) {
   const char* hostname = settingsHostname();
 
@@ -144,8 +146,7 @@ bool connectSta(
 
   while (
       WiFi.status() != WL_CONNECTED &&
-      !(stopWhenNotFound && WiFi.status() == WL_NO_SSID_AVAIL) &&
-      millis() - startMs < WIFI_TIMEOUT_MS
+      millis() - startMs < timeoutMs
   ) {
     delay(WIFI_POLL_MS);
     serialLogPrint(".");
@@ -214,9 +215,13 @@ bool connectSavedNetworks() {
     order + networks.count(),
     [&](size_t index) {
       const WifiNetwork& network = networks.at(index);
-      const bool missing = scanned && rssi[index] == INT32_MIN;
+      const bool unseen = scanned && rssi[index] == INT32_MIN;
 
-      return connectSta(network.ssid, network.password, missing);
+      return connectSta(
+        network.ssid,
+        network.password,
+        unseen ? WIFI_UNSEEN_TIMEOUT_MS : WIFI_TIMEOUT_MS
+      );
     }
   );
 }
