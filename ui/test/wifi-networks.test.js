@@ -64,6 +64,7 @@ describe("wifi networks", () => {
 
       return robotFetch(input, options);
     };
+
     await submit("#config-form");
 
     expect(saveDisabledDuringRemove).toBe(true);
