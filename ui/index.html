@@ -158,9 +158,9 @@
             <td>Factory reset all settings to defaults</td>
           </tr>
           <tr>
-            <td>POST</td>
-            <td><code>/settings/wifi/remove</code></td>
-            <td>Remove a saved WiFi network (<code>wifi_ssid</code>)</td>
+            <td>PUT</td>
+            <td><code>/settings/wifi</code></td>
+            <td>Replace the saved WiFi networks (JSON body)</td>
           </tr>
           <tr>
             <td>GET</td>
@@ -288,21 +288,6 @@
             <td>0&ndash;64 printable ASCII; empty clears (disables auth)</td>
           </tr>
           <tr>
-            <td><code>wifi_ssid</code></td>
-            <td>string</td>
-            <td>
-              1&ndash;32 chars; must be sent with <code>wifi_password</code>; up to 5 saved networks
-            </td>
-          </tr>
-          <tr>
-            <td><code>wifi_password</code></td>
-            <td>string</td>
-            <td>
-              0&ndash;63 chars; empty allowed for open networks; tested before save in setup AP mode
-              only
-            </td>
-          </tr>
-          <tr>
             <td><code>servo_mins</code></td>
             <td>string</td>
             <td>
@@ -334,15 +319,15 @@
         </tbody>
       </table>
       <p>
-        Servo min/max, RGB LED mapping, and OLED rotation can only be set in setup AP mode. WiFi
-        networks added outside setup AP mode are saved without a test. During setup,
-        <code>hostname</code> may be sent with <code>wifi_ssid</code> and
-        <code>wifi_password</code> (same hostname rules as Config). During setup (credentials not
-        saved), control APIs return <strong>503</strong> <code>wifi not configured</code>;
-        <code>POST /setup/servo</code>, <code>POST /setup/led</code>,
-        <code>POST /setup/audio</code>, and <code>POST /setup/oled</code> stay available. Servo
-        ranges, RGB mapping, and screen rotation survive factory reset and can be retuned in the
-        setup wizard.
+        Servo min/max, RGB LED mapping, and OLED rotation can only be set in setup AP mode.
+        <code>PUT /settings/wifi</code> takes a JSON array of 1&ndash;5
+        <code>{"ssid", "password"}</code> objects; leave out <code>password</code> to keep a saved
+        one. In setup AP mode the robot tests the first network before saving. During setup
+        (credentials not saved), control APIs return <strong>503</strong>
+        <code>wifi not configured</code>; <code>POST /setup/servo</code>,
+        <code>POST /setup/led</code>, <code>POST /setup/audio</code>, and
+        <code>POST /setup/oled</code> stay available. Servo ranges, RGB mapping, and screen rotation
+        survive factory reset and can be retuned in the setup wizard.
       </p>
       <p>POST <code>/anim</code> &mdash; query param <code>name</code>:</p>
       <table>

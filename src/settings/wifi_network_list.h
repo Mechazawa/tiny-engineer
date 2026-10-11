@@ -9,7 +9,7 @@ struct WifiNetwork {
   char password[SETTINGS_WIFI_PASSWORD_MAX_LEN + 1];
 };
 
-// Saved networks in the order the robot tries them at boot.
+// Saved networks; boot tries the ones a scan misses in this order.
 class WifiNetworkList {
 public:
   size_t count() const;
@@ -17,12 +17,9 @@ public:
   const WifiNetwork* data() const;
   int find(const char* ssid) const;
 
-  // Puts the network first, replacing the password when the SSID is already
-  // saved. False when the credentials are invalid or the list is full.
+  // Appends the network. False when the credentials are invalid, the SSID
+  // is already listed, or the list is full.
   bool add(const char* ssid, const char* password);
-  // False for an unknown SSID or the last network: an empty list puts the
-  // robot in setup AP mode at the next boot, so only factory reset clears it.
-  bool remove(const char* ssid);
 
   // NVS blob: count() entries back to back. False (list unchanged) when the
   // blob is not a whole number of valid entries.

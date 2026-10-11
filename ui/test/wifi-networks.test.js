@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { $, click, fakeRobot, loadApp, submit } from "./robot.js";
+import { $, click, fakeRobot, loadApp, settle, submit } from "./robot.js";
 
 const rows = () =>
   [...document.querySelectorAll("#wifi-network-list .wifi-network")].map((row) => ({
@@ -8,15 +8,20 @@ const rows = () =>
     button: row.querySelector(".btn"),
   }));
 
-const wifiPosts = (robot) =>
-  robot.requests
-    .filter((request) => request.method === "POST" && request.params.wifi_ssid !== undefined)
-    .map((request) => `${request.path} ${request.params.wifi_ssid}`);
+const wifiPuts = (robot) =>
+  robot.requests.filter((request) => request.method === "PUT" && request.path === "/settings/wifi");
 
 async function stage(ssid, password = "") {
   $("#wifi-network-ssid").value = ssid;
   $("#wifi-network-password").value = password;
   await click("#wifi-network-add");
+}
+
+async function removeRow(ssid) {
+  rows()
+    .find((row) => row.ssid === ssid)
+    .button.click();
+  await settle();
 }
 
 describe("wifi networks", () => {
@@ -30,48 +35,55 @@ describe("wifi networks", () => {
     expect(rows()[0].button.disabled).toBe(true);
   });
 
-  it("sends staged changes only on save, adds before removals", async () => {
+  it("sends the whole list once on save", async () => {
     const robot = fakeRobot({ settings: { wifi_networks: ["home"] } });
 
     await loadApp("/config");
     await stage(" office ", "secret");
-    await click("#wifi-network-list .wifi-network:last-child .btn");
+    await removeRow("home");
 
     expect(rows().map((row) => row.note)).toEqual(["Added on save", "Removed on save"]);
-    expect(wifiPosts(robot)).toEqual([]);
+    expect(wifiPuts(robot)).toEqual([]);
 
     await submit("#config-form");
 
-    expect(wifiPosts(robot)).toEqual(["/settings office", "/settings/wifi/remove home"]);
-    expect(robot.lastPost("/settings").params.wifi_password).toBe("secret");
+    expect(wifiPuts(robot).map((request) => request.json)).toEqual([
+      [{ ssid: "office", password: "secret" }],
+    ]);
     expect(rows().map((row) => row.ssid)).toEqual(["office"]);
     expect($("#status").textContent).toBe("Settings saved. WiFi networks apply after reboot.");
   });
 
-  it("keeps the controls locked until the wifi requests finish", async () => {
-    fakeRobot({ settings: { wifi_networks: ["home", "office"] } });
+  it("swaps four of five networks in one request", async () => {
+    const robot = fakeRobot({ settings: { wifi_networks: ["a", "b", "c", "d", "e"] } });
 
     await loadApp("/config");
-    await click("#wifi-network-list .wifi-network:first-child .btn");
 
-    const robotFetch = globalThis.fetch;
-    let saveDisabledDuringRemove = null;
+    for (const ssid of ["a", "b", "c", "d"]) {
+      await removeRow(ssid);
+    }
 
-    globalThis.fetch = (input, options) => {
-      if (String(input).startsWith("/settings/wifi/remove")) {
-        saveDisabledDuringRemove = $("#config-form [type=submit]").disabled;
-      }
-
-      return robotFetch(input, options);
-    };
+    for (const ssid of ["f", "g", "h", "i"]) {
+      await stage(ssid, "pw");
+    }
 
     await submit("#config-form");
 
-    expect(saveDisabledDuringRemove).toBe(true);
-    expect($("#config-form [type=submit]").disabled).toBe(false);
+    expect(wifiPuts(robot)).toHaveLength(1);
+    expect(robot.settings.wifi_networks).toEqual(["f", "g", "h", "i", "e"]);
   });
 
-  it("drops a staged change on undo", async () => {
+  it("keeps saved passwords by leaving them out", async () => {
+    const robot = fakeRobot({ settings: { wifi_networks: ["home", "office"] } });
+
+    await loadApp("/config");
+    await removeRow("office");
+    await submit("#config-form");
+
+    expect(wifiPuts(robot)[0].json).toEqual([{ ssid: "home" }]);
+  });
+
+  it("sends nothing when the list did not change", async () => {
     const robot = fakeRobot({ settings: { wifi_networks: ["home"] } });
 
     await loadApp("/config");
@@ -79,7 +91,7 @@ describe("wifi networks", () => {
     await click("#wifi-network-list .wifi-network:first-child .btn");
     await submit("#config-form");
 
-    expect(wifiPosts(robot)).toEqual([]);
+    expect(wifiPuts(robot)).toEqual([]);
     expect($("#status").textContent).toBe("Settings saved.");
   });
 
@@ -92,16 +104,37 @@ describe("wifi networks", () => {
     expect($("#status").textContent).toBe("The robot keeps up to 5 networks. Remove one first.");
   });
 
-  it("names the network a failed request was for", async () => {
+  it("keeps the controls locked until the list is saved", async () => {
+    fakeRobot({ settings: { wifi_networks: ["home", "office"] } });
+
+    await loadApp("/config");
+    await removeRow("office");
+
+    const robotFetch = globalThis.fetch;
+    let saveDisabledDuringPut = null;
+
+    globalThis.fetch = (input, options) => {
+      if (options?.method === "PUT") {
+        saveDisabledDuringPut = $("#config-form [type=submit]").disabled;
+      }
+
+      return robotFetch(input, options);
+    };
+
+    await submit("#config-form");
+
+    expect(saveDisabledDuringPut).toBe(true);
+    expect($("#config-form [type=submit]").disabled).toBe(false);
+  });
+
+  it("reports the robot's error", async () => {
     const robot = fakeRobot({ settings: { wifi_networks: ["home", "office"] } });
 
     await loadApp("/config");
-    await click("#wifi-network-list .wifi-network:first-child .btn");
-    robot.failing.add("/settings/wifi/remove");
+    await removeRow("office");
+    robot.failing.add("/settings/wifi");
     await submit("#config-form");
 
-    expect($("#status").textContent).toBe(
-      "Settings saved. WiFi changes failed: home: robot said no",
-    );
+    expect($("#status").textContent).toBe("Settings saved. WiFi networks not saved: robot said no");
   });
 });

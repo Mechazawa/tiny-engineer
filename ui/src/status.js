@@ -1,4 +1,4 @@
-import { apiPost } from "./api.js";
+import { apiPost, apiPutJson } from "./api.js";
 import { $, $$ } from "./dom.js";
 
 const statusBar = $("#status");
@@ -30,10 +30,11 @@ function setBusy(on) {
   }
 }
 
-// POSTs with the controls locked, reporting progress and failures in the status bar.
+// POSTs params, or PUTs json when given, with the controls locked, reporting progress and failures
+// in the status bar.
 // onSuccess runs before the controls unlock, for follow-up requests that belong to the same action.
 // Resolves to the apiPost result, or null when already busy or the request failed to send.
-export async function perform({ path, params, pending, failure, onSuccess }) {
+export async function perform({ path, params, json, pending, failure, onSuccess }) {
   if (busy) {
     return null;
   }
@@ -42,7 +43,7 @@ export async function perform({ path, params, pending, failure, onSuccess }) {
   setStatus(pending, "loading");
 
   try {
-    const result = await apiPost(path, params);
+    const result = await (json === undefined ? apiPost(path, params) : apiPutJson(path, json));
 
     if (!result.ok) {
       setStatus(result.data.error || failure, "err");

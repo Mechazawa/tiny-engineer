@@ -3,33 +3,30 @@
 
 #include "settings/wifi_network_list.h"
 
-void test_add_puts_newest_first() {
+void test_add_keeps_order() {
   WifiNetworkList networks;
 
   TEST_ASSERT_TRUE(networks.add("home", "secret"));
   TEST_ASSERT_TRUE(networks.add("office", ""));
 
   TEST_ASSERT_EQUAL(2, networks.count());
-  TEST_ASSERT_EQUAL_STRING("office", networks.at(0).ssid);
-  TEST_ASSERT_EQUAL_STRING("home", networks.at(1).ssid);
+  TEST_ASSERT_EQUAL_STRING("home", networks.at(0).ssid);
+  TEST_ASSERT_EQUAL_STRING("secret", networks.at(0).password);
+  TEST_ASSERT_EQUAL_STRING("office", networks.at(1).ssid);
+  TEST_ASSERT_EQUAL(1, networks.find("office"));
+  TEST_ASSERT_EQUAL(-1, networks.find("cafe"));
 }
 
-void test_add_known_ssid_moves_it_first_with_new_password() {
+void test_add_rejects_duplicates() {
   WifiNetworkList networks;
   networks.add("home", "old");
-  networks.add("office", "x");
-  networks.add("cafe", "y");
 
-  TEST_ASSERT_TRUE(networks.add("office", "new"));
-
-  TEST_ASSERT_EQUAL(3, networks.count());
-  TEST_ASSERT_EQUAL_STRING("office", networks.at(0).ssid);
-  TEST_ASSERT_EQUAL_STRING("new", networks.at(0).password);
-  TEST_ASSERT_EQUAL_STRING("cafe", networks.at(1).ssid);
-  TEST_ASSERT_EQUAL_STRING("home", networks.at(2).ssid);
+  TEST_ASSERT_FALSE(networks.add("home", "new"));
+  TEST_ASSERT_EQUAL(1, networks.count());
+  TEST_ASSERT_EQUAL_STRING("old", networks.at(0).password);
 }
 
-void test_full_list_only_accepts_known_ssids() {
+void test_add_rejects_a_sixth_network() {
   WifiNetworkList networks;
   const char* ssids[] = {"a", "b", "c", "d", "e"};
 
@@ -38,7 +35,6 @@ void test_full_list_only_accepts_known_ssids() {
   }
 
   TEST_ASSERT_FALSE(networks.add("f", ""));
-  TEST_ASSERT_TRUE(networks.add("a", "changed"));
   TEST_ASSERT_EQUAL(SETTINGS_WIFI_NETWORK_MAX, networks.count());
 }
 
@@ -49,22 +45,8 @@ void test_add_rejects_invalid_credentials() {
 
   TEST_ASSERT_FALSE(networks.add("", "secret"));
   TEST_ASSERT_FALSE(networks.add("home", longPassword));
+  TEST_ASSERT_FALSE(networks.add("home", nullptr));
   TEST_ASSERT_EQUAL(0, networks.count());
-}
-
-void test_remove_keeps_order_of_the_rest() {
-  WifiNetworkList networks;
-  networks.add("home", "");
-  networks.add("office", "");
-  networks.add("cafe", "");
-
-  TEST_ASSERT_TRUE(networks.remove("office"));
-  TEST_ASSERT_FALSE(networks.remove("office"));
-
-  TEST_ASSERT_EQUAL(2, networks.count());
-  TEST_ASSERT_EQUAL_STRING("cafe", networks.at(0).ssid);
-  TEST_ASSERT_EQUAL_STRING("home", networks.at(1).ssid);
-  TEST_ASSERT_EQUAL(-1, networks.find("office"));
 }
 
 void test_load_round_trips_saved_blob() {
@@ -78,8 +60,8 @@ void test_load_round_trips_saved_blob() {
     loaded.load(saved.data(), saved.count() * sizeof(WifiNetwork))
   );
   TEST_ASSERT_EQUAL(2, loaded.count());
-  TEST_ASSERT_EQUAL_STRING("office", loaded.at(0).ssid);
-  TEST_ASSERT_EQUAL_STRING("secret", loaded.at(1).password);
+  TEST_ASSERT_EQUAL_STRING("home", loaded.at(0).ssid);
+  TEST_ASSERT_EQUAL_STRING("secret", loaded.at(0).password);
 }
 
 void test_load_rejects_corrupt_blob() {
@@ -100,22 +82,12 @@ void test_load_rejects_corrupt_blob() {
   TEST_ASSERT_EQUAL_STRING("home", networks.at(0).ssid);
 }
 
-void test_remove_keeps_the_last_network() {
-  WifiNetworkList networks;
-  networks.add("home", "");
-
-  TEST_ASSERT_FALSE(networks.remove("home"));
-  TEST_ASSERT_EQUAL(1, networks.count());
-}
-
 int main() {
   UNITY_BEGIN();
-  RUN_TEST(test_add_puts_newest_first);
-  RUN_TEST(test_add_known_ssid_moves_it_first_with_new_password);
-  RUN_TEST(test_full_list_only_accepts_known_ssids);
+  RUN_TEST(test_add_keeps_order);
+  RUN_TEST(test_add_rejects_duplicates);
+  RUN_TEST(test_add_rejects_a_sixth_network);
   RUN_TEST(test_add_rejects_invalid_credentials);
-  RUN_TEST(test_remove_keeps_order_of_the_rest);
-  RUN_TEST(test_remove_keeps_the_last_network);
   RUN_TEST(test_load_round_trips_saved_blob);
   RUN_TEST(test_load_rejects_corrupt_blob);
   return UNITY_END();

@@ -1,8 +1,8 @@
-import { apiPost } from "./api.js";
+import { apiPutJson } from "./api.js";
 import { $, element } from "./dom.js";
 import { setStatus } from "./status.js";
 
-const MAX_NETWORKS = 5;
+export const MAX_NETWORKS = 5;
 const ssidField = $("#wifi-network-ssid");
 const passwordField = $("#wifi-network-password");
 
@@ -43,15 +43,22 @@ export const wifiNetworks = {
     return this.removed.size > 0 || this.added.size > 0;
   },
 
-  isKept(ssid) {
-    return this.saved.includes(ssid) && !this.removed.has(ssid);
+  // Order is boot priority for networks a scan misses: new ones first, then the kept saved ones.
+  get desired() {
+    return [
+      ...[...this.added].map(([ssid, password]) => ({ ssid, password })),
+      ...this.saved
+        .filter((ssid) => !this.removed.has(ssid) && !this.added.has(ssid))
+        .map((ssid) => ({ ssid })),
+    ];
   },
 
-  get remaining() {
-    return (
-      this.saved.filter((ssid) => !this.removed.has(ssid) && !this.added.has(ssid)).length +
-      this.added.size
-    );
+  // The setup wizard's list: the network to test first, then the saved ones that still fit.
+  withFirst(ssid, password) {
+    return [
+      { ssid, password },
+      ...this.saved.filter((saved) => saved !== ssid).map((saved) => ({ ssid: saved })),
+    ].slice(0, MAX_NETWORKS);
   },
 
   stageAdd() {
@@ -63,7 +70,9 @@ export const wifiNetworks = {
       return;
     }
 
-    if (!this.added.has(ssid) && !this.isKept(ssid) && this.remaining >= MAX_NETWORKS) {
+    const listed = this.desired.some((network) => network.ssid === ssid);
+
+    if (!listed && this.desired.length >= MAX_NETWORKS) {
       setStatus(`The robot keeps up to ${MAX_NETWORKS} networks. Remove one first.`, "err");
 
       return;
@@ -98,44 +107,31 @@ export const wifiNetworks = {
           : networkRow(ssid, {
               action: () => this.removed.add(ssid),
               label: "Remove",
-              enabled: this.remaining > 1,
+              enabled: this.desired.length > 1,
             }),
       );
 
     this.list.replaceChildren(...addedRows, ...savedRows);
   },
 
-  // Adds go first so swapping out the only saved network does not trip the firmware's keep-one
-  // rule. Resolves to the error per failed network; the list reloads from the last robot reply.
+  // Resolves to the robot's error, or null when the list saved or nothing changed.
   async save() {
-    const requests = [
-      ...[...this.added].map(([ssid, password]) => ({
-        path: "/settings",
-        params: { wifi_ssid: ssid, wifi_password: password },
-      })),
-      ...[...this.removed].map((ssid) => ({
-        path: "/settings/wifi/remove",
-        params: { wifi_ssid: ssid },
-      })),
-    ];
-    const errors = [];
-    let latest = null;
-
-    for (const { path, params } of requests) {
-      const result = await apiPost(path, params).catch(() => ({ ok: false, data: {} }));
-
-      if (result.ok) {
-        latest = result.data;
-      } else {
-        errors.push(`${params.wifi_ssid}: ${result.data.error || "network error"}`);
-      }
+    if (!this.pending) {
+      return null;
     }
 
-    if (latest) {
-      this.load(latest);
+    const result = await apiPutJson("/settings/wifi", this.desired).catch(() => ({
+      ok: false,
+      data: {},
+    }));
+
+    if (!result.ok) {
+      return result.data.error || "network error";
     }
 
-    return errors;
+    this.load(result.data);
+
+    return null;
   },
 };
 

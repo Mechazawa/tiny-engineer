@@ -32,10 +32,6 @@ function applySettingsParams(settings, params) {
   for (const [key, value] of Object.entries(params)) {
     if (key === "servo_mins" || key === "servo_maxs") {
       next[key] = value.split(",").map(Number);
-    } else if (key === "wifi_ssid") {
-      next.wifi_networks = [value, ...settings.wifi_networks.filter((ssid) => ssid !== value)];
-    } else if (key === "wifi_password") {
-      continue;
     } else if (key === "access_token") {
       next.access_token_set = value !== "";
     } else if (key === "welcome" || key === "serial_log" || key === "oled_rotate_180") {
@@ -78,6 +74,7 @@ export function fakeRobot({
       path: url.pathname,
       params: Object.fromEntries(url.searchParams),
       authorization: options.headers?.Authorization,
+      json: options.body === undefined ? undefined : JSON.parse(options.body),
     };
     const json = (body, status = 200) => new Response(JSON.stringify(body), { status });
 
@@ -103,10 +100,12 @@ export function fakeRobot({
       robot.settings = applySettingsParams(robot.settings, request.params);
     }
 
-    if (request.path === "/settings/wifi/remove") {
-      robot.settings.wifi_networks = robot.settings.wifi_networks.filter(
-        (ssid) => ssid !== request.params.wifi_ssid,
-      );
+    if (request.path === "/settings/wifi" && request.method === "PUT") {
+      robot.settings.wifi_networks = request.json.map((network) => network.ssid);
+
+      if (provisioning) {
+        return json({ ...robot.settings, wifi_connect_success: true, wifi_ip: "192.168.1.10" });
+      }
     }
 
     if (request.path.startsWith("/settings")) {

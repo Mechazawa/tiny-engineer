@@ -111,11 +111,11 @@ curl -X POST "http://tiny-engineer.local/test/servo?index=0&angle=90"
 | `GET` / `POST` | `/anim` | Current animation / start one (`name`, optional `interrupt`) — full params in [api.md](../api.md#post-anim) |
 | `POST` | `/play` | Stream a WAV while `talking` (or `/play/{name}`) runs; answers when the clip ends — full params in [api.md](../api.md#post-play) |
 | `GET` | `/settings` | Persistent settings (`sleep_timeout`, `hostname`, `volume`, `welcome`, `serial_log`, `continuous_timeout`, `loading`, `eyes_style`, `access_token_set`, `wifi_configured`, `servo_mins`, `servo_maxs`, `rgb_order`, `oled_rotate_180`, `wifi_networks`) |
-| `POST` | `/settings?...&wifi_ssid=&wifi_password=` | Update NVS settings; WiFi params add a saved network (tested before save in setup AP only); `reboot_required` if hostname changed |
+| `POST` | `/settings?...` | Update NVS settings; `reboot_required` if hostname changed |
 | `POST` | `/settings?...&servo_mins=&servo_maxs=` | Servo min/max comma lists; setup-AP-only |
 | `POST` | `/settings?...&rgb_order=` | WS2812 byte order (`RGB`/`RBG`/`GRB`/`GBR`/`BRG`/`BGR`); setup-AP-only; default `GRB` |
 | `POST` | `/settings?...&oled_rotate_180=` | OLED 180° rotation (`0`/`1`); setup-AP-only; default `0` |
-| `POST` | `/settings/wifi/remove?wifi_ssid=` | Remove a saved WiFi network; the last one stays |
+| `PUT` | `/settings/wifi` | Replace the saved WiFi networks (JSON array of 1 to 5); first one tested in setup AP mode |
 | `POST` | `/settings/reset` | Factory reset settings to defaults (clears WiFi, keeps servo ranges, RGB mapping, and screen rotation); power-cycle to reopen setup AP |
 | `POST` | `/test/audio` | `{"ok":true,"test":"audio"}` after `runSoundTest()` |
 | `POST` | `/test/audio/bell` | `{"ok":true,"test":"bell"}` after `playBell()` |

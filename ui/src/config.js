@@ -168,10 +168,10 @@ async function saveConfig() {
       }
 
       const wifiChanged = wifiNetworks.pending;
-      const wifiErrors = await wifiNetworks.save();
+      const wifiError = await wifiNetworks.save();
 
-      if (wifiErrors.length > 0) {
-        setStatus(`Settings saved. WiFi changes failed: ${wifiErrors.join("; ")}`, "err");
+      if (wifiError) {
+        setStatus(`Settings saved. WiFi networks not saved: ${wifiError}`, "err");
 
         return;
       }

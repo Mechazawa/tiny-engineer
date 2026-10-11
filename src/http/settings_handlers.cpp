@@ -114,8 +114,6 @@ void handleSettingsPost(WebServer& server) {
   const bool hasLoading = server.hasArg("loading");
   const bool hasEyesStyle = server.hasArg("eyes_style");
   const bool hasAccessToken = server.hasArg("access_token");
-  const bool hasWifiSsid = server.hasArg("wifi_ssid");
-  const bool hasWifiPassword = server.hasArg("wifi_password");
   const bool hasServoMins = server.hasArg("servo_mins");
   const bool hasServoMaxs = server.hasArg("servo_maxs");
   const bool hasRgbOrder = server.hasArg("rgb_order");
@@ -123,12 +121,12 @@ void handleSettingsPost(WebServer& server) {
 
   if (!hasSleep && !hasHost && !hasVolume && !hasWelcome && !hasSerialLog &&
       !hasContTo && !hasLoading && !hasEyesStyle && !hasAccessToken &&
-      !hasWifiSsid && !hasWifiPassword && !hasServoMins && !hasServoMaxs &&
+      !hasServoMins && !hasServoMaxs &&
       !hasRgbOrder && !hasOledRotate180) {
     httpSendJson(
       server,
       400,
-      "{\"ok\":false,\"error\":\"missing sleep_timeout, hostname, volume, welcome, serial_log, continuous_timeout, loading, eyes_style, access_token, wifi_ssid, wifi_password, servo_mins, servo_maxs, rgb_order, or oled_rotate_180\"}"
+      "{\"ok\":false,\"error\":\"missing sleep_timeout, hostname, volume, welcome, serial_log, continuous_timeout, loading, eyes_style, access_token, servo_mins, servo_maxs, rgb_order, or oled_rotate_180\"}"
     );
     return;
   }
@@ -151,7 +149,6 @@ void handleSettingsPost(WebServer& server) {
   const char* eyesStylePtr = nullptr;
   String accessTokenArg;
   const char* accessTokenPtr = nullptr;
-  WifiNetworkList wifiNetworks = settingsWifiNetworks();
   uint8_t servoMins[SETTINGS_SERVO_COUNT] = {};
   uint8_t servoMaxs[SETTINGS_SERVO_COUNT] = {};
   const uint8_t* servoMinsPtr = nullptr;
@@ -160,7 +157,6 @@ void handleSettingsPost(WebServer& server) {
   const char* rgbOrderPtr = nullptr;
   bool oledRotate180 = false;
   const bool* oledRotate180Ptr = nullptr;
-  bool wifiConnectSuccess = false;
 
   if (hasSleep) {
     const String sleepArg = server.arg("sleep_timeout");
@@ -343,69 +339,6 @@ void handleSettingsPost(WebServer& server) {
     }
   }
 
-  if (hasWifiSsid || hasWifiPassword) {
-    if (!hasWifiSsid || !hasWifiPassword) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"wifi_ssid and wifi_password required together\"}"
-      );
-      return;
-    }
-
-    const String wifiSsidArg = server.arg("wifi_ssid");
-    const String wifiPasswordArg = server.arg("wifi_password");
-
-    if (!settingsValidateWifiSsid(wifiSsidArg.c_str())) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"invalid wifi_ssid\"}"
-      );
-      return;
-    }
-
-    if (!settingsValidateWifiPassword(wifiPasswordArg.c_str())) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"wifi_password too long\"}"
-      );
-      return;
-    }
-
-    if (!wifiNetworks.add(wifiSsidArg.c_str(), wifiPasswordArg.c_str())) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"wifi network list full\"}"
-      );
-      return;
-    }
-
-    // Outside setup mode the robot cannot test a network without dropping
-    // the connection serving this request, so it saves untested.
-    if (wifiProvisioningMode()) {
-      if (!wifiTestCredentials(
-            wifiSsidArg.c_str(),
-            wifiPasswordArg.c_str(),
-            hostPtr
-          )) {
-        char body[96];
-        snprintf(
-          body,
-          sizeof(body),
-          "{\"ok\":false,\"error\":\"%s\"}",
-          wifiLastConnectError()
-        );
-        httpSendJson(server, 400, body);
-        return;
-      }
-
-      wifiConnectSuccess = true;
-    }
-  }
-
   if (hasServoMins || hasServoMaxs) {
     if (!wifiProvisioningMode()) {
       httpSendJson(
@@ -501,8 +434,8 @@ void handleSettingsPost(WebServer& server) {
   }
 
   bool rebootRequired = false;
-  const bool saved =
-    saveSettings(
+
+  if (!saveSettings(
         sleepPtr,
         hostPtr,
         volumePtr,
@@ -517,14 +450,7 @@ void handleSettingsPost(WebServer& server) {
         rgbOrderPtr,
         oledRotate180Ptr,
         &rebootRequired
-      ) &&
-    (!hasWifiSsid || saveWifiNetworks(wifiNetworks));
-
-  if (!saved) {
-    if (wifiConnectSuccess) {
-      wifiRestoreProvisioningAp();
-    }
-
+      )) {
     httpSendJson(
       server,
       400,
@@ -540,47 +466,97 @@ void handleSettingsPost(WebServer& server) {
     restoreProvisioningOled();
   }
 
-  sendSettingsJson(server, rebootRequired, wifiConnectSuccess);
-
-  if (wifiConnectSuccess) {
-    delay(300);
-    wifiStopProvisioningAp();
-    showBootIp(wifiIpText());
-  }
+  sendSettingsJson(server, rebootRequired, false);
 }
 
-void handleSettingsWifiRemove(WebServer& server) {
-  if (!server.hasArg("wifi_ssid")) {
+void handleSettingsWifiPut(WebServer& server) {
+  JsonDocument body;
+
+  if (deserializeJson(body, server.arg("plain")) ||
+      !body.is<JsonArrayConst>()) {
     httpSendJson(
       server,
       400,
-      "{\"ok\":false,\"error\":\"missing wifi_ssid\"}"
+      "{\"ok\":false,\"error\":\"body must be a JSON array of networks\"}"
     );
     return;
   }
 
-  WifiNetworkList wifiNetworks = settingsWifiNetworks();
-  const String ssid = server.arg("wifi_ssid");
+  const JsonArrayConst entries = body.as<JsonArrayConst>();
 
-  if (wifiNetworks.find(ssid.c_str()) < 0) {
-    httpSendJson(
-      server,
-      404,
-      "{\"ok\":false,\"error\":\"unknown wifi_ssid\"}"
-    );
-    return;
-  }
-
-  if (!wifiNetworks.remove(ssid.c_str())) {
+  // An empty list would put the robot in setup AP mode at the next boot;
+  // factory reset is the way to clear WiFi.
+  if (entries.size() == 0 || entries.size() > SETTINGS_WIFI_NETWORK_MAX) {
     httpSendJson(
       server,
       400,
-      "{\"ok\":false,\"error\":\"cannot remove the last wifi network\"}"
+      "{\"ok\":false,\"error\":\"send 1 to 5 wifi networks\"}"
     );
     return;
   }
 
-  if (!saveWifiNetworks(wifiNetworks)) {
+  const WifiNetworkList& saved = settingsWifiNetworks();
+  WifiNetworkList next;
+
+  for (const JsonObjectConst entry : entries) {
+    const char* ssid = entry["ssid"] | "";
+    const int savedIndex = saved.find(ssid);
+    const JsonVariantConst password = entry["password"];
+
+    if (password.isNull() && savedIndex < 0) {
+      httpSendJson(
+        server,
+        400,
+        "{\"ok\":false,\"error\":\"password required for a new network\"}"
+      );
+      return;
+    }
+
+    if (next.find(ssid) >= 0) {
+      httpSendJson(
+        server,
+        400,
+        "{\"ok\":false,\"error\":\"duplicate ssid\"}"
+      );
+      return;
+    }
+
+    if (!next.add(
+          ssid,
+          password.isNull() ? saved.at(savedIndex).password
+                            : password.as<const char*>()
+        )) {
+      httpSendJson(
+        server,
+        400,
+        "{\"ok\":false,\"error\":\"invalid ssid or password\"}"
+      );
+      return;
+    }
+  }
+
+  // Outside setup AP mode a test would drop the connection serving this
+  // request, so the list is saved untested.
+  const bool tested = wifiProvisioningMode();
+
+  if (tested &&
+      !wifiTestCredentials(next.at(0).ssid, next.at(0).password)) {
+    char error[96];
+    snprintf(
+      error,
+      sizeof(error),
+      "{\"ok\":false,\"error\":\"%s\"}",
+      wifiLastConnectError()
+    );
+    httpSendJson(server, 400, error);
+    return;
+  }
+
+  if (!saveWifiNetworks(next)) {
+    if (tested) {
+      wifiRestoreProvisioningAp();
+    }
+
     httpSendJson(
       server,
       400,
@@ -589,7 +565,13 @@ void handleSettingsWifiRemove(WebServer& server) {
     return;
   }
 
-  sendSettingsJson(server, false, false);
+  sendSettingsJson(server, false, tested);
+
+  if (tested) {
+    delay(300);
+    wifiStopProvisioningAp();
+    showBootIp(wifiIpText());
+  }
 }
 
 void handleSettingsReset(WebServer& server) {
@@ -610,6 +592,6 @@ void handleSettingsReset(WebServer& server) {
 bool isSettingsOrAnimPath(const String& uri) {
   return uri == "/anim" || uri == "/play" || uri.startsWith("/play/") ||
          uri == "/settings" || uri == "/settings/reset" ||
-         uri == "/settings/wifi/remove" ||
+         uri == "/settings/wifi" ||
          uri == "/auth" || uri == "/setup/servo";
 }

@@ -45,45 +45,15 @@ int WifiNetworkList::find(const char* ssid) const {
 
 bool WifiNetworkList::add(const char* ssid, const char* password) {
   if (!settingsValidateWifiSsid(ssid) ||
-      !settingsValidateWifiPassword(password)) {
+      !settingsValidateWifiPassword(password) ||
+      find(ssid) >= 0 ||
+      count_ == SETTINGS_WIFI_NETWORK_MAX) {
     return false;
   }
 
-  const int existing = find(ssid);
-
-  if (existing < 0 && count_ == SETTINGS_WIFI_NETWORK_MAX) {
-    return false;
-  }
-
-  const size_t shifted =
-    existing < 0 ? count_ : static_cast<size_t>(existing);
-
-  memmove(&networks_[1], &networks_[0], shifted * sizeof(WifiNetwork));
-
-  if (existing < 0) {
-    count_++;
-  }
-
-  networks_[0] = {};
-  strncpy(networks_[0].ssid, ssid, SETTINGS_WIFI_SSID_MAX_LEN);
-  strncpy(networks_[0].password, password, SETTINGS_WIFI_PASSWORD_MAX_LEN);
-  return true;
-}
-
-bool WifiNetworkList::remove(const char* ssid) {
-  const int index = find(ssid);
-
-  if (index < 0 || count_ == 1) {
-    return false;
-  }
-
-  memmove(
-    &networks_[index],
-    &networks_[index + 1],
-    (count_ - index - 1) * sizeof(WifiNetwork)
-  );
-  count_--;
-  networks_[count_] = {};
+  WifiNetwork& network = networks_[count_++];
+  strncpy(network.ssid, ssid, SETTINGS_WIFI_SSID_MAX_LEN);
+  strncpy(network.password, password, SETTINGS_WIFI_PASSWORD_MAX_LEN);
   return true;
 }
 
