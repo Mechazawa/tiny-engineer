@@ -41,17 +41,9 @@ describe("setup wizard", () => {
     }
 
     expect(angle()).toBe("180");
-    expect(robot.posts("/setup/servo").map((request) => request.params.angle)).toEqual([
-      "100",
-      "110",
-      "120",
-      "130",
-      "140",
-      "150",
-      "160",
-      "170",
-      "180",
-    ]);
+    expect(
+      robot.posts("/setup/servo").map((request) => (request.json as { angle: number }).angle),
+    ).toEqual([100, 110, 120, 130, 140, 150, 160, 170, 180]);
   });
 
   it("restores the shown angle when a move fails", async () => {
@@ -74,7 +66,7 @@ describe("setup wizard", () => {
 
     await click("+1°");
 
-    expect(robot.lastPost("/setup/servo")?.params).toEqual({ index: "1", angle: "91" });
+    expect(robot.lastPost("/setup/servo")?.json).toEqual({ index: 1, angle: 91 });
 
     await click("Head");
 
@@ -100,11 +92,11 @@ describe("setup wizard", () => {
     await click("Set min (60°)");
     await click("Next: Screen");
 
-    expect(robot.lastPost("/settings")?.params).toEqual({
-      servo_mins: "80,40,45,35,40",
-      servo_maxs: "130,130,135,125,130",
+    expect(robot.lastPost("/settings")?.json).toEqual({
+      servo_mins: [80, 40, 45, 35, 40],
+      servo_maxs: [130, 130, 135, 125, 130],
     });
-    expect(robot.lastPost("/setup/oled")?.params).toEqual({ rotate_180: "0" });
+    expect(robot.lastPost("/setup/oled")?.json).toEqual({ rotate_180: false });
     expect(stepLabel()).toBe("Step 2 of 5 · Screen");
   });
 
@@ -130,7 +122,7 @@ describe("setup wizard", () => {
       "POST /settings",
       "PUT /settings/wifi",
     ]);
-    expect(writes[0].params).toEqual({ hostname: "desk-bot" });
+    expect(writes[0].json).toEqual({ hostname: "desk-bot" });
     expect(writes[1].json).toEqual([{ ssid: "home", password: "secret" }, { ssid: "old" }]);
     expect(screen.getByRole("status").textContent).toContain("WiFi connected");
     expect(screen.getByRole("navigation")).toBeTruthy();
@@ -159,7 +151,7 @@ describe("setup wizard", () => {
 
     await click("Next: Speaker");
 
-    expect(robot.lastPost("/settings")?.params).toEqual({ rgb_order: "RGB" });
+    expect(robot.lastPost("/settings")?.json).toEqual({ rgb_order: "RGB" });
     expect(stepLabel()).toBe("Step 4 of 5 · Speaker");
   });
 });

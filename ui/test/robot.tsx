@@ -31,24 +31,16 @@ export interface RecordedRequest {
   json?: unknown;
 }
 
-function applySettingsParams(settings: Settings, params: Record<string, string>): Settings {
-  const next: Record<string, unknown> = { ...settings };
-
-  for (const [key, value] of Object.entries(params)) {
-    if (key === "servo_mins" || key === "servo_maxs") {
-      next[key] = value.split(",").map(Number);
-    } else if (key === "access_token") {
-      next.access_token_set = value !== "";
-    } else if (key === "welcome" || key === "serial_log" || key === "oled_rotate_180") {
-      next[key] = value === "1";
-    } else {
-      next[key] = /^\d+$/.test(value) ? Number(value) : value;
-    }
-  }
-
-  next.reboot_required = next.hostname !== settings.hostname;
-
-  return next as unknown as Settings;
+function applySettingsPatch(
+  settings: Settings,
+  { access_token: accessToken, ...patch }: Partial<Settings> & { access_token?: string },
+): Settings {
+  return {
+    ...settings,
+    ...patch,
+    access_token_set: accessToken === undefined ? settings.access_token_set : accessToken !== "",
+    reboot_required: (patch.hostname ?? settings.hostname) !== settings.hostname,
+  };
 }
 
 // Stands in for the firmware HTTP API and records every request the UI makes.
@@ -115,7 +107,7 @@ export function fakeRobot({
       }
 
       if (request.path === "/settings" && request.method === "POST") {
-        robot.settings = applySettingsParams(robot.settings, request.params);
+        robot.settings = applySettingsPatch(robot.settings, request.json as Partial<Settings>);
       }
 
       if (request.path === "/settings/wifi" && request.method === "PUT") {

@@ -2,7 +2,7 @@
 
 Persistent settings live in NVS (namespace `te`) under [`src/settings/`](../src/settings/). They are exposed on `GET`/`POST /settings`, the Config web UI, and must stay in sync with API docs.
 
-**HTTP / JSON** (query params and `GET /settings` fields — see [api.md](api.md)): `sleep_timeout`, `hostname`, `volume`, `welcome`, `serial_log`, `continuous_timeout`, `loading`, `eyes_style`, `access_token`, `servo_mins` / `servo_maxs`, `rgb_order`, `oled_rotate_180`. WiFi networks have their own endpoint, `PUT /settings/wifi`, and show as `wifi_networks`.
+**HTTP / JSON** (`POST /settings` body and `GET /settings` fields — see [api.md](api.md)): `sleep_timeout`, `hostname`, `volume`, `welcome`, `serial_log`, `continuous_timeout`, `loading`, `eyes_style`, `access_token`, `servo_mins` / `servo_maxs`, `rgb_order`, `oled_rotate_180`. WiFi networks have their own endpoint, `PUT /settings/wifi`, and show as `wifi_networks`.
 
 **NVS keys** (≤15 chars; defined in [`nvs.h`](../src/settings/nvs.h)): `sleep_m`, `host`, `vol`, `welcome`, `serial_log`, `cont_to`, `loading`, `eyes_sty`, `access_tok`, `wifi_nets` (blob of up to 5 networks; replaces the older single-network `wifi_ssid` / `wifi_pass`, which are migrated on load), `sranges`, `rgb_ord`, `oled_rot`. Add new short keys there — do not reuse HTTP names as NVS keys unless they already fit the length limit.
 
@@ -15,7 +15,7 @@ Follow the same pattern for a new setting.
 | Storage | NVS under namespace `te`; short key name (≤15 chars for Preferences) |
 | RAM | One `SettingsValues` struct (`g_settings`) filled by `initSettings()`; callers use getters |
 | Update API | `saveSettings(const SettingsPatch&, ...)`: only the fields the patch sets change |
-| HTTP | Query params on `POST /settings`; at least one param required |
+| HTTP | JSON object body on `POST /settings`; at least one field required |
 | Apply timing | Prefer immediate apply. If boot-only (like hostname), set `reboot_required` and document it. WiFi networks live in a `WifiNetworkList` saved with `saveWifiNetworks()`, outside `saveSettings(...)`; they are tested before save only in setup AP mode. Servo min/max (`servo_mins` / `servo_maxs`), RGB LED mapping (`rgb_order`), and OLED rotation (`oled_rotate_180`) are setup-AP-only and apply immediately |
 | Types | Prefer small integers / short strings; validate before any NVS write |
 
@@ -39,13 +39,8 @@ Call the getter wherever the value affects behavior (e.g. `settingsVolume()` in 
 
 ### 3. HTTP — [`src/http/settings_handlers.cpp`](../src/http/settings_handlers.cpp)
 
-1. Include the field in both `snprintf` branches of `sendSettingsJson` (with and without `reboot_required`).
-3. In `handleSettingsPost`:
-   - `server.hasArg("foo")`
-   - Parse (same style as `sleep_timeout` / `volume`: `strtoul` + end-pointer check for integers)
-   - Validate → **400** with a clear `error` string
-   - Pass pointer into `saveSettings`
-4. Update the “missing …” **400** message to list the new param.
+1. Add the field to `settingsJson()`.
+2. Read it into the patch in `readPatch()` with `readValue` (numbers, booleans) or `readText` (strings). A wrong JSON type answers **400** `invalid <field>`, and so does a value `SettingsPatch::invalidField()` rejects.
 
 ### 4. Web UI — [`ui/`](../ui/)
 
@@ -76,7 +71,7 @@ Flash only when you want to try it on hardware (`pio run -t upload`).
 | --- | --- |
 | Settings | `SETTINGS_DEFAULT_VOLUME = 70`, key `vol`, `settingsVolume()`, range 0–100 |
 | Audio | Tone amplitude and WAV PCM scaled by `settingsVolume() / 100` |
-| API | `"volume":70` on GET; `POST /settings?volume=40` |
+| API | `"volume":70` on GET; `POST /settings` `{"volume":40}` |
 | UI | Slider + number on Config; live `N%` label |
 | Docs | `api.md` + README |
 

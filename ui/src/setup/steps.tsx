@@ -84,7 +84,7 @@ export function NetworkStep() {
     // The connection test registers mDNS under the saved hostname, so it is saved first.
     const hostnameSaved = await perform({
       path: "/settings",
-      request: { method: "POST", params: { hostname: host } },
+      request: { method: "POST", json: { hostname: host } },
       pending: "Saving hostname…",
       failure: "Hostname not saved",
     });

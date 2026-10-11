@@ -1,60 +1,41 @@
 #include "http/request.h"
 
-#include <cstdlib>
-
 #include "http/response.h"
 #include "servos.h"
 
-namespace {
+bool readJsonBody(WebServer& server, JsonDocument& body) {
+  if (!server.hasArg("plain")) {
+    // WebServer keeps "plain" only for bodies that are not form-encoded.
+    if (server.args() > 0 || server.clientContentLength() > 0) {
+      sendError(server, 400, "send a JSON body with Content-Type: application/json");
+      return false;
+    }
 
-bool parseIndex(const String& text, int& out) {
-  char* end = nullptr;
-  const long parsed = strtol(text.c_str(), &end, 10);
+    body.to<JsonObject>();
+    return true;
+  }
 
-  if (text.isEmpty() || *end != '\0' || text[0] == '-' || text[0] == '+') {
+  if (deserializeJson(body, server.arg("plain")) || !body.is<JsonObjectConst>()) {
+    sendError(server, 400, "body must be a JSON object");
     return false;
   }
 
-  out = static_cast<int>(parsed);
   return true;
 }
 
-bool parseAngle(const String& text, float& out) {
-  char* end = nullptr;
-  out = strtof(text.c_str(), &end);
-  return !text.isEmpty() && *end == '\0';
-}
+std::optional<ServoMove> ServoMove::read(WebServer& server, JsonObjectConst body) {
+  const JsonVariantConst index = body["index"];
+  const JsonVariantConst angle = body["angle"];
 
-}  // namespace
-
-std::optional<ServoMove> ServoMove::read(WebServer& server) {
-  if (!server.hasArg("index") || !server.hasArg("angle")) {
-    sendError(server, 400, "missing index or angle");
-    return std::nullopt;
-  }
-
-  ServoMove move{};
-
-  if (!parseIndex(server.arg("index"), move.index)) {
+  if (!index.is<int>() || index.as<int>() < 0 || index.as<int>() >= SERVO_COUNT) {
     sendError(server, 400, "invalid index");
     return std::nullopt;
   }
 
-  if (!parseAngle(server.arg("angle"), move.angle)) {
+  if (!angle.is<float>() || angle.as<float>() < 0.0f || angle.as<float>() > 180.0f) {
     sendError(server, 400, "invalid angle");
     return std::nullopt;
   }
 
-  if (move.index >= SERVO_COUNT) {
-    sendError(server, 400, "index out of range");
-    return std::nullopt;
-  }
-
-  // Written so NaN fails too.
-  if (!(move.angle >= 0.0f && move.angle <= 180.0f)) {
-    sendError(server, 400, "angle out of range");
-    return std::nullopt;
-  }
-
-  return move;
+  return ServoMove{index.as<int>(), angle.as<float>()};
 }

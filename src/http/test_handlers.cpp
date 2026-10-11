@@ -56,17 +56,20 @@ void handleLedTest(WebServer& server) {
 }
 
 void handleServoTest(WebServer& server) {
-  const std::optional<ServoMove> move = ServoMove::read(server);
+  JsonDocument request;
+
+  if (!readJsonBody(server, request)) {
+    return;
+  }
+
+  const std::optional<ServoMove> move = ServoMove::read(server, request.as<JsonObjectConst>());
 
   if (!move) {
     return;
   }
 
-  if (!moveServoSmooth(move->index, move->angle)) {
-    sendError(server, 400, "index out of range");
-    return;
-  }
-
+  // ServoMove::read checked the index, the only thing the move can refuse.
+  moveServoSmooth(move->index, move->angle);
   showIdleScreen();
 
   JsonDocument body;

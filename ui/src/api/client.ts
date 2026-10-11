@@ -24,11 +24,10 @@ export const token = {
   },
 };
 
-export type Params = Record<string, string | number>;
-
 export interface Request {
   method?: "GET" | "POST" | "PUT";
-  params?: Params;
+  // Query parameters; only POST /anim takes them.
+  params?: Record<string, string>;
   json?: unknown;
 }
 
@@ -36,9 +35,7 @@ export interface Request {
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; data: ApiError };
 
 export function apiFetch(path: string, { method = "GET", params, json }: Request = {}) {
-  const query = params
-    ? `?${new URLSearchParams(Object.entries(params).map(([key, value]) => [key, String(value)]))}`
-    : "";
+  const query = params ? `?${new URLSearchParams(params)}` : "";
   const headers: Record<string, string> = {};
   const stored = token.get();
 

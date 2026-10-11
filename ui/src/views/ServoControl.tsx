@@ -27,7 +27,7 @@ export function ServoControl() {
   async function move(target: string) {
     const result = await perform({
       path: "/test/servo",
-      request: { method: "POST", params: { index, angle: target } },
+      request: { method: "POST", json: { index, angle: Number(target) } },
       pending: "Moving servo…",
       failure: "Move failed",
     });

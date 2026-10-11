@@ -71,13 +71,13 @@ function ConfigForm() {
       path: "/settings",
       request: {
         method: "POST",
-        params: {
-          sleep_timeout: draft.sleepTimeout,
+        json: {
+          sleep_timeout: Number(draft.sleepTimeout),
           hostname: host,
           volume: draft.volume,
-          welcome: draft.welcome ? 1 : 0,
-          serial_log: draft.serialLog ? 1 : 0,
-          continuous_timeout: draft.continuousTimeout,
+          welcome: draft.welcome,
+          serial_log: draft.serialLog,
+          continuous_timeout: Number(draft.continuousTimeout),
           loading: draft.loading,
           eyes_style: draft.eyesStyle,
           ...(newToken === undefined ? {} : { access_token: newToken }),

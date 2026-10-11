@@ -1,5 +1,5 @@
 import { useState } from "preact/hooks";
-import { api, apiFetch, type Params } from "../api/client";
+import { api, apiFetch } from "../api/client";
 import { Button, useStatus } from "../status/status";
 import { useResettableState } from "../useResettableState";
 
@@ -12,8 +12,7 @@ const CHANNELS = [
 ] as const;
 const BYTE_LABELS = ["First byte", "Second byte", "Third byte"];
 
-export const releaseLed = () =>
-  apiFetch("/setup/led", { method: "POST", params: { byte: "off" } }).catch(() => {});
+export const releaseLed = () => apiFetch("/setup/led", { method: "POST" }).catch(() => {});
 
 // `looks` holds the color seen for each WS2812 wire byte; together they spell the RGB order.
 export function useLedMapping(savedSetting: string | undefined) {
@@ -40,13 +39,13 @@ export function LedStep({ mapping }: { mapping: LedMapping }) {
   const { busy, setStatus, clearStatus } = useStatus();
 
   // Previews skip the busy lock so taps feel instant.
-  async function preview(params: Params) {
+  async function preview(json: { color: string; rgb_order: string } | { byte: number }) {
     if (busy) {
       return;
     }
 
     try {
-      const result = await api("/setup/led", { method: "POST", params });
+      const result = await api("/setup/led", { method: "POST", json });
 
       if (result.ok) {
         clearStatus();

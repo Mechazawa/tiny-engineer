@@ -5,7 +5,9 @@ export function ApiReference() {
       <h2 className="page-title">API reference</h2>
       <p className="page-desc">
         JSON HTTP API on port 80. Optional Bearer auth when an access token is configured. Test
-        routes are POST only. <code>GET /auth</code> is always public.
+        routes are POST only. <code>GET /auth</code> is always public. Fields go in a JSON body with{" "}
+        <code>Content-Type: application/json</code>, except the <code>name</code> of{" "}
+        <code>POST /anim</code>.
       </p>
       <table>
         <thead>
@@ -194,12 +196,12 @@ export function ApiReference() {
         </tbody>
       </table>
       <p>
-        POST <code>/settings</code> &mdash; query params (at least one required):
+        POST <code>/settings</code> &mdash; JSON body fields (at least one required):
       </p>
       <table>
         <thead>
           <tr>
-            <th>Param</th>
+            <th>Field</th>
             <th>Type</th>
             <th>Range</th>
           </tr>
@@ -230,15 +232,15 @@ export function ApiReference() {
             <td>
               <code>welcome</code>
             </td>
-            <td>integer</td>
-            <td>0 or 1 (boot welcome animation)</td>
+            <td>boolean</td>
+            <td>Boot welcome animation</td>
           </tr>
           <tr>
             <td>
               <code>serial_log</code>
             </td>
-            <td>integer</td>
-            <td>0 or 1 (USB serial debug logging)</td>
+            <td>boolean</td>
+            <td>USB serial debug logging</td>
           </tr>
           <tr>
             <td>
@@ -277,17 +279,17 @@ export function ApiReference() {
             <td>
               <code>servo_mins</code>
             </td>
-            <td>string</td>
+            <td>integer array</td>
             <td>
-              5 comma-separated ints 0&ndash;180; setup AP only; requires <code>servo_maxs</code>
+              5 integers 0&ndash;180; setup AP only; requires <code>servo_maxs</code>
             </td>
           </tr>
           <tr>
             <td>
               <code>servo_maxs</code>
             </td>
-            <td>string</td>
-            <td>5 comma-separated ints 0&ndash;180; setup AP only; each max &gt; min</td>
+            <td>integer array</td>
+            <td>5 integers 0&ndash;180; setup AP only; each max &gt; min</td>
           </tr>
           <tr>
             <td>
@@ -303,9 +305,9 @@ export function ApiReference() {
             <td>
               <code>oled_rotate_180</code>
             </td>
-            <td>integer</td>
+            <td>boolean</td>
             <td>
-              <code>0</code> or <code>1</code>; setup AP only; default <code>0</code>
+              Setup AP only; default <code>false</code>
             </td>
           </tr>
         </tbody>
@@ -459,12 +461,12 @@ export function ApiReference() {
         </tbody>
       </table>
       <p>
-        POST <code>/test/servo</code> &mdash; query params:
+        POST <code>/test/servo</code> &mdash; JSON body fields:
       </p>
       <table>
         <thead>
           <tr>
-            <th>Param</th>
+            <th>Field</th>
             <th>Type</th>
             <th>Range</th>
           </tr>
@@ -487,13 +489,13 @@ export function ApiReference() {
         </tbody>
       </table>
       <p>
-        POST <code>/setup/servo</code> &mdash; setup AP only, ~25&deg;/s, no safe-range clamp. Query
-        params:
+        POST <code>/setup/servo</code> &mdash; setup AP only, ~25&deg;/s, no safe-range clamp. JSON
+        body fields:
       </p>
       <table>
         <thead>
           <tr>
-            <th>Param</th>
+            <th>Field</th>
             <th>Type</th>
             <th>Range</th>
           </tr>
@@ -528,12 +530,12 @@ export function ApiReference() {
       </table>
       <p>
         POST <code>/setup/led</code> &mdash; setup AP only, no Wi-Fi gate. Lights a logical color or
-        one WS2812 <em>wire</em> byte. Query params:
+        one WS2812 <em>wire</em> byte. An empty body releases the hold. JSON body fields:
       </p>
       <table>
         <thead>
           <tr>
-            <th>Param</th>
+            <th>Field</th>
             <th>Type</th>
             <th>Range</th>
           </tr>
@@ -563,27 +565,26 @@ export function ApiReference() {
             <td>
               <code>byte</code>
             </td>
-            <td>string</td>
+            <td>integer</td>
             <td>
-              <code>0</code>, <code>1</code>, <code>2</code>, or <code>off</code> (omit or{" "}
-              <code>off</code> releases the hold)
+              <code>0</code>, <code>1</code>, or <code>2</code>
             </td>
           </tr>
         </tbody>
       </table>
       <p>
         POST <code>/setup/audio</code> &mdash; setup AP only, no Wi-Fi gate. Plays{" "}
-        <code>welcome.wav</code> from LittleFS. No query params.
+        <code>welcome.wav</code> from LittleFS. No body.
       </p>
       <p>
         POST <code>/setup/oled</code> &mdash; setup AP only, no Wi-Fi gate. Preview OLED rotation
-        and draw <code>THIS WAY UP</code>. Omit <code>rotate_180</code> to restore the provisioning
-        screen. Query params:
+        and draw <code>THIS WAY UP</code>. An empty body restores the provisioning screen. JSON body
+        fields:
       </p>
       <table>
         <thead>
           <tr>
-            <th>Param</th>
+            <th>Field</th>
             <th>Type</th>
             <th>Range</th>
           </tr>
@@ -593,10 +594,8 @@ export function ApiReference() {
             <td>
               <code>rotate_180</code>
             </td>
-            <td>integer</td>
-            <td>
-              <code>0</code> or <code>1</code> (omit to restore provisioning text)
-            </td>
+            <td>boolean</td>
+            <td>Leave out to restore provisioning text</td>
           </tr>
         </tbody>
       </table>

@@ -1,11 +1,8 @@
 #include <Arduino.h>
-#include <ArduinoJson.h>
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
 
 #include "display/oled.h"
 #include "http/handlers.h"
+#include "http/request.h"
 #include "http/response.h"
 #include "network/wifi_connect.h"
 #include "settings/settings.h"
@@ -13,42 +10,127 @@
 
 namespace {
 
-bool parseServoCsv(const String& raw, uint8_t out[SETTINGS_SERVO_COUNT]) {
-  const char* p = raw.c_str();
+template <typename T>
+bool readValue(JsonObjectConst body, const char* key, std::optional<T>& out) {
+  const JsonVariantConst value = body[key];
+
+  if (value.isNull()) {
+    return true;
+  }
+
+  if (!value.is<T>()) {
+    return false;
+  }
+
+  out = value.as<T>();
+  return true;
+}
+
+bool readText(JsonObjectConst body, const char* key, const char*& out) {
+  const JsonVariantConst value = body[key];
+
+  if (value.isNull()) {
+    return true;
+  }
+
+  out = value.as<const char*>();
+  return out != nullptr;
+}
+
+bool readServoList(JsonVariantConst list, uint8_t (&out)[SETTINGS_SERVO_COUNT]) {
+  if (!list.is<JsonArrayConst>() || list.size() != SETTINGS_SERVO_COUNT) {
+    return false;
+  }
 
   for (size_t i = 0; i < SETTINGS_SERVO_COUNT; i++) {
-    if (p == nullptr || *p == '\0') {
+    if (!list[i].is<uint8_t>()) {
       return false;
     }
 
-    char* end = nullptr;
-    const unsigned long parsed = strtoul(p, &end, 10);
-
-    if (end == p || parsed > 255) {
-      return false;
-    }
-
-    if (i + 1 < SETTINGS_SERVO_COUNT) {
-      if (*end != ',') {
-        return false;
-      }
-
-      p = end + 1;
-    } else if (*end != '\0') {
-      return false;
-    }
-
-    out[i] = static_cast<uint8_t>(parsed);
+    out[i] = list[i].as<uint8_t>();
   }
 
   return true;
 }
 
-void sendSettingsJson(
-  WebServer& server,
-  bool rebootRequired,
-  bool wifiConnectSuccess
-) {
+// Name of the first field with the wrong JSON type, or nullptr once the patch holds every field.
+const char* readPatch(JsonObjectConst body, SettingsPatch& patch) {
+  if (!readValue(body, "sleep_timeout", patch.sleepTimeoutMin)) {
+    return "sleep_timeout";
+  }
+
+  if (!readText(body, "hostname", patch.hostname)) {
+    return "hostname";
+  }
+
+  if (!readValue(body, "volume", patch.volume)) {
+    return "volume";
+  }
+
+  if (!readValue(body, "welcome", patch.welcome)) {
+    return "welcome";
+  }
+
+  if (!readValue(body, "serial_log", patch.serialLog)) {
+    return "serial_log";
+  }
+
+  if (!readValue(body, "continuous_timeout", patch.continuousTimeoutMin)) {
+    return "continuous_timeout";
+  }
+
+  if (!readText(body, "loading", patch.loading)) {
+    return "loading";
+  }
+
+  if (!readText(body, "eyes_style", patch.eyesStyle)) {
+    return "eyes_style";
+  }
+
+  if (!readText(body, "access_token", patch.accessToken)) {
+    return "access_token";
+  }
+
+  if (!readText(body, "rgb_order", patch.rgbOrder)) {
+    return "rgb_order";
+  }
+
+  if (!readValue(body, "oled_rotate_180", patch.oledRotate180)) {
+    return "oled_rotate_180";
+  }
+
+  if (!body["servo_mins"].isNull() || !body["servo_maxs"].isNull()) {
+    ServoRanges ranges{};
+
+    if (!readServoList(body["servo_mins"], ranges.mins) ||
+        !readServoList(body["servo_maxs"], ranges.maxs)) {
+      return "servo_mins or servo_maxs";
+    }
+
+    patch.servoRanges = ranges;
+  }
+
+  return nullptr;
+}
+
+// Servo ranges, RGB mapping and screen rotation belong to the setup wizard.
+const char* setupOnlyStep(const SettingsPatch& patch) {
+  if (patch.servoRanges) {
+    return "servo";
+  }
+
+  if (patch.rgbOrder != nullptr) {
+    return "rgb";
+  }
+
+  if (patch.oledRotate180) {
+    return "oled";
+  }
+
+  return nullptr;
+}
+
+JsonDocument settingsJson() {
   JsonDocument doc;
 
   doc["ok"] = true;
@@ -81,310 +163,61 @@ void sendSettingsJson(
     ssids.add(networks.at(i).ssid);
   }
 
-  if (wifiConnectSuccess) {
-    doc["wifi_connect_success"] = true;
-    doc["wifi_ip"] = wifiIpText();
-    doc["wifi_hostname"] = String(settingsHostname()) + ".local";
-  }
-
-  if (rebootRequired) {
-    doc["reboot_required"] = true;
-  }
-
-  sendJson(server, 200, doc);
+  return doc;
 }
 
 }  // namespace
 
 void handleSettingsGet(WebServer& server) {
-  sendSettingsJson(server, false, false);
+  sendJson(server, 200, settingsJson());
 }
 
 void handleSettingsPost(WebServer& server) {
-  const bool hasSleep = server.hasArg("sleep_timeout");
-  const bool hasHost = server.hasArg("hostname");
-  const bool hasVolume = server.hasArg("volume");
-  const bool hasWelcome = server.hasArg("welcome");
-  const bool hasSerialLog = server.hasArg("serial_log");
-  const bool hasContTo = server.hasArg("continuous_timeout");
-  const bool hasLoading = server.hasArg("loading");
-  const bool hasEyesStyle = server.hasArg("eyes_style");
-  const bool hasAccessToken = server.hasArg("access_token");
-  const bool hasServoMins = server.hasArg("servo_mins");
-  const bool hasServoMaxs = server.hasArg("servo_maxs");
-  const bool hasRgbOrder = server.hasArg("rgb_order");
-  const bool hasOledRotate180 = server.hasArg("oled_rotate_180");
+  JsonDocument body;
 
-  if (!hasSleep && !hasHost && !hasVolume && !hasWelcome && !hasSerialLog &&
-      !hasContTo && !hasLoading && !hasEyesStyle && !hasAccessToken &&
-      !hasServoMins && !hasServoMaxs &&
-      !hasRgbOrder && !hasOledRotate180) {
-    sendError(server, 400, "missing sleep_timeout, hostname, volume, welcome, serial_log, continuous_timeout, loading, eyes_style, access_token, servo_mins, servo_maxs, rgb_order, or oled_rotate_180");
+  if (!readJsonBody(server, body)) {
     return;
   }
 
-  uint32_t sleepTimeoutMin = 0;
-  const uint32_t* sleepPtr = nullptr;
-  String hostnameArg;
-  const char* hostPtr = nullptr;
-  uint8_t volume = 0;
-  const uint8_t* volumePtr = nullptr;
-  bool welcome = false;
-  const bool* welcomePtr = nullptr;
-  bool serialLog = false;
-  const bool* serialLogPtr = nullptr;
-  uint32_t continuousTimeoutMin = 0;
-  const uint32_t* contToPtr = nullptr;
-  String loadingArg;
-  const char* loadingPtr = nullptr;
-  String eyesStyleArg;
-  const char* eyesStylePtr = nullptr;
-  String accessTokenArg;
-  const char* accessTokenPtr = nullptr;
-  uint8_t servoMins[SETTINGS_SERVO_COUNT] = {};
-  uint8_t servoMaxs[SETTINGS_SERVO_COUNT] = {};
-  const uint8_t* servoMinsPtr = nullptr;
-  const uint8_t* servoMaxsPtr = nullptr;
-  String rgbOrderArg;
-  const char* rgbOrderPtr = nullptr;
-  bool oledRotate180 = false;
-  const bool* oledRotate180Ptr = nullptr;
-
-  if (hasSleep) {
-    const String sleepArg = server.arg("sleep_timeout");
-    char* end = nullptr;
-    const unsigned long parsed =
-      strtoul(sleepArg.c_str(), &end, 10);
-
-    if (end == sleepArg.c_str() || *end != '\0') {
-      sendError(server, 400, "invalid sleep_timeout");
-      return;
-    }
-
-    sleepTimeoutMin = static_cast<uint32_t>(parsed);
-
-    if (!settingsValidateSleepTimeout(sleepTimeoutMin)) {
-      sendError(server, 400, "sleep_timeout out of range");
-      return;
-    }
-
-    sleepPtr = &sleepTimeoutMin;
+  if (body.size() == 0) {
+    sendError(server, 400, "send at least one setting");
+    return;
   }
 
-  if (hasHost) {
-    hostnameArg = server.arg("hostname");
-    hostPtr = hostnameArg.c_str();
+  SettingsPatch patch;
+  const char* invalid = readPatch(body.as<JsonObjectConst>(), patch);
 
-    if (!settingsValidateHostname(hostPtr)) {
-      sendError(server, 400, "invalid hostname");
-      return;
-    }
+  if (invalid == nullptr) {
+    invalid = patch.invalidField();
   }
 
-  if (hasVolume) {
-    const String volumeArg = server.arg("volume");
-    char* end = nullptr;
-    const unsigned long parsed =
-      strtoul(volumeArg.c_str(), &end, 10);
-
-    if (end == volumeArg.c_str() || *end != '\0' || parsed > 255) {
-      sendError(server, 400, "invalid volume");
-      return;
-    }
-
-    volume = static_cast<uint8_t>(parsed);
-
-    if (!settingsValidateVolume(volume)) {
-      sendError(server, 400, "volume out of range");
-      return;
-    }
-
-    volumePtr = &volume;
+  if (invalid != nullptr) {
+    sendError(server, 400, (String("invalid ") + invalid).c_str());
+    return;
   }
 
-  if (hasWelcome) {
-    const String welcomeArg = server.arg("welcome");
-    char* end = nullptr;
-    const unsigned long parsed =
-      strtoul(welcomeArg.c_str(), &end, 10);
+  const char* setupStep = setupOnlyStep(patch);
 
-    if (end == welcomeArg.c_str() || *end != '\0' || parsed > 1) {
-      sendError(server, 400, "invalid welcome");
-      return;
-    }
-
-    welcome = parsed == 1;
-    welcomePtr = &welcome;
-  }
-
-  if (hasSerialLog) {
-    const String serialLogArg = server.arg("serial_log");
-    char* end = nullptr;
-    const unsigned long parsed =
-      strtoul(serialLogArg.c_str(), &end, 10);
-
-    if (end == serialLogArg.c_str() || *end != '\0' || parsed > 1) {
-      sendError(server, 400, "invalid serial_log");
-      return;
-    }
-
-    serialLog = parsed == 1;
-    serialLogPtr = &serialLog;
-  }
-
-  if (hasContTo) {
-    const String contArg = server.arg("continuous_timeout");
-    char* end = nullptr;
-    const unsigned long parsed =
-      strtoul(contArg.c_str(), &end, 10);
-
-    if (end == contArg.c_str() || *end != '\0') {
-      sendError(server, 400, "invalid continuous_timeout");
-      return;
-    }
-
-    continuousTimeoutMin = static_cast<uint32_t>(parsed);
-
-    if (!settingsValidateContinuousTimeout(continuousTimeoutMin)) {
-      sendError(server, 400, "continuous_timeout out of range");
-      return;
-    }
-
-    contToPtr = &continuousTimeoutMin;
-  }
-
-  if (hasLoading) {
-    loadingArg = server.arg("loading");
-    loadingPtr = loadingArg.c_str();
-
-    if (!settingsValidateLoading(loadingPtr)) {
-      sendError(server, 400, "invalid loading");
-      return;
-    }
-  }
-
-  if (hasEyesStyle) {
-    eyesStyleArg = server.arg("eyes_style");
-    eyesStylePtr = eyesStyleArg.c_str();
-
-    if (!settingsValidateEyesStyle(eyesStylePtr)) {
-      sendError(server, 400, "invalid eyes_style");
-      return;
-    }
-  }
-
-  if (hasAccessToken) {
-    accessTokenArg = server.arg("access_token");
-    accessTokenPtr = accessTokenArg.c_str();
-
-    if (!settingsValidateAccessToken(accessTokenPtr)) {
-      sendError(server, 400, "invalid access_token");
-      return;
-    }
-  }
-
-  if (hasServoMins || hasServoMaxs) {
-    if (!wifiProvisioningMode()) {
-      sendError(server, 400, "servo setup only in AP mode");
-      return;
-    }
-
-    if (!hasServoMins || !hasServoMaxs) {
-      sendError(server, 400, "servo_mins and servo_maxs required together");
-      return;
-    }
-
-    if (!parseServoCsv(server.arg("servo_mins"), servoMins) ||
-        !parseServoCsv(server.arg("servo_maxs"), servoMaxs)) {
-      sendError(server, 400, "invalid servo_mins or servo_maxs");
-      return;
-    }
-
-    ServoRanges ranges{};
-    memcpy(ranges.mins, servoMins, SETTINGS_SERVO_COUNT);
-    memcpy(ranges.maxs, servoMaxs, SETTINGS_SERVO_COUNT);
-
-    if (!ranges.valid()) {
-      sendError(server, 400, "servo ranges out of range");
-      return;
-    }
-
-    servoMinsPtr = servoMins;
-    servoMaxsPtr = servoMaxs;
-  }
-
-  if (hasRgbOrder) {
-    if (!wifiProvisioningMode()) {
-      sendError(server, 400, "rgb setup only in AP mode");
-      return;
-    }
-
-    rgbOrderArg = server.arg("rgb_order");
-
-    if (!settingsValidateRgbOrder(rgbOrderArg.c_str())) {
-      sendError(server, 400, "invalid rgb_order");
-      return;
-    }
-
-    rgbOrderPtr = rgbOrderArg.c_str();
-  }
-
-  if (hasOledRotate180) {
-    if (!wifiProvisioningMode()) {
-      sendError(server, 400, "oled setup only in AP mode");
-      return;
-    }
-
-    const String oledArg = server.arg("oled_rotate_180");
-    char* end = nullptr;
-    const unsigned long parsed =
-      strtoul(oledArg.c_str(), &end, 10);
-
-    if (end == oledArg.c_str() || *end != '\0' || parsed > 1) {
-      sendError(server, 400, "invalid oled_rotate_180");
-      return;
-    }
-
-    oledRotate180 = parsed == 1;
-    oledRotate180Ptr = &oledRotate180;
+  if (setupStep != nullptr && !wifiProvisioningMode()) {
+    sendError(server, 400, (String(setupStep) + " setup only in AP mode").c_str());
+    return;
   }
 
   bool rebootRequired = false;
-
-  SettingsPatch patch;
-  auto optional = [](const auto* value) {
-    return value == nullptr ? std::nullopt : std::make_optional(*value);
-  };
-  patch.sleepTimeoutMin = optional(sleepPtr);
-  patch.hostname = hostPtr;
-  patch.volume = optional(volumePtr);
-  patch.welcome = optional(welcomePtr);
-  patch.serialLog = optional(serialLogPtr);
-  patch.continuousTimeoutMin = optional(contToPtr);
-  patch.loading = loadingPtr;
-  patch.eyesStyle = eyesStylePtr;
-  patch.accessToken = accessTokenPtr;
-  patch.rgbOrder = rgbOrderPtr;
-  patch.oledRotate180 = optional(oledRotate180Ptr);
-
-  if (servoMinsPtr != nullptr) {
-    ServoRanges ranges{};
-    memcpy(ranges.mins, servoMinsPtr, SETTINGS_SERVO_COUNT);
-    memcpy(ranges.maxs, servoMaxsPtr, SETTINGS_SERVO_COUNT);
-    patch.servoRanges = ranges;
-  }
 
   if (!saveSettings(patch, &rebootRequired)) {
     sendError(server, 400, "save failed");
     return;
   }
 
-  if (oledRotate180Ptr != nullptr) {
+  if (patch.oledRotate180) {
     applyOledRotation();
     restoreProvisioningOled();
   }
 
-  sendSettingsJson(server, rebootRequired, false);
+  JsonDocument reply = settingsJson();
+  reply["reboot_required"] = rebootRequired;
+  sendJson(server, 200, reply);
 }
 
 void handleSettingsWifiPut(WebServer& server) {
@@ -453,7 +286,15 @@ void handleSettingsWifiPut(WebServer& server) {
     return;
   }
 
-  sendSettingsJson(server, false, tested);
+  JsonDocument reply = settingsJson();
+
+  if (tested) {
+    reply["wifi_connect_success"] = true;
+    reply["wifi_ip"] = wifiIpText();
+    reply["wifi_hostname"] = String(settingsHostname()) + ".local";
+  }
+
+  sendJson(server, 200, reply);
 
   if (tested) {
     delay(300);
@@ -470,5 +311,7 @@ void handleSettingsReset(WebServer& server) {
     return;
   }
 
-  sendSettingsJson(server, rebootRequired, false);
+  JsonDocument reply = settingsJson();
+  reply["reboot_required"] = rebootRequired;
+  sendJson(server, 200, reply);
 }

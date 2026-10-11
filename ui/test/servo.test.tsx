@@ -38,6 +38,6 @@ describe("servo page", () => {
 
     await user.click(screen.getByRole("button", { name: "Move servo" }));
 
-    expect(robot.lastPost("/test/servo")?.params).toEqual({ index: "0", angle: "100" });
+    expect(robot.lastPost("/test/servo")?.json).toEqual({ index: 0, angle: 100 });
   });
 });

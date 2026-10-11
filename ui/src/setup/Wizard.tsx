@@ -1,5 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
-import { apiFetch, type Params } from "../api/client";
+import { apiFetch } from "../api/client";
 import type { Settings } from "../api/types";
 import { useRobot } from "../robot";
 import { Button, useStatus } from "../status/status";
@@ -18,8 +18,9 @@ const STEPS = [
 
 type StepId = (typeof STEPS)[number]["id"];
 
-const previewOled = (params?: Params) =>
-  apiFetch("/setup/oled", { method: "POST", params }).catch(() => {});
+// No body restores the setup screen.
+const previewOled = (json?: { rotate_180: boolean }) =>
+  apiFetch("/setup/oled", { method: "POST", json }).catch(() => {});
 
 export function Wizard() {
   const { settings, applySettings } = useRobot();
@@ -39,10 +40,10 @@ export function Wizard() {
     releaseLed();
   }, []);
 
-  async function save(params: Params, pending: string) {
+  async function save(json: Partial<Settings>, pending: string) {
     const result = await perform<Settings>({
       path: "/settings",
-      request: { method: "POST", params },
+      request: { method: "POST", json },
       pending,
       failure: "Save failed",
     });
@@ -61,19 +62,19 @@ export function Wizard() {
     async servos() {
       const saved = await save(
         {
-          servo_mins: calibration.ranges.map(([min]) => min).join(","),
-          servo_maxs: calibration.ranges.map(([, max]) => max).join(","),
+          servo_mins: calibration.ranges.map(([min]) => min),
+          servo_maxs: calibration.ranges.map(([, max]) => max),
         },
         "Saving servo ranges…",
       );
 
       if (saved) {
         goTo("oled");
-        previewOled({ rotate_180: oledRotate180 ? 1 : 0 });
+        previewOled({ rotate_180: oledRotate180 });
       }
     },
     async oled() {
-      if (await save({ oled_rotate_180: oledRotate180 ? 1 : 0 }, "Saving screen rotation…")) {
+      if (await save({ oled_rotate_180: oledRotate180 }, "Saving screen rotation…")) {
         goTo("led");
       }
     },
@@ -96,7 +97,7 @@ export function Wizard() {
     led() {
       releaseLed();
       goTo("oled");
-      previewOled({ rotate_180: oledRotate180 ? 1 : 0 });
+      previewOled({ rotate_180: oledRotate180 });
     },
     speaker: () => goTo("led"),
     network: () => goTo("speaker"),
@@ -106,7 +107,7 @@ export function Wizard() {
     const next = !oledRotate180;
 
     setOledRotate180(next);
-    previewOled({ rotate_180: next ? 1 : 0 });
+    previewOled({ rotate_180: next });
   }
 
   const blocked = (step.id === "servos" && !calibration.valid) || (step.id === "led" && !led.valid);

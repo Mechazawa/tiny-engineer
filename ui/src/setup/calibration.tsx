@@ -47,10 +47,10 @@ const percent = (angle: number) => `${(angle / 180) * 100}%`;
 function useSetupServo() {
   const { perform, clearStatus } = useStatus();
 
-  return async (params: Record<string, number>) => {
+  return async (json: { all: number } | { index: number; angle: number }) => {
     const result = await perform({
       path: "/setup/servo",
-      request: { method: "POST", params },
+      request: { method: "POST", json },
       pending: "Moving servos…",
       failure: "Move failed",
     });

@@ -12,131 +12,137 @@
 
 namespace {
 
-// Setup routes drive the hardware without the saved limits, so they only run in setup AP mode.
-bool inSetupMode(WebServer& server, const char* step) {
-  if (wifiProvisioningMode()) {
-    return true;
+// Setup routes drive the hardware without the saved limits, so they only run
+// in setup AP mode. On success `body` holds the request.
+bool readSetupRequest(WebServer& server, const char* step, JsonDocument& body) {
+  if (!wifiProvisioningMode()) {
+    sendError(server, 400, (String("setup ") + step + " only in AP mode").c_str());
+    return false;
   }
 
-  sendError(server, 400, (String("setup ") + step + " only in AP mode").c_str());
-  return false;
+  return readJsonBody(server, body);
 }
 
 JsonDocument setupReply(const char* step) {
-  JsonDocument body;
-  body["ok"] = true;
-  body["setup"] = step;
-  return body;
+  JsonDocument reply;
+  reply["ok"] = true;
+  reply["setup"] = step;
+  return reply;
 }
 
-void holdLogicalColor(WebServer& server, const String& color) {
+void holdLogicalColor(WebServer& server, JsonObjectConst body) {
+  const String color = body["color"].as<const char*>();
+  const JsonVariantConst order = body["rgb_order"];
+
   if (color != "R" && color != "G" && color != "B") {
     sendError(server, 400, "invalid color");
     return;
   }
 
-  const char* order = nullptr;
-  const String orderArg = server.arg("rgb_order");
-
-  if (server.hasArg("rgb_order")) {
-    if (!settingsValidateRgbOrder(orderArg.c_str())) {
-      sendError(server, 400, "invalid rgb_order");
-      return;
-    }
-
-    order = orderArg.c_str();
+  if (!order.isNull() && !settingsValidateRgbOrder(order.as<const char*>())) {
+    sendError(server, 400, "invalid rgb_order");
+    return;
   }
 
-  rgbSetupHoldLogical(color == "R" ? 255 : 0, color == "G" ? 255 : 0, color == "B" ? 255 : 0, order);
+  rgbSetupHoldLogical(
+    color == "R" ? 255 : 0,
+    color == "G" ? 255 : 0,
+    color == "B" ? 255 : 0,
+    order.as<const char*>()
+  );
 
-  JsonDocument body = setupReply("led");
-  body["color"] = color;
-  sendJson(server, 200, body);
+  JsonDocument reply = setupReply("led");
+  reply["color"] = color;
+  sendJson(server, 200, reply);
 }
 
-void holdWireByte(WebServer& server, const String& byte) {
-  if (byte != "0" && byte != "1" && byte != "2") {
+void holdWireByte(WebServer& server, JsonVariantConst byte) {
+  if (!byte.is<uint8_t>() || byte.as<uint8_t>() > 2) {
     sendError(server, 400, "invalid byte");
     return;
   }
 
-  rgbSetupHoldWireByte(static_cast<uint8_t>(byte.toInt()));
+  rgbSetupHoldWireByte(byte.as<uint8_t>());
 
-  JsonDocument body = setupReply("led");
-  body["byte"] = byte.toInt();
-  sendJson(server, 200, body);
+  JsonDocument reply = setupReply("led");
+  reply["byte"] = byte;
+  sendJson(server, 200, reply);
 }
 
 }  // namespace
 
 void handleSetupServo(WebServer& server) {
-  if (!inSetupMode(server, "servo")) {
+  JsonDocument body;
+
+  if (!readSetupRequest(server, "servo", body)) {
     return;
   }
 
-  if (server.hasArg("all")) {
-    if (server.arg("all") != "90") {
+  if (!body["all"].isNull()) {
+    if (body["all"] != 90) {
       sendError(server, 400, "invalid all");
       return;
     }
 
     servoMoveAllToElectricalAngle(90.0f);
 
-    JsonDocument body = setupReply("servo");
-    body["all"] = 90;
-    sendJson(server, 200, body);
+    JsonDocument reply = setupReply("servo");
+    reply["all"] = 90;
+    sendJson(server, 200, reply);
     return;
   }
 
-  const std::optional<ServoMove> move = ServoMove::read(server);
+  const std::optional<ServoMove> move = ServoMove::read(server, body.as<JsonObjectConst>());
 
   if (!move) {
     return;
   }
 
-  if (!moveServoSmoothElectrical(move->index, move->angle)) {
-    sendError(server, 400, "index out of range");
-    return;
-  }
+  // ServoMove::read checked the index, the only thing the move can refuse.
+  moveServoSmoothElectrical(move->index, move->angle);
 
-  JsonDocument body = setupReply("servo");
-  body["index"] = move->index;
-  body["angle"] = move->angle;
-  sendJson(server, 200, body);
+  JsonDocument reply = setupReply("servo");
+  reply["index"] = move->index;
+  reply["angle"] = move->angle;
+  sendJson(server, 200, reply);
 }
 
 void handleSetupLed(WebServer& server) {
-  if (!inSetupMode(server, "led")) {
+  JsonDocument body;
+
+  if (!readSetupRequest(server, "led", body)) {
     return;
   }
 
-  const String byte = server.arg("byte");
-  const bool release = !server.hasArg("byte") || byte == "off";
+  const bool hasColor = !body["color"].isNull();
+  const bool hasByte = !body["byte"].isNull();
 
-  if (server.hasArg("color")) {
-    if (!release) {
-      sendError(server, 400, "color and byte conflict");
-      return;
-    }
-
-    holdLogicalColor(server, server.arg("color"));
+  if (hasColor && hasByte) {
+    sendError(server, 400, "color and byte conflict");
     return;
   }
 
-  if (!release) {
-    holdWireByte(server, byte);
+  if (hasColor) {
+    holdLogicalColor(server, body.as<JsonObjectConst>());
+    return;
+  }
+
+  if (hasByte) {
+    holdWireByte(server, body["byte"]);
     return;
   }
 
   rgbSetupRelease();
 
-  JsonDocument body = setupReply("led");
-  body["off"] = true;
-  sendJson(server, 200, body);
+  JsonDocument reply = setupReply("led");
+  reply["off"] = true;
+  sendJson(server, 200, reply);
 }
 
 void handleSetupAudio(WebServer& server) {
-  if (!inSetupMode(server, "audio")) {
+  JsonDocument body;
+
+  if (!readSetupRequest(server, "audio", body)) {
     return;
   }
 
@@ -152,29 +158,28 @@ void handleSetupAudio(WebServer& server) {
 }
 
 void handleSetupOled(WebServer& server) {
-  if (!inSetupMode(server, "oled")) {
+  JsonDocument body;
+
+  if (!readSetupRequest(server, "oled", body)) {
     return;
   }
 
-  if (!server.hasArg("rotate_180")) {
+  const JsonVariantConst rotate = body["rotate_180"];
+  JsonDocument reply = setupReply("oled");
+
+  if (rotate.isNull()) {
     restoreProvisioningOled();
-
-    JsonDocument body = setupReply("oled");
-    body["restored"] = true;
-    sendJson(server, 200, body);
+    reply["restored"] = true;
+    sendJson(server, 200, reply);
     return;
   }
 
-  const String rotate = server.arg("rotate_180");
-
-  if (rotate != "0" && rotate != "1") {
+  if (!rotate.is<bool>()) {
     sendError(server, 400, "invalid rotate_180");
     return;
   }
 
-  showOledOrientationTest(rotate == "1");
-
-  JsonDocument body = setupReply("oled");
-  body["rotate_180"] = rotate == "1";
-  sendJson(server, 200, body);
+  showOledOrientationTest(rotate.as<bool>());
+  reply["rotate_180"] = rotate;
+  sendJson(server, 200, reply);
 }

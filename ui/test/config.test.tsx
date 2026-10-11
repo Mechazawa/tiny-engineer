@@ -22,16 +22,16 @@ describe("config page", () => {
     await user.type(field("Sleep timeout (minutes)"), "20");
     await click("Save settings");
 
-    expect(robot.lastPost("/settings")?.params).toMatchObject({
-      sleep_timeout: "20",
+    expect(robot.lastPost("/settings")?.json).toEqual({
+      sleep_timeout: 20,
       hostname: "tiny-engineer",
-      volume: "70",
-      welcome: "1",
-      serial_log: "0",
+      volume: 70,
+      welcome: true,
+      serial_log: false,
+      continuous_timeout: 5,
       loading: "progress",
       eyes_style: "classic",
     });
-    expect(robot.lastPost("/settings")?.params).not.toHaveProperty("access_token");
     expect(screen.getByRole("status").textContent).toBe("Settings saved.");
   });
 
@@ -56,7 +56,7 @@ describe("config page", () => {
     await click("Remove token");
     await click("Save settings");
 
-    expect(robot.lastPost("/settings")?.params.access_token).toBe("");
+    expect(robot.lastPost("/settings")?.json).toHaveProperty("access_token", "");
     expect(sessionStorage.getItem("te_access_token")).toBeNull();
     expect(screen.getByText("Auth disabled")).toBeTruthy();
   });
@@ -68,7 +68,7 @@ describe("config page", () => {
     await user.type(field("Access token"), "new-token");
     await click("Save settings");
 
-    expect(robot.lastPost("/settings")?.params.access_token).toBe("new-token");
+    expect(robot.lastPost("/settings")?.json).toHaveProperty("access_token", "new-token");
     expect(sessionStorage.getItem("te_access_token")).toBe("new-token");
     expect(field("Access token").value).toBe("********");
   });
