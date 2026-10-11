@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { type ComponentChildren, type ComponentProps, createContext } from "preact";
 import { useCallback, useContext, useMemo, useRef, useState } from "preact/hooks";
 import { api, type ApiResult, type Request } from "../api/client";
@@ -112,9 +113,13 @@ type ButtonProps = ComponentProps<"button"> & { variant?: "primary" | "danger" }
 // Every button locks while an action runs.
 export function Button({ variant, className, disabled, ...props }: ButtonProps) {
   const { busy } = useStatus();
-  const classes = ["btn", variant && `btn-${variant}`, className].filter(Boolean).join(" ");
 
   return (
-    <button type="button" {...props} className={classes} disabled={busy || Boolean(disabled)} />
+    <button
+      type="button"
+      {...props}
+      className={clsx("btn", variant && `btn-${variant}`, className)}
+      disabled={busy || Boolean(disabled)}
+    />
   );
 }

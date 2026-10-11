@@ -1,6 +1,6 @@
-import { cleanup, render, screen } from "@testing-library/preact";
+import { cleanup, render, screen, waitFor } from "@testing-library/preact";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, vi } from "vitest";
+import { afterEach, beforeEach, expect, vi } from "vitest";
 import type { Settings, WifiNetwork } from "../src/api/types";
 import { App } from "../src/App";
 
@@ -137,26 +137,20 @@ export function fakeRobot({
 beforeEach(() => sessionStorage.clear());
 afterEach(cleanup);
 
-// Lets the chain of awaited fetches and renders behind one user action finish.
-export async function settle() {
-  for (let i = 0; i < 20; i++) {
-    await new Promise((resolve) => setTimeout(resolve, 0));
-  }
-}
-
-// Renders the panel at `path` once boot has loaded the settings or stopped at a gate.
-export async function renderApp(path = "/") {
+export function renderApp(path = "/") {
   window.history.replaceState({}, "", path);
   render(<App />);
-  await settle();
 
   const user = userEvent.setup();
 
   return {
     user,
+    // Waits until the button is enabled, so a click never lands while the last action runs.
     async click(name: string | RegExp) {
-      await user.click(screen.getByRole("button", { name }));
-      await settle();
+      const button = await screen.findByRole<HTMLButtonElement>("button", { name });
+
+      await waitFor(() => expect(button.disabled).toBe(false));
+      await user.click(button);
     },
   };
 }

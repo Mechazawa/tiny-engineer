@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { useState } from "preact/hooks";
 import { useResettableState } from "../useResettableState";
 import { api } from "../api/client";
@@ -75,7 +76,7 @@ function NetworkRow({
   onClick: () => void;
 }) {
   return (
-    <li className={removed ? "wifi-network wifi-network-removed" : "wifi-network"}>
+    <li className={clsx("wifi-network", removed && "wifi-network-removed")}>
       <span className="wifi-network-ssid">{ssid}</span>
       <span className="wifi-network-note">{note}</span>
       <Button

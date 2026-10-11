@@ -7,12 +7,6 @@
 #include "settings/settings.h"
 #include "settings/wifi_network_list.h"
 
-template <size_t N>
-void copyText(char (&dest)[N], const char* src) {
-  strncpy(dest, src, N - 1);
-  dest[N - 1] = '\0';
-}
-
 // Every saved setting except the WiFi networks, which have their own NVS key.
 struct SettingsValues {
   uint32_t sleepTimeoutMin;

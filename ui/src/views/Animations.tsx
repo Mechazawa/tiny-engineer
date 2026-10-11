@@ -24,11 +24,15 @@ export function Animations() {
   const [current, setCurrent] = useState("…");
 
   useEffect(() => {
-    api<AnimationReply>("/anim")
+    const controller = new AbortController();
+
+    api<AnimationReply>("/anim", { signal: controller.signal })
       .then((reply) => reply.ok && setCurrent(reply.data.animation))
       .catch(() => {
         // The badge keeps its last value.
       });
+
+    return () => controller.abort();
   }, []);
 
   async function play(name: string) {

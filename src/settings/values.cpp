@@ -11,21 +11,21 @@ SettingsValues SettingsValues::defaults() {
   SettingsValues values{};
 
   values.sleepTimeoutMin = SETTINGS_DEFAULT_SLEEP_TIMEOUT_MIN;
-  copyText(values.hostname, SETTINGS_DEFAULT_HOSTNAME);
+  strlcpy(values.hostname, SETTINGS_DEFAULT_HOSTNAME, sizeof(values.hostname));
   values.volume = SETTINGS_DEFAULT_VOLUME;
   values.welcome = SETTINGS_DEFAULT_WELCOME;
   values.serialLog = SETTINGS_DEFAULT_SERIAL_LOG;
   values.continuousTimeoutMin = SETTINGS_DEFAULT_CONTINUOUS_TIMEOUT_MIN;
-  copyText(values.loading, SETTINGS_DEFAULT_LOADING);
-  copyText(values.eyesStyle, SETTINGS_DEFAULT_EYES_STYLE);
-  copyText(values.accessToken, SETTINGS_DEFAULT_ACCESS_TOKEN);
+  strlcpy(values.loading, SETTINGS_DEFAULT_LOADING, sizeof(values.loading));
+  strlcpy(values.eyesStyle, SETTINGS_DEFAULT_EYES_STYLE, sizeof(values.eyesStyle));
+  strlcpy(values.accessToken, SETTINGS_DEFAULT_ACCESS_TOKEN, sizeof(values.accessToken));
 
   for (size_t i = 0; i < SETTINGS_SERVO_COUNT; i++) {
     values.servoRanges.mins[i] = static_cast<uint8_t>(SERVO_SPECS[i].min);
     values.servoRanges.maxs[i] = static_cast<uint8_t>(SERVO_SPECS[i].max);
   }
 
-  copyText(values.rgbOrder, SETTINGS_DEFAULT_RGB_ORDER);
+  strlcpy(values.rgbOrder, SETTINGS_DEFAULT_RGB_ORDER, sizeof(values.rgbOrder));
   values.oledRotate180 = SETTINGS_DEFAULT_OLED_ROTATE_180;
   return values;
 }
@@ -40,23 +40,23 @@ void SettingsValues::apply(const SettingsPatch& patch) {
   oledRotate180 = patch.oledRotate180.value_or(oledRotate180);
 
   if (patch.hostname != nullptr) {
-    copyText(hostname, patch.hostname);
+    strlcpy(hostname, patch.hostname, sizeof(hostname));
   }
 
   if (patch.loading != nullptr) {
-    copyText(loading, patch.loading);
+    strlcpy(loading, patch.loading, sizeof(loading));
   }
 
   if (patch.eyesStyle != nullptr) {
-    copyText(eyesStyle, patch.eyesStyle);
+    strlcpy(eyesStyle, patch.eyesStyle, sizeof(eyesStyle));
   }
 
   if (patch.accessToken != nullptr) {
-    copyText(accessToken, patch.accessToken);
+    strlcpy(accessToken, patch.accessToken, sizeof(accessToken));
   }
 
   if (patch.rgbOrder != nullptr) {
-    copyText(rgbOrder, patch.rgbOrder);
+    strlcpy(rgbOrder, patch.rgbOrder, sizeof(rgbOrder));
   }
 }
 

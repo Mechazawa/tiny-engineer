@@ -10,32 +10,28 @@ import { useWifiNetworks, WifiNetworksSection } from "./wifiNetworks";
 
 const EYES_STYLES = ["classic", "kaomoji", "cover", "dots"];
 
-const loadingMode = (settings: Settings | null): LoadingMode =>
-  settings?.loading === "sleep_inertia" ? "sleep_inertia" : "progress";
-
 const clampVolume = (value: string) => {
   const parsed = parseInt(value, 10);
 
   return Number.isNaN(parsed) ? 70 : Math.min(100, Math.max(0, parsed));
 };
 
-function draftFrom(settings: Settings | null) {
+function draftFrom(settings: Settings) {
   return {
-    hostname: settings?.hostname ?? "",
-    sleepTimeout: String(settings?.sleep_timeout ?? ""),
-    continuousTimeout: String(settings?.continuous_timeout ?? 5),
-    volume: settings?.volume ?? 70,
-    welcome: settings?.welcome !== false,
-    serialLog: Boolean(settings?.serial_log),
-    loading: loadingMode(settings),
-    eyesStyle:
-      settings && EYES_STYLES.includes(settings.eyes_style) ? settings.eyes_style : "classic",
+    hostname: settings.hostname,
+    sleepTimeout: String(settings.sleep_timeout),
+    continuousTimeout: String(settings.continuous_timeout),
+    volume: settings.volume,
+    welcome: settings.welcome,
+    serialLog: settings.serial_log,
+    loading: settings.loading,
+    eyesStyle: settings.eyes_style,
   };
 }
 
 function saveMessage(previousHost: string, previousLoading: LoadingMode, saved: Settings) {
   const hostChanged = saved.hostname !== previousHost || Boolean(saved.reboot_required);
-  const loadingChanged = loadingMode(saved) !== previousLoading;
+  const loadingChanged = saved.loading !== previousLoading;
 
   if (hostChanged && loadingChanged) {
     return "Saved. Hostname and loading screen apply after reboot.";
@@ -52,18 +48,17 @@ function saveMessage(previousHost: string, previousLoading: LoadingMode, saved: 
   return "Settings saved.";
 }
 
-function ConfigForm() {
-  const { settings, applySettings } = useRobot();
+function ConfigForm({ settings }: { settings: Settings }) {
+  const { applySettings } = useRobot();
   const { perform, setStatus } = useStatus();
   const [draft, setDraft] = useResettableState(settings, draftFrom);
   const accessToken = useAccessToken(settings);
-  const networks = useWifiNetworks(settings?.wifi_networks ?? [], applySettings);
+  const networks = useWifiNetworks(settings.wifi_networks, applySettings);
   const set = (fields: Partial<typeof draft>) => setDraft({ ...draft, ...fields });
 
   async function save(event: Event) {
     event.preventDefault();
 
-    const host = draft.hostname.trim();
     const previousLoading = draft.loading;
     const newToken = accessToken.pendingValue;
 
@@ -73,7 +68,7 @@ function ConfigForm() {
         method: "POST",
         json: {
           sleep_timeout: Number(draft.sleepTimeout),
-          hostname: host,
+          hostname: draft.hostname,
           volume: draft.volume,
           welcome: draft.welcome,
           serial_log: draft.serialLog,
@@ -103,7 +98,7 @@ function ConfigForm() {
 
         const wifiNote = wifiChanged ? " WiFi networks apply after reboot." : "";
 
-        setStatus(saveMessage(host, previousLoading, saved) + wifiNote, "ok");
+        setStatus(saveMessage(draft.hostname, previousLoading, saved) + wifiNote, "ok");
       },
     });
   }
@@ -322,22 +317,22 @@ function FactoryReset() {
 }
 
 export function ConfigPage() {
-  const { inSetup } = useRobot();
+  const { inSetup, settings } = useRobot();
 
   if (inSetup) {
-    return (
-      <section>
-        <Wizard />
-      </section>
-    );
+    return <section>{settings && <Wizard settings={settings} />}</section>;
   }
 
   return (
     <section>
       <h2 className="page-title">Config</h2>
       <p className="page-desc">Saved to flash. Most changes apply right away.</p>
-      <ConfigForm />
-      <FactoryReset />
+      {settings && (
+        <>
+          <ConfigForm settings={settings} />
+          <FactoryReset />
+        </>
+      )}
     </section>
   );
 }

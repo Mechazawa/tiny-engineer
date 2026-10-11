@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/preact";
+import { screen, waitFor, within } from "@testing-library/preact";
 import { describe, expect, it } from "vitest";
 import { fakeRobot, renderApp } from "./robot";
 
@@ -10,10 +10,13 @@ const rows = () =>
       note: row.querySelector(".wifi-network-note")?.textContent,
       button: within(row).getByRole<HTMLButtonElement>("button"),
     }));
+const statusText = () => screen.queryByRole("status")?.textContent;
 
 async function openConfig(settings: { wifi_networks: string[] }) {
   const robot = fakeRobot({ settings });
-  const app = await renderApp("/config");
+  const app = renderApp("/config");
+
+  await screen.findByRole("list", { name: "Saved WiFi networks" });
 
   return {
     robot,
@@ -54,13 +57,13 @@ describe("wifi networks", () => {
 
     await click("Save settings");
 
+    await waitFor(() =>
+      expect(statusText()).toBe("Settings saved. WiFi networks apply after reboot."),
+    );
     expect(robot.sent("PUT", "/settings/wifi").map((request) => request.json)).toEqual([
       [{ ssid: "office", password: "secret" }],
     ]);
     expect(rows().map((row) => row.ssid)).toEqual(["office"]);
-    expect(screen.getByRole("status").textContent).toBe(
-      "Settings saved. WiFi networks apply after reboot.",
-    );
   });
 
   it("swaps four of five networks in one request", async () => {
@@ -78,8 +81,8 @@ describe("wifi networks", () => {
 
     await click("Save settings");
 
+    await waitFor(() => expect(robot.settings.wifi_networks).toEqual(["f", "g", "h", "i", "e"]));
     expect(robot.sent("PUT", "/settings/wifi")).toHaveLength(1);
-    expect(robot.settings.wifi_networks).toEqual(["f", "g", "h", "i", "e"]);
   });
 
   it("keeps saved passwords by leaving them out", async () => {
@@ -88,7 +91,9 @@ describe("wifi networks", () => {
     await rowButton("office");
     await click("Save settings");
 
-    expect(robot.sent("PUT", "/settings/wifi")[0].json).toEqual([{ ssid: "home" }]);
+    await waitFor(() =>
+      expect(robot.sent("PUT", "/settings/wifi")[0]?.json).toEqual([{ ssid: "home" }]),
+    );
   });
 
   it("clears a new password for a saved network once it is saved", async () => {
@@ -97,10 +102,10 @@ describe("wifi networks", () => {
     await stage("home", "new-secret");
     await click("Save settings");
 
+    await waitFor(() => expect(rows().map((row) => row.note)).toEqual([""]));
     expect(robot.sent("PUT", "/settings/wifi")[0].json).toEqual([
       { ssid: "home", password: "new-secret" },
     ]);
-    expect(rows().map((row) => row.note)).toEqual([""]);
   });
 
   it("sends nothing when the list did not change", async () => {
@@ -110,8 +115,8 @@ describe("wifi networks", () => {
     await rowButton("office");
     await click("Save settings");
 
+    await waitFor(() => expect(statusText()).toBe("Settings saved."));
     expect(robot.sent("PUT", "/settings/wifi")).toEqual([]);
-    expect(screen.getByRole("status").textContent).toBe("Settings saved.");
   });
 
   it("refuses a sixth network", async () => {
@@ -120,9 +125,7 @@ describe("wifi networks", () => {
     await stage("f");
 
     expect(rows()).toHaveLength(5);
-    expect(screen.getByRole("status").textContent).toBe(
-      "The robot keeps up to 5 networks. Remove one first.",
-    );
+    expect(statusText()).toBe("The robot keeps up to 5 networks. Remove one first.");
   });
 
   it("keeps the controls locked until the list is saved", async () => {
@@ -139,8 +142,8 @@ describe("wifi networks", () => {
     await rowButton("office");
     await click("Save settings");
 
-    expect(lockedDuringPut).toBe(true);
-    expect(save.disabled).toBe(false);
+    await waitFor(() => expect(lockedDuringPut).toBe(true));
+    await waitFor(() => expect(save.disabled).toBe(false));
   });
 
   it("reports the robot's error and keeps the staged change", async () => {
@@ -150,8 +153,8 @@ describe("wifi networks", () => {
     robot.failing.add("/settings/wifi");
     await click("Save settings");
 
-    expect(screen.getByRole("status").textContent).toBe(
-      "Settings saved. WiFi networks not saved: robot said no",
+    await waitFor(() =>
+      expect(statusText()).toBe("Settings saved. WiFi networks not saved: robot said no"),
     );
     expect(rows().map((row) => row.note)).toEqual(["", "Removed on save"]);
   });

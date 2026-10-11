@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
 import type { Settings, WifiNetwork } from "../api/types";
 import { HostnameField } from "../config/HostnameField";
 import { MAX_NETWORKS } from "../config/wifiNetworks";
@@ -56,23 +56,19 @@ export function SpeakerStep() {
   );
 }
 
-export function NetworkStep() {
-  const { settings, applySettings, leaveSetup } = useRobot();
+export function NetworkStep({ settings }: { settings: Settings }) {
+  const { applySettings, leaveSetup } = useRobot();
   const { perform, setStatus } = useStatus();
   const [ssid, setSsid] = useState("");
   const [password, setPassword] = useState("");
   const [revealed, setRevealed] = useState(false);
-  const [hostname, setHostname] = useResettableState(settings?.hostname ?? "", String);
-  const ssidRef = useRef<HTMLInputElement>(null);
-  const hostnameRef = useRef<HTMLInputElement>(null);
+  const [hostname, setHostname] = useResettableState(settings.hostname, String);
 
-  useEffect(() => ssidRef.current?.focus(), []);
+  // Runs once the browser has checked the hostname field.
+  async function connect(event: Event) {
+    event.preventDefault();
 
-  async function connect() {
     const network = ssid.trim();
-    const host = hostname.trim();
-
-    setHostname(host);
 
     if (!network) {
       setStatus("Enter a WiFi network name.", "err");
@@ -80,18 +76,10 @@ export function NetworkStep() {
       return;
     }
 
-    if (hostnameRef.current) {
-      hostnameRef.current.value = host;
-
-      if (!hostnameRef.current.reportValidity()) {
-        return;
-      }
-    }
-
     // The connection test registers mDNS under the saved hostname, so it is saved first.
     const hostnameSaved = await perform({
       path: "/settings",
-      request: { method: "POST", json: { hostname: host } },
+      request: { method: "POST", json: { hostname } },
       pending: "Saving hostname…",
       failure: "Hostname not saved",
     });
@@ -102,7 +90,7 @@ export function NetworkStep() {
 
     const result = await perform<Settings>({
       path: "/settings/wifi",
-      request: { method: "PUT", json: withFirst(settings?.wifi_networks ?? [], network, password) },
+      request: { method: "PUT", json: withFirst(settings.wifi_networks, network, password) },
       pending: "Testing WiFi credentials…",
       failure: "WiFi connection failed",
     });
@@ -143,13 +131,13 @@ export function NetworkStep() {
       <p className="hint">
         Enter the network name and password for the WiFi you want the robot to join.
       </p>
-      <div>
+      <form onSubmit={connect}>
         <div className="form-group">
           <label htmlFor="config-wifi-ssid">Network name (SSID)</label>
           <input
-            ref={ssidRef}
             type="text"
             id="config-wifi-ssid"
+            autoFocus
             maxLength={32}
             autoComplete="off"
             value={ssid}
@@ -173,16 +161,11 @@ export function NetworkStep() {
           </div>
           <p className="hint">Leave empty only for open networks.</p>
         </div>
-        <HostnameField
-          id="config-wifi-hostname"
-          value={hostname}
-          onInput={setHostname}
-          inputRef={hostnameRef}
-        />
-        <Button id="config-wifi-connect" variant="primary" onClick={connect}>
+        <HostnameField id="config-wifi-hostname" value={hostname} onInput={setHostname} />
+        <Button type="submit" id="config-wifi-connect" variant="primary">
           Connect to WiFi
         </Button>
-      </div>
+      </form>
     </div>
   );
 }

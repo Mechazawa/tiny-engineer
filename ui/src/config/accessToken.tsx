@@ -6,8 +6,8 @@ const MASK = "********";
 
 // A saved token shows as a mask until the field is focused (`draft` stays null); typing replaces
 // it and the toggle stages removal. Every settings reply starts it over.
-export function useAccessToken(settings: Settings | null) {
-  const configured = Boolean(settings?.access_token_set);
+export function useAccessToken(settings: Settings) {
+  const configured = settings.access_token_set;
   const [{ draft, clearPending }, setState] = useResettableState(settings, () => ({
     draft: null as string | null,
     clearPending: false,

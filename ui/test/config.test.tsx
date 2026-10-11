@@ -1,13 +1,23 @@
-import { screen } from "@testing-library/preact";
+import { screen, waitFor } from "@testing-library/preact";
 import { describe, expect, it } from "vitest";
 import { fakeRobot, renderApp } from "./robot";
 
 const field = (label: string) => screen.getByLabelText<HTMLInputElement>(label);
+const statusText = () => screen.queryByRole("status")?.textContent;
+
+// The form renders once the settings have loaded.
+async function openConfig(settings = {}) {
+  const robot = fakeRobot({ settings });
+  const app = renderApp("/config");
+
+  await screen.findByLabelText("Hostname");
+
+  return { robot, ...app };
+}
 
 describe("config page", () => {
   it("fills the form from the robot's settings", async () => {
-    fakeRobot({ settings: { hostname: "desk-bot", volume: 35, eyes_style: "dots" } });
-    await renderApp("/config");
+    await openConfig({ hostname: "desk-bot", volume: 35, eyes_style: "dots" });
 
     expect(field("Hostname").value).toBe("desk-bot");
     expect(screen.getByText("35%")).toBeTruthy();
@@ -15,13 +25,13 @@ describe("config page", () => {
   });
 
   it("saves the form without touching a saved token", async () => {
-    const robot = fakeRobot({ settings: { access_token_set: true } });
-    const { user, click } = await renderApp("/config");
+    const { robot, user, click } = await openConfig({ access_token_set: true });
 
     await user.clear(field("Sleep timeout (minutes)"));
     await user.type(field("Sleep timeout (minutes)"), "20");
     await click("Save settings");
 
+    await waitFor(() => expect(statusText()).toBe("Settings saved."));
     expect(robot.lastPost("/settings")?.json).toEqual({
       sleep_timeout: 20,
       hostname: "tiny-engineer",
@@ -32,44 +42,39 @@ describe("config page", () => {
       loading: "progress",
       eyes_style: "classic",
     });
-    expect(screen.getByRole("status").textContent).toBe("Settings saved.");
   });
 
   it("says when a hostname change needs a reboot", async () => {
-    fakeRobot();
-    const { user, click } = await renderApp("/config");
+    const { user, click } = await openConfig();
 
     await user.clear(field("Hostname"));
     await user.type(field("Hostname"), "desk-bot");
     await click("Save settings");
 
-    expect(screen.getByRole("status").textContent).toBe("Saved. Hostname applies after reboot.");
+    await waitFor(() => expect(statusText()).toBe("Saved. Hostname applies after reboot."));
   });
 
   it("sends an empty token to remove it and forgets the stored copy", async () => {
-    const robot = fakeRobot({ settings: { access_token_set: true } });
-
     sessionStorage.setItem("te_access_token", "old");
 
-    const { click } = await renderApp("/config");
+    const { robot, click } = await openConfig({ access_token_set: true });
 
     await click("Remove token");
     await click("Save settings");
 
+    expect(await screen.findByText("Auth disabled")).toBeTruthy();
     expect(robot.lastPost("/settings")?.json).toHaveProperty("access_token", "");
     expect(sessionStorage.getItem("te_access_token")).toBeNull();
-    expect(screen.getByText("Auth disabled")).toBeTruthy();
   });
 
   it("replaces the token with a typed one and keeps using it", async () => {
-    const robot = fakeRobot({ settings: { access_token_set: true } });
-    const { user, click } = await renderApp("/config");
+    const { robot, user, click } = await openConfig({ access_token_set: true });
 
     await user.type(field("Access token"), "new-token");
     await click("Save settings");
 
+    await waitFor(() => expect(field("Access token").value).toBe("********"));
     expect(robot.lastPost("/settings")?.json).toHaveProperty("access_token", "new-token");
     expect(sessionStorage.getItem("te_access_token")).toBe("new-token");
-    expect(field("Access token").value).toBe("********");
   });
 });

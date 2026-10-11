@@ -15,7 +15,7 @@ void loadText(char (&dest)[N], const char* key, bool (*valid)(const char*)) {
   const String value = g_settingsPrefs.getString(key, dest);
 
   if (valid(value.c_str())) {
-    copyText(dest, value.c_str());
+    strlcpy(dest, value.c_str(), sizeof(dest));
   }
 }
 
@@ -161,7 +161,7 @@ bool factoryResetSettings(bool* rebootRequired) {
   // The hardware calibration survives a reset.
   SettingsValues next = defaults;
   next.servoRanges = g_settings.servoRanges;
-  copyText(next.rgbOrder, g_settings.rgbOrder);
+  strlcpy(next.rgbOrder, g_settings.rgbOrder, sizeof(next.rgbOrder));
   next.oledRotate180 = g_settings.oledRotate180;
 
   if (!next.save(true)) {

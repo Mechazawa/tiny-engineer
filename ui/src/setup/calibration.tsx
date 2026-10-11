@@ -16,7 +16,7 @@ const CENTER = 90;
 const NUDGES = [-10, -5, -1, 1, 5, 10];
 
 // Servo step state: "horns" while the printed parts go on, then "ranges" to find each joint's limits.
-export function useCalibration(settings: Settings | null) {
+export function useCalibration(settings: Settings) {
   const [phase, setPhase] = useState<"horns" | "ranges">("horns");
   const [joint, setJoint] = useState(0);
   const [angles, setAngles] = useState(() => SERVO_NAMES.map(() => CENTER));

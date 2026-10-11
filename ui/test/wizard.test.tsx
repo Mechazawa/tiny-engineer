@@ -1,13 +1,14 @@
-import { screen, within } from "@testing-library/preact";
+import { screen, waitFor, within } from "@testing-library/preact";
 import { describe, expect, it } from "vitest";
 import { fakeRobot, renderApp } from "./robot";
 
 const angle = () => screen.getByTestId("calib-angle").textContent;
 const stepLabel = () => screen.getByText(/^Step \d of 5/).textContent;
+const statusText = () => screen.queryByRole("status")?.textContent;
 
 async function startCalibration(settings = {}) {
   const robot = fakeRobot({ provisioning: true, settings });
-  const app = await renderApp("/");
+  const app = renderApp("/");
 
   await app.click("Parts are on →");
 
@@ -17,10 +18,10 @@ async function startCalibration(settings = {}) {
 describe("setup wizard", () => {
   it("takes over the config page while the robot is provisioning", async () => {
     fakeRobot({ provisioning: true });
-    await renderApp("/");
+    renderApp("/");
 
+    expect(await screen.findByRole("heading", { name: "Tiny Engineer setup" })).toBeTruthy();
     expect(screen.queryByRole("navigation")).toBeNull();
-    expect(screen.getByRole("heading", { name: "Tiny Engineer setup" })).toBeTruthy();
     expect(stepLabel()).toBe("Step 1 of 5 · Servos");
   });
 
@@ -40,6 +41,7 @@ describe("setup wizard", () => {
       await click("+10°");
     }
 
+    await waitFor(() => expect(robot.sent("POST", "/setup/servo")).toHaveLength(9));
     expect(angle()).toBe("180");
     expect(
       robot
@@ -54,8 +56,8 @@ describe("setup wizard", () => {
     robot.failing.add("/setup/servo");
     await click("+5°");
 
+    await waitFor(() => expect(statusText()).toBe("robot said no"));
     expect(angle()).toBe("90");
-    expect(screen.getByRole("status").textContent).toBe("robot said no");
   });
 
   it("keeps each joint's angle when switching tabs", async () => {
@@ -68,7 +70,9 @@ describe("setup wizard", () => {
 
     await click("+1°");
 
-    expect(robot.lastPost("/setup/servo")?.json).toEqual({ index: 1, angle: 91 });
+    await waitFor(() =>
+      expect(robot.lastPost("/setup/servo")?.json).toEqual({ index: 1, angle: 91 }),
+    );
 
     await click("Head");
 
@@ -82,7 +86,7 @@ describe("setup wizard", () => {
     await click("+5°");
     await click("Set min (60°)");
 
-    expect(screen.getByRole("status").textContent).toBe("Min must be less than max.");
+    expect(statusText()).toBe("Min must be less than max.");
     expect(screen.getByRole("button", { name: "Set min (60°)" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Set max (90°)" })).toBeTruthy();
   });
@@ -94,12 +98,12 @@ describe("setup wizard", () => {
     await click("Set min (60°)");
     await click("Next: Screen");
 
+    await waitFor(() => expect(stepLabel()).toBe("Step 2 of 5 · Screen"));
     expect(robot.lastPost("/settings")?.json).toEqual({
       servo_mins: [80, 40, 45, 35, 40],
       servo_maxs: [130, 130, 135, 125, 130],
     });
     expect(robot.lastPost("/setup/oled")?.json).toEqual({ rotate_180: false });
-    expect(stepLabel()).toBe("Step 2 of 5 · Screen");
   });
 
   it("saves the hostname, then tests the new network ahead of the saved ones", async () => {
@@ -109,7 +113,7 @@ describe("setup wizard", () => {
       await click(next);
     }
 
-    await user.type(screen.getByLabelText("Network name (SSID)"), "home");
+    await user.type(await screen.findByLabelText("Network name (SSID)"), "home");
     await user.type(screen.getByLabelText("Password"), "secret");
     await user.clear(screen.getByLabelText("Hostname"));
     await user.type(screen.getByLabelText("Hostname"), "desk-bot");
@@ -117,6 +121,8 @@ describe("setup wizard", () => {
     const writesBefore = robot.requests.length;
 
     await click("Connect to WiFi");
+
+    expect(await screen.findByRole("navigation")).toBeTruthy();
 
     const writes = robot.requests.slice(writesBefore).filter((request) => request.method !== "GET");
 
@@ -126,8 +132,7 @@ describe("setup wizard", () => {
     ]);
     expect(writes[0].json).toEqual({ hostname: "desk-bot" });
     expect(writes[1].json).toEqual([{ ssid: "home", password: "secret" }, { ssid: "old" }]);
-    expect(screen.getByRole("status").textContent).toContain("WiFi connected");
-    expect(screen.getByRole("navigation")).toBeTruthy();
+    expect(statusText()).toContain("WiFi connected");
   });
 
   it("blocks a color mapping that uses a color twice", async () => {
@@ -135,10 +140,9 @@ describe("setup wizard", () => {
 
     await click("Next: Screen");
     await click("Next: RGB mapping");
+    await click("Change color mapping");
 
     expect(stepLabel()).toBe("Step 3 of 5 · RGB mapping");
-
-    await click("Change color mapping");
 
     const byte = (name: string) => within(screen.getByRole("group", { name }));
     const next = () => screen.getByRole<HTMLButtonElement>("button", { name: "Next: Speaker" });
@@ -153,7 +157,7 @@ describe("setup wizard", () => {
 
     await click("Next: Speaker");
 
+    await waitFor(() => expect(stepLabel()).toBe("Step 4 of 5 · Speaker"));
     expect(robot.lastPost("/settings")?.json).toEqual({ rgb_order: "RGB" });
-    expect(stepLabel()).toBe("Step 4 of 5 · Speaker");
   });
 });

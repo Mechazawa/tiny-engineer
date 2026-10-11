@@ -8,7 +8,7 @@ namespace {
 
 bool tokenAccepted(WebServer& server) {
   return !settingsAccessTokenSet() ||
-         server.header("Authorization") == String("Bearer ") + settingsAccessToken();
+         server.header("Authorization").equalsConstantTime(String("Bearer ") + settingsAccessToken());
 }
 
 }  // namespace

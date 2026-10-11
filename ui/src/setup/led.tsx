@@ -1,10 +1,10 @@
 import { useState } from "preact/hooks";
+import clsx from "clsx";
 import { apiFetch } from "../api/client";
 import { Button, useStatus } from "../status/status";
 import { useResettableState } from "../useResettableState";
 
 const RGB_ORDERS = ["RGB", "RBG", "GRB", "GBR", "BRG", "BGR"];
-const DEFAULT_ORDER = "GRB";
 const CHANNELS = [
   ["R", "Red"],
   ["G", "Green"],
@@ -15,9 +15,7 @@ const BYTE_LABELS = ["First byte", "Second byte", "Third byte"];
 export const releaseLed = () => apiFetch("/setup/led", { method: "POST" }).catch(() => {});
 
 // `looks` holds the color seen for each WS2812 wire byte; together they spell the RGB order.
-export function useLedMapping(savedSetting: string | undefined) {
-  const savedOrder =
-    savedSetting && RGB_ORDERS.includes(savedSetting) ? savedSetting : DEFAULT_ORDER;
+export function useLedMapping(savedOrder: string) {
   const [looks, setLooks] = useResettableState(savedOrder, (order) => [...order]);
   const [remapOpen, setRemapOpen] = useState(false);
   const order = looks.join("");
@@ -103,12 +101,10 @@ export function LedStep({ mapping }: { mapping: LedMapping }) {
                 {CHANNELS.map(([channel, name]) => (
                   <Button
                     key={channel}
-                    className={[
+                    className={clsx(
                       `led-${channel.toLowerCase()}`,
                       mapping.looks[byte] === channel && "active",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
+                    )}
                     onClick={() => pickLook(byte, channel)}
                   >
                     {name}

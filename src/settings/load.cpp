@@ -59,7 +59,7 @@ void initSettings() {
     serialLogPrintln("Settings: NVS open failed; using defaults");
   }
 
-  copyText(g_bootHostname, g_settings.hostname);
+  strlcpy(g_bootHostname, g_settings.hostname, sizeof(g_bootHostname));
 
   if (legacyWifi) {
     migrateLegacyWifi();

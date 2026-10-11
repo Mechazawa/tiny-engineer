@@ -12,13 +12,5 @@ export const DEFAULT_SERVO_RANGES: Range[] = [
   [40, 130],
 ];
 
-export function savedRanges(settings: Settings | null): Range[] {
-  const mins = settings?.servo_mins;
-  const maxs = settings?.servo_maxs;
-
-  if (mins?.length !== SERVO_NAMES.length || maxs?.length !== SERVO_NAMES.length) {
-    return DEFAULT_SERVO_RANGES;
-  }
-
-  return mins.map((min, index) => [min, maxs[index]] as const);
-}
+export const savedRanges = ({ servo_mins: mins, servo_maxs: maxs }: Settings): Range[] =>
+  mins.map((min, index) => [min, maxs[index]] as const);

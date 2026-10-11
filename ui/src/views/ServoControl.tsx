@@ -1,12 +1,13 @@
 import { useState } from "preact/hooks";
 import { useRobot } from "../robot";
-import { SERVO_NAMES, savedRanges } from "../servos";
+import { DEFAULT_SERVO_RANGES, SERVO_NAMES, savedRanges } from "../servos";
 import { Button, useStatus } from "../status/status";
 
 export function ServoControl() {
   const { settings } = useRobot();
   const { perform, setStatus } = useStatus();
-  const ranges = savedRanges(settings);
+  // Until the settings load, the stock ranges stand in.
+  const ranges = settings ? savedRanges(settings) : DEFAULT_SERVO_RANGES;
   const [index, setIndex] = useState(0);
   const [angle, setAngle] = useState("90");
   const [min, max] = ranges[index];

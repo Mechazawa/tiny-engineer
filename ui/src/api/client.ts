@@ -29,12 +29,13 @@ export interface Request {
   // Query parameters; only POST /anim takes them.
   params?: Record<string, string>;
   json?: unknown;
+  signal?: AbortSignal;
 }
 
 // `ok` also covers firmware errors reported as {"ok":false} in a 200 body.
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; data: ApiError };
 
-export function apiFetch(path: string, { method = "GET", params, json }: Request = {}) {
+export function apiFetch(path: string, { method = "GET", params, json, signal }: Request = {}) {
   const query = params ? `?${new URLSearchParams(params)}` : "";
   const headers: Record<string, string> = {};
   const stored = token.get();
@@ -51,6 +52,7 @@ export function apiFetch(path: string, { method = "GET", params, json }: Request
     method,
     headers,
     body: json === undefined ? undefined : JSON.stringify(json),
+    signal,
   });
 }
 

@@ -22,16 +22,13 @@ type StepId = (typeof STEPS)[number]["id"];
 const previewOled = (json?: { rotate_180: boolean }) =>
   apiFetch("/setup/oled", { method: "POST", json }).catch(() => {});
 
-export function Wizard() {
-  const { settings, applySettings } = useRobot();
+export function Wizard({ settings }: { settings: Settings }) {
+  const { applySettings } = useRobot();
   const { perform, clearStatus } = useStatus();
   const [stepIndex, setStepIndex] = useState(0);
-  const [oledRotate180, setOledRotate180] = useResettableState(
-    Boolean(settings?.oled_rotate_180),
-    Boolean,
-  );
+  const [oledRotate180, setOledRotate180] = useResettableState(settings.oled_rotate_180, Boolean);
   const calibration = useCalibration(settings);
-  const led = useLedMapping(settings?.rgb_order);
+  const led = useLedMapping(settings.rgb_order);
   const step = STEPS[stepIndex];
   const placingParts = step.id === "servos" && calibration.phase === "horns";
   const goTo = (id: StepId) => setStepIndex(STEPS.findIndex((each) => each.id === id));
@@ -131,7 +128,7 @@ export function Wizard() {
       {step.id === "oled" && <ScreenStep onRotate={rotateOled} />}
       {step.id === "led" && <LedStep mapping={led} />}
       {step.id === "speaker" && <SpeakerStep />}
-      {step.id === "network" && <NetworkStep />}
+      {step.id === "network" && <NetworkStep settings={settings} />}
       {!placingParts && (
         <div className="setup-footer">
           <Button onClick={retreat[step.id]}>Back</Button>
