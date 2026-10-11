@@ -106,18 +106,30 @@ void test_wifi_password() {
 }
 
 void test_servo_ranges() {
-  const uint8_t validMin[SETTINGS_SERVO_COUNT] = {10, 20, 30, 40, 50};
-  const uint8_t validMax[SETTINGS_SERVO_COUNT] = {20, 30, 40, 50, 60};
-  const uint8_t equalMin[SETTINGS_SERVO_COUNT] = {10, 20, 30, 40, 50};
-  const uint8_t equalMax[SETTINGS_SERVO_COUNT] = {10, 30, 40, 50, 60};
-  const uint8_t overMin[SETTINGS_SERVO_COUNT] = {10, 20, 30, 40, 50};
-  const uint8_t overMax[SETTINGS_SERVO_COUNT] = {20, 30, 40, 50, 181};
+  const ServoRanges valid = {{10, 20, 30, 40, 50}, {20, 30, 40, 50, 180}};
+  const ServoRanges equal = {{10, 20, 30, 40, 50}, {20, 30, 40, 50, 50}};
+  const ServoRanges over = {{10, 20, 30, 40, 50}, {20, 30, 40, 50, 181}};
 
-  TEST_ASSERT_FALSE(settingsValidateServoRanges(nullptr, validMax));
-  TEST_ASSERT_FALSE(settingsValidateServoRanges(validMin, nullptr));
-  TEST_ASSERT_FALSE(settingsValidateServoRanges(equalMin, equalMax));
-  TEST_ASSERT_FALSE(settingsValidateServoRanges(overMin, overMax));
-  TEST_ASSERT_TRUE(settingsValidateServoRanges(validMin, validMax));
+  TEST_ASSERT_TRUE(valid.valid());
+  TEST_ASSERT_FALSE(equal.valid());
+  TEST_ASSERT_FALSE(over.valid());
+}
+
+void test_patch_names_the_first_invalid_field() {
+  SettingsPatch patch;
+
+  TEST_ASSERT_NULL(patch.invalidField());
+
+  patch.volume = 50;
+  patch.hostname = "tiny-engineer";
+  TEST_ASSERT_NULL(patch.invalidField());
+
+  patch.volume = 101;
+  patch.rgbOrder = "XYZ";
+  TEST_ASSERT_EQUAL_STRING("volume", patch.invalidField());
+
+  patch.volume = 100;
+  TEST_ASSERT_EQUAL_STRING("rgb_order", patch.invalidField());
 }
 
 void test_rgb_order() {
@@ -145,6 +157,7 @@ int main() {
   RUN_TEST(test_wifi_ssid);
   RUN_TEST(test_wifi_password);
   RUN_TEST(test_servo_ranges);
+  RUN_TEST(test_patch_names_the_first_invalid_field);
   RUN_TEST(test_rgb_order);
   return UNITY_END();
 }

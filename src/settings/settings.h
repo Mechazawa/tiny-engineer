@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 
 class WifiNetworkList;
 
@@ -33,6 +34,33 @@ constexpr uint8_t SETTINGS_SERVO_ANGLE_MAX = 180;
 constexpr size_t SETTINGS_RGB_ORDER_MAX_LEN = 3;
 constexpr const char* SETTINGS_DEFAULT_RGB_ORDER = "GRB";
 constexpr bool SETTINGS_DEFAULT_OLED_ROTATE_180 = false;
+
+struct ServoRanges {
+  uint8_t mins[SETTINGS_SERVO_COUNT];
+  uint8_t maxs[SETTINGS_SERVO_COUNT];
+
+  // Every angle within 0..SETTINGS_SERVO_ANGLE_MAX and each min below its max.
+  bool valid() const;
+};
+
+// Fields left empty, or nullptr for text, keep their saved value.
+struct SettingsPatch {
+  std::optional<uint32_t> sleepTimeoutMin;
+  const char* hostname = nullptr;
+  std::optional<uint8_t> volume;
+  std::optional<bool> welcome;
+  std::optional<bool> serialLog;
+  std::optional<uint32_t> continuousTimeoutMin;
+  const char* loading = nullptr;
+  const char* eyesStyle = nullptr;
+  const char* accessToken = nullptr;
+  std::optional<ServoRanges> servoRanges;
+  const char* rgbOrder = nullptr;
+  std::optional<bool> oledRotate180;
+
+  // API name of the first field set to an invalid value, or nullptr.
+  const char* invalidField() const;
+};
 
 void initSettings();
 
@@ -66,31 +94,12 @@ bool settingsValidateEyesStyle(const char* eyesStyle);
 bool settingsValidateAccessToken(const char* accessToken);
 bool settingsValidateWifiSsid(const char* wifiSsid);
 bool settingsValidateWifiPassword(const char* wifiPassword);
-bool settingsValidateServoRanges(
-  const uint8_t* servoMins,
-  const uint8_t* servoMaxs
-);
 bool settingsValidateRgbOrder(const char* rgbOrder);
 
-// Updates RAM cache and NVS for any non-null args. Returns false on validation
-// failure (no write). If hostname is set and differs from boot hostname,
-// *rebootRequired is set true when non-null.
-bool saveSettings(
-  const uint32_t* sleepTimeoutMin,
-  const char* hostname,
-  const uint8_t* volume,
-  const bool* welcome,
-  const bool* serialLog,
-  const uint32_t* continuousTimeoutMin,
-  const char* loading,
-  const char* eyesStyle,
-  const char* accessToken,
-  const uint8_t* servoMins,
-  const uint8_t* servoMaxs,
-  const char* rgbOrder,
-  const bool* oledRotate180,
-  bool* rebootRequired
-);
+// Saves the fields the patch sets and keeps the others. False when a field is
+// invalid (nothing is written) or NVS fails. *rebootRequired is set when the
+// saved hostname differs from the boot hostname.
+bool saveSettings(const SettingsPatch& patch, bool* rebootRequired);
 
 // Replaces every saved network in RAM and NVS.
 bool saveWifiNetworks(const WifiNetworkList& networks);

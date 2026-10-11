@@ -300,7 +300,11 @@ void handleSettingsPost(WebServer& server) {
       return;
     }
 
-    if (!settingsValidateServoRanges(servoMins, servoMaxs)) {
+    ServoRanges ranges{};
+    memcpy(ranges.mins, servoMins, SETTINGS_SERVO_COUNT);
+    memcpy(ranges.maxs, servoMaxs, SETTINGS_SERVO_COUNT);
+
+    if (!ranges.valid()) {
       sendError(server, 400, "servo ranges out of range");
       return;
     }
@@ -347,22 +351,30 @@ void handleSettingsPost(WebServer& server) {
 
   bool rebootRequired = false;
 
-  if (!saveSettings(
-        sleepPtr,
-        hostPtr,
-        volumePtr,
-        welcomePtr,
-        serialLogPtr,
-        contToPtr,
-        loadingPtr,
-        eyesStylePtr,
-        accessTokenPtr,
-        servoMinsPtr,
-        servoMaxsPtr,
-        rgbOrderPtr,
-        oledRotate180Ptr,
-        &rebootRequired
-      )) {
+  SettingsPatch patch;
+  auto optional = [](const auto* value) {
+    return value == nullptr ? std::nullopt : std::make_optional(*value);
+  };
+  patch.sleepTimeoutMin = optional(sleepPtr);
+  patch.hostname = hostPtr;
+  patch.volume = optional(volumePtr);
+  patch.welcome = optional(welcomePtr);
+  patch.serialLog = optional(serialLogPtr);
+  patch.continuousTimeoutMin = optional(contToPtr);
+  patch.loading = loadingPtr;
+  patch.eyesStyle = eyesStylePtr;
+  patch.accessToken = accessTokenPtr;
+  patch.rgbOrder = rgbOrderPtr;
+  patch.oledRotate180 = optional(oledRotate180Ptr);
+
+  if (servoMinsPtr != nullptr) {
+    ServoRanges ranges{};
+    memcpy(ranges.mins, servoMinsPtr, SETTINGS_SERVO_COUNT);
+    memcpy(ranges.maxs, servoMaxsPtr, SETTINGS_SERVO_COUNT);
+    patch.servoRanges = ranges;
+  }
+
+  if (!saveSettings(patch, &rebootRequired)) {
     sendError(server, 400, "save failed");
     return;
   }
