@@ -1,8 +1,9 @@
-import { useState } from "preact/hooks";
-import type { Settings } from "../api/types";
-import { DEFAULT_SERVO_RANGES, type Range, savedRanges, SERVO_NAMES } from "../servos";
-import { Button, useStatus } from "../status/status";
-import { useResettableState } from "../useResettableState";
+import { Button } from "../components/Button";
+import { ConfigSection } from "../components/ConfigSection";
+import { DEFAULT_SERVO_RANGES, type Range, SERVO_NAMES } from "../servos";
+import { useStatus } from "../status/status";
+import { type Calibration, CENTER } from "./useCalibration";
+import { useSetupServo } from "./useSetupServo";
 
 const JOINT_COPY = [
   "Pitch only. Watch cable slack to the head. Stop before the head hits the neck piece. Down is toward the laptop; up is away.",
@@ -12,86 +13,9 @@ const JOINT_COPY = [
   "Rotate until the right hand sits over the bell at the extreme. Prefer a band symmetric about 90° (hint only — stock 40–130 is fine).",
 ];
 const BODY_JOINT = 4;
-const CENTER = 90;
 const NUDGES = [-10, -5, -1, 1, 5, 10];
 
-// Servo step state: "horns" while the printed parts go on, then "ranges" to find each joint's limits.
-export function useCalibration(settings: Settings) {
-  const [phase, setPhase] = useState<"horns" | "ranges">("horns");
-  const [joint, setJoint] = useState(0);
-  const [angles, setAngles] = useState(() => SERVO_NAMES.map(() => CENTER));
-  const [ranges, setRanges] = useResettableState(settings, savedRanges);
-
-  return {
-    phase,
-    setPhase,
-    joint,
-    setJoint,
-    angles,
-    setAngles,
-    ranges,
-    setRanges,
-    valid: ranges.every(([min, max]) => min < max),
-    placePartsDone() {
-      setPhase("ranges");
-      setJoint(0);
-      setAngles(angles.map((angle, index) => (index === 0 ? CENTER : angle)));
-    },
-  };
-}
-
-type Calibration = ReturnType<typeof useCalibration>;
-
 const percent = (angle: number) => `${(angle / 180) * 100}%`;
-
-function useSetupServo() {
-  const { perform, clearStatus } = useStatus();
-
-  return async (json: { all: number } | { index: number; angle: number }) => {
-    const result = await perform({
-      path: "/setup/servo",
-      request: { method: "POST", json },
-      pending: "Moving servos…",
-      failure: "Move failed",
-    });
-
-    if (result?.ok) {
-      clearStatus();
-    }
-
-    return Boolean(result?.ok);
-  };
-}
-
-export function PlaceParts({ calibration }: { calibration: Calibration }) {
-  const moveServos = useSetupServo();
-
-  async function centerAll() {
-    if (await moveServos({ all: CENTER })) {
-      calibration.setAngles(SERVO_NAMES.map(() => CENTER));
-    }
-  }
-
-  return (
-    <div className="config-section">
-      <h3>Attach the printed parts</h3>
-      <p className="setup-copy">
-        All joints use the full 0–180° electrical scale. <strong>90°</strong> is shaft center, not
-        the middle of the safe band.
-      </p>
-      <p className="setup-copy">
-        Press each printed part onto the servo shaft at rest: head toward the laptop, neck straight,
-        hands down, body centered in the chair. Snug the shaft screws.
-      </p>
-      <Button id="setup-move-90" variant="primary" onClick={centerAll}>
-        Move all to 90°
-      </Button>
-      <Button id="setup-horns-done" onClick={calibration.placePartsDone}>
-        Parts are on →
-      </Button>
-    </div>
-  );
-}
 
 export function FindRanges({ calibration }: { calibration: Calibration }) {
   const { setStatus } = useStatus();
@@ -138,8 +62,7 @@ export function FindRanges({ calibration }: { calibration: Calibration }) {
   }
 
   return (
-    <div className="config-section">
-      <h3>Find safe ranges</h3>
+    <ConfigSection title="Find safe ranges">
       <p className="setup-copy">
         Move one joint at a time with the buttons. Stop before cables pull taut or parts collide.
         The bar is a guide only. Stock limits are pre-filled. Switching tabs leaves the other joints
@@ -195,6 +118,6 @@ export function FindRanges({ calibration }: { calibration: Calibration }) {
         <Button onClick={() => setLimit("max")}>{`Set max (${max}°)`}</Button>
       </div>
       <Button onClick={() => setRange(DEFAULT_SERVO_RANGES[joint])}>Reset to default</Button>
-    </div>
+    </ConfigSection>
   );
 }

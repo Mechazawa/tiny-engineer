@@ -1,6 +1,6 @@
 import { useState } from "preact/hooks";
+import { Button } from "../components/Button";
 import { useRobot } from "../robot";
-import { Button } from "../status/status";
 
 export function AuthGate() {
   const { unlock } = useRobot();
@@ -48,24 +48,6 @@ export function AuthGate() {
             Unlock
           </Button>
         </form>
-      </div>
-    </div>
-  );
-}
-
-export function RebootGate() {
-  return (
-    <div className="gate">
-      <div className="gate-box">
-        <h1>Factory reset done</h1>
-        <p>
-          Settings and WiFi credentials are cleared. Servo ranges, RGB LED mapping, and screen
-          rotation stay. Power-cycle or press the device reset button.
-        </p>
-        <p>
-          Then join the robot WiFi shown on the OLED and open the setup page to configure home WiFi.
-          You can retune servo ranges, screen rotation, and LED mapping there.
-        </p>
       </div>
     </div>
   );

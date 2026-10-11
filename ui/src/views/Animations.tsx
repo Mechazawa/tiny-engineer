@@ -1,7 +1,8 @@
 import { useEffect, useState } from "preact/hooks";
 import { api } from "../api/client";
 import type { AnimationReply } from "../api/types";
-import { Button, useStatus } from "../status/status";
+import { Button } from "../components/Button";
+import { useStatus } from "../status/status";
 
 const ANIMATIONS = [
   ["none", "Idle", "Rest pose"],

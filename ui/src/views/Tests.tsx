@@ -1,4 +1,5 @@
-import { Button, useStatus } from "../status/status";
+import { Button } from "../components/Button";
+import { useStatus } from "../status/status";
 
 const TESTS = [
   ["/test/audio", "Play ascending tones through the speaker.", "Audio tones"],

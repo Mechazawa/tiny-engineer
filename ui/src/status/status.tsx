@@ -1,5 +1,4 @@
-import clsx from "clsx";
-import { type ComponentChildren, type ComponentProps, createContext } from "preact";
+import { type ComponentChildren, createContext } from "preact";
 import { useCallback, useContext, useMemo, useRef, useState } from "preact/hooks";
 import { api, type ApiResult, type Request } from "../api/client";
 
@@ -92,34 +91,4 @@ export function StatusProvider({ children }: { children: ComponentChildren }) {
   );
 
   return <StatusContext.Provider value={value}>{children}</StatusContext.Provider>;
-}
-
-export function StatusBar() {
-  const { status } = useStatus();
-
-  if (!status) {
-    return null;
-  }
-
-  return (
-    <div id="status" role="status" className={status.type}>
-      {status.message}
-    </div>
-  );
-}
-
-type ButtonProps = ComponentProps<"button"> & { variant?: "primary" | "danger" };
-
-// Every button locks while an action runs.
-export function Button({ variant, className, disabled, ...props }: ButtonProps) {
-  const { busy } = useStatus();
-
-  return (
-    <button
-      type="button"
-      {...props}
-      className={clsx("btn", variant && `btn-${variant}`, className)}
-      disabled={busy || Boolean(disabled)}
-    />
-  );
 }

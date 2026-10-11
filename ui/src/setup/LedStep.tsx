@@ -1,37 +1,15 @@
-import { useState } from "preact/hooks";
 import clsx from "clsx";
-import { apiFetch } from "../api/client";
-import { Button, useStatus } from "../status/status";
-import { useResettableState } from "../useResettableState";
+import { Button } from "../components/Button";
+import { ConfigSection } from "../components/ConfigSection";
+import { useStatus } from "../status/status";
+import type { LedMapping } from "./useLedMapping";
 
-const RGB_ORDERS = ["RGB", "RBG", "GRB", "GBR", "BRG", "BGR"];
 const CHANNELS = [
   ["R", "Red"],
   ["G", "Green"],
   ["B", "Blue"],
 ] as const;
 const BYTE_LABELS = ["First byte", "Second byte", "Third byte"];
-
-export const releaseLed = () => apiFetch("/setup/led", { method: "POST" }).catch(() => {});
-
-// `looks` holds the color seen for each WS2812 wire byte; together they spell the RGB order.
-export function useLedMapping(savedOrder: string) {
-  const [looks, setLooks] = useResettableState(savedOrder, (order) => [...order]);
-  const [remapOpen, setRemapOpen] = useState(false);
-  const order = looks.join("");
-
-  return {
-    savedOrder,
-    looks,
-    setLooks,
-    order,
-    valid: RGB_ORDERS.includes(order),
-    remapOpen,
-    setRemapOpen,
-  };
-}
-
-type LedMapping = ReturnType<typeof useLedMapping>;
 
 export function LedStep({ mapping }: { mapping: LedMapping }) {
   const { perform, clearStatus } = useStatus();
@@ -49,8 +27,7 @@ export function LedStep({ mapping }: { mapping: LedMapping }) {
   }
 
   return (
-    <div className="config-section">
-      <h3>RGB LED</h3>
+    <ConfigSection title="RGB LED">
       <p className="setup-copy">
         Tap Red, Green, and Blue. The LED should match. If a color looks wrong or stays off, change
         the mapping — some boards swap the LED wires.
@@ -115,6 +92,6 @@ export function LedStep({ mapping }: { mapping: LedMapping }) {
           ))}
         </div>
       )}
-    </div>
+    </ConfigSection>
   );
 }

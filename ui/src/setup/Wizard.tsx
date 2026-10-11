@@ -2,11 +2,17 @@ import { useEffect, useState } from "preact/hooks";
 import { apiFetch } from "../api/client";
 import type { Settings } from "../api/types";
 import { useRobot } from "../robot";
-import { Button, useStatus } from "../status/status";
+import { Button } from "../components/Button";
+import { useStatus } from "../status/status";
 import { useResettableState } from "../useResettableState";
-import { FindRanges, PlaceParts, useCalibration } from "./calibration";
-import { LedStep, releaseLed, useLedMapping } from "./led";
-import { NetworkStep, ScreenStep, SpeakerStep } from "./steps";
+import { FindRanges } from "./FindRanges";
+import { LedStep } from "./LedStep";
+import { NetworkStep } from "./NetworkStep";
+import { PlaceParts } from "./PlaceParts";
+import { ScreenStep } from "./ScreenStep";
+import { SpeakerStep } from "./SpeakerStep";
+import { useCalibration } from "./useCalibration";
+import { releaseLed, useLedMapping } from "./useLedMapping";
 
 const STEPS = [
   { id: "servos", title: "Servos", next: "Next: Screen" },
@@ -110,7 +116,7 @@ export function Wizard({ settings }: { settings: Settings }) {
   const blocked = (step.id === "servos" && !calibration.valid) || (step.id === "led" && !led.valid);
 
   return (
-    <div id="setup-wizard">
+    <div>
       <h2 className="page-title">Tiny Engineer setup</h2>
       <p className="page-desc">{`Step ${stepIndex + 1} of ${STEPS.length} · ${step.title}`}</p>
       <div className="setup-progress-track">

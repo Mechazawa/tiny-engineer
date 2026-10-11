@@ -1,9 +1,11 @@
 import { useState } from "preact/hooks";
 import type { Settings, WifiNetwork } from "../api/types";
-import { HostnameField } from "../config/HostnameField";
-import { MAX_NETWORKS } from "../config/wifiNetworks";
+import { Button } from "../components/Button";
+import { ConfigSection } from "../components/ConfigSection";
+import { HostnameField } from "../components/HostnameField";
+import { MAX_NETWORKS } from "../config/useWifiNetworks";
 import { useRobot } from "../robot";
-import { Button, useStatus } from "../status/status";
+import { useStatus } from "../status/status";
 import { useResettableState } from "../useResettableState";
 
 // The network to test first, then the saved ones that still fit.
@@ -12,49 +14,6 @@ const withFirst = (saved: string[], ssid: string, password: string): WifiNetwork
     { ssid, password },
     ...saved.filter((name) => name !== ssid).map((name) => ({ ssid: name })),
   ].slice(0, MAX_NETWORKS);
-
-export function ScreenStep({ onRotate }: { onRotate: () => void }) {
-  return (
-    <div className="config-section">
-      <h3>Screen</h3>
-      <p className="setup-copy">
-        Look at the OLED. Text should read right-side up. Tap Rotate 180° if it is upside down.
-      </p>
-      <Button variant="primary" onClick={onRotate}>
-        Rotate 180°
-      </Button>
-    </div>
-  );
-}
-
-export function SpeakerStep() {
-  const { perform, setStatus } = useStatus();
-
-  async function play() {
-    const result = await perform({
-      path: "/setup/audio",
-      pending: "Playing…",
-      failure: "Playback failed",
-    });
-
-    if (result?.ok) {
-      setStatus("Done.", "ok");
-    }
-  }
-
-  return (
-    <div className="config-section">
-      <h3>Speaker</h3>
-      <p className="setup-copy">
-        Play the welcome clip. You should hear speech from the speaker. Skip if you want — you can
-        test again later from Tests.
-      </p>
-      <Button id="setup-audio-play" variant="primary" onClick={play}>
-        Play
-      </Button>
-    </div>
-  );
-}
 
 export function NetworkStep({ settings }: { settings: Settings }) {
   const { applySettings, leaveSetup } = useRobot();
@@ -123,11 +82,7 @@ export function NetworkStep({ settings }: { settings: Settings }) {
   }
 
   return (
-    <div className="config-section">
-      <div className="config-section-head">
-        <h3>WiFi</h3>
-        <span className="apply-badge apply-now">Immediate</span>
-      </div>
+    <ConfigSection title="WiFi" apply="now">
       <p className="hint">
         Enter the network name and password for the WiFi you want the robot to join.
       </p>
@@ -166,6 +121,6 @@ export function NetworkStep({ settings }: { settings: Settings }) {
           Connect to WiFi
         </Button>
       </form>
-    </div>
+    </ConfigSection>
   );
 }

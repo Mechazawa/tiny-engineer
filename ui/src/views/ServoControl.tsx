@@ -1,7 +1,8 @@
 import { useState } from "preact/hooks";
 import { useRobot } from "../robot";
 import { DEFAULT_SERVO_RANGES, SERVO_NAMES, savedRanges } from "../servos";
-import { Button, useStatus } from "../status/status";
+import { Button } from "../components/Button";
+import { useStatus } from "../status/status";
 
 export function ServoControl() {
   const { settings } = useRobot();

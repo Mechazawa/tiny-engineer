@@ -1,49 +1,17 @@
-import { Link, Route, Switch, useLocation } from "wouter-preact";
-import { AuthGate, RebootGate } from "./gates/gates";
+import { Route, Switch } from "wouter-preact";
+import { Footer } from "./components/Footer";
+import { Nav } from "./components/Nav";
+import { StatusBar } from "./components/StatusBar";
+import { ConfigPage } from "./config/ConfigPage";
+import { AuthGate } from "./gates/AuthGate";
+import { RebootGate } from "./gates/RebootGate";
 import { RobotProvider, useRobot } from "./robot";
-import { StatusBar, StatusProvider } from "./status/status";
+import { StatusProvider } from "./status/status";
 import { Animations } from "./views/Animations";
 import { ApiReference } from "./views/ApiReference";
-import { ConfigPage } from "./config/ConfigPage";
 import { Home } from "./views/Home";
 import { ServoControl } from "./views/ServoControl";
 import { Tests } from "./views/Tests";
-
-const NAV = [
-  ["/", "Home"],
-  ["/animations", "Animations"],
-  ["/tests", "Tests"],
-  ["/servo", "Servo"],
-  ["/config", "Config"],
-  ["/api", "API"],
-] as const;
-
-function Nav() {
-  const [location] = useLocation();
-
-  return (
-    <nav>
-      {NAV.map(([path, label]) => (
-        <Link key={path} href={path} className={location === path ? "active" : ""}>
-          {label}
-        </Link>
-      ))}
-    </nav>
-  );
-}
-
-function Footer() {
-  const { version } = useRobot();
-
-  return (
-    <footer>
-      <a href="https://github.com/jamro/tiny-engineer" target="_blank" rel="noopener">
-        github.com/jamro/tiny-engineer
-      </a>
-      <p id="fw-version">{version ? `Firmware ${version}` : "Firmware …"}</p>
-    </footer>
-  );
-}
 
 function Shell() {
   const { gate, inSetup } = useRobot();
