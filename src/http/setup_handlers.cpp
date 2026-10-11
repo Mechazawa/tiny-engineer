@@ -7,21 +7,9 @@
 #include "http/handlers.h"
 #include "http/request.h"
 #include "http/response.h"
-#include "network/wifi_connect.h"
 #include "settings/settings.h"
 
 namespace {
-
-// Setup routes drive the hardware without the saved limits, so they only run
-// in setup AP mode. On success `body` holds the request.
-bool readSetupRequest(WebServer& server, const char* step, JsonDocument& body) {
-  if (!wifiProvisioningMode()) {
-    sendError(server, 400, (String("setup ") + step + " only in AP mode").c_str());
-    return false;
-  }
-
-  return readJsonBody(server, body);
-}
 
 JsonDocument setupReply(const char* step) {
   JsonDocument reply;
@@ -74,7 +62,7 @@ void holdWireByte(WebServer& server, JsonVariantConst byte) {
 void handleSetupServo(WebServer& server) {
   JsonDocument body;
 
-  if (!readSetupRequest(server, "servo", body)) {
+  if (!readJsonBody(server, body)) {
     return;
   }
 
@@ -98,7 +86,6 @@ void handleSetupServo(WebServer& server) {
     return;
   }
 
-  // ServoMove::read checked the index, the only thing the move can refuse.
   moveServoSmoothElectrical(move->index, move->angle);
 
   JsonDocument reply = setupReply("servo");
@@ -110,7 +97,7 @@ void handleSetupServo(WebServer& server) {
 void handleSetupLed(WebServer& server) {
   JsonDocument body;
 
-  if (!readSetupRequest(server, "led", body)) {
+  if (!readJsonBody(server, body)) {
     return;
   }
 
@@ -140,12 +127,6 @@ void handleSetupLed(WebServer& server) {
 }
 
 void handleSetupAudio(WebServer& server) {
-  JsonDocument body;
-
-  if (!readSetupRequest(server, "audio", body)) {
-    return;
-  }
-
   const bool played = playWelcome();
   showIdleScreen();
 
@@ -160,7 +141,7 @@ void handleSetupAudio(WebServer& server) {
 void handleSetupOled(WebServer& server) {
   JsonDocument body;
 
-  if (!readSetupRequest(server, "oled", body)) {
+  if (!readJsonBody(server, body)) {
     return;
   }
 

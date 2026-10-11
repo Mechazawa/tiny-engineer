@@ -42,7 +42,9 @@ describe("setup wizard", () => {
 
     expect(angle()).toBe("180");
     expect(
-      robot.posts("/setup/servo").map((request) => (request.json as { angle: number }).angle),
+      robot
+        .sent("POST", "/setup/servo")
+        .map((request) => (request.json as { angle: number }).angle),
     ).toEqual([100, 110, 120, 130, 140, 150, 160, 170, 180]);
   });
 

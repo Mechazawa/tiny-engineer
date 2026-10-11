@@ -34,7 +34,7 @@ describe("servo page", () => {
     await user.clear(angle);
     await user.type(angle, "100");
 
-    expect(robot.posts("/test/servo")).toHaveLength(0);
+    expect(robot.sent("POST", "/test/servo")).toHaveLength(0);
 
     await user.click(screen.getByRole("button", { name: "Move servo" }));
 

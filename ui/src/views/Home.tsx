@@ -59,6 +59,10 @@ function HealthStrip() {
   const [text, setText] = useState("Loading status…");
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    let stopped = false;
+
+    // The next poll waits for this reply, so a slow robot never gets overlapping requests.
     async function poll() {
       try {
         const health = await api<Health>("/health");
@@ -72,12 +76,18 @@ function HealthStrip() {
       } catch {
         setText("Could not load status.");
       }
+
+      if (!stopped) {
+        timer = setTimeout(poll, 1000);
+      }
     }
 
     poll();
-    const timer = setInterval(poll, 1000);
 
-    return () => clearInterval(timer);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
   }, [applyHealth]);
 
   return (

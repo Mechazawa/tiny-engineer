@@ -1,5 +1,5 @@
 import { useState } from "preact/hooks";
-import { api, apiFetch } from "../api/client";
+import { apiFetch } from "../api/client";
 import { Button, useStatus } from "../status/status";
 import { useResettableState } from "../useResettableState";
 
@@ -36,26 +36,15 @@ export function useLedMapping(savedSetting: string | undefined) {
 type LedMapping = ReturnType<typeof useLedMapping>;
 
 export function LedStep({ mapping }: { mapping: LedMapping }) {
-  const { busy, setStatus, clearStatus } = useStatus();
+  const { perform, clearStatus } = useStatus();
 
-  // Previews skip the busy lock so taps feel instant.
-  async function preview(json: { color: string; rgb_order: string } | { byte: number }) {
-    if (busy) {
-      return;
-    }
-
-    try {
-      const result = await api("/setup/led", { method: "POST", json });
-
-      if (result.ok) {
-        clearStatus();
-      } else {
-        setStatus(result.data.error || "LED preview failed", "err");
-      }
-    } catch {
-      setStatus("Network error", "err");
-    }
-  }
+  const preview = (json: { color: string; rgb_order: string } | { byte: number }) =>
+    perform({
+      path: "/setup/led",
+      request: { method: "POST", json },
+      failure: "LED preview failed",
+      onSuccess: clearStatus,
+    });
 
   function pickLook(byte: number, look: string) {
     mapping.setLooks(mapping.looks.map((each, index) => (index === byte ? look : each)));

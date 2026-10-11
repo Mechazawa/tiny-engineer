@@ -314,7 +314,7 @@ curl -X POST http://tiny-engineer.local/test/led
 
 ### `POST /setup/servo`
 
-Setup AP only. Slowly move one servo, or all five to 90°, using the full **0–180°** electrical range (no saved safe-range clamp). ~25°/s (`SERVO_CALIB_SPEED_DEG_S`). Used by the setup wizard for seating printed parts at 90° and for range finding. Handler blocks until the move finishes. Does **not** require Wi-Fi credentials. Outside provisioning → **400** `setup servo only in AP mode`.
+Setup AP only. Slowly move one servo, or all five to 90°, using the full **0–180°** electrical range (no saved safe-range clamp). ~25°/s (`SERVO_CALIB_SPEED_DEG_S`). Used by the setup wizard for seating printed parts at 90° and for range finding. Handler blocks until the move finishes. Does **not** require Wi-Fi credentials. Outside provisioning → **400** `setup only in AP mode`.
 
 JSON body: either `{"all": 90}`, or `index` + `angle`.
 
@@ -337,7 +337,7 @@ Wrong fields return **400** and do not move any servo:
 
 | `error` | When |
 | --- | --- |
-| `setup servo only in AP mode` | Not in setup AP |
+| `setup only in AP mode` | Not in setup AP |
 | `invalid all` | `all` present but not `90` |
 | `invalid index` | `index` missing, not an integer, or outside `0`–`4` |
 | `invalid angle` | `angle` missing, not a number, or outside `0`–`180` |
@@ -346,7 +346,7 @@ After STA is up, use `POST /test/servo` (clamped to saved min/max).
 
 ### `POST /setup/led`
 
-Setup AP only. Holds the LED so provisioning dim-blue does not clobber the preview. Does **not** require Wi-Fi credentials. Outside provisioning → **400** `setup led only in AP mode`.
+Setup AP only. Holds the LED so provisioning dim-blue does not clobber the preview. Does **not** require Wi-Fi credentials. Outside provisioning → **400** `setup only in AP mode`.
 
 Logical **color** (`R` / `G` / `B`) lights firmware red/green/blue using the saved `rgb_order`, or the `rgb_order` field if sent (wizard remap preview). Wire **byte** lights that WS2812 channel order-independent (`LED_COLOR_ORDER_RGB`, that channel 255). An empty body (neither `color` nor `byte`) releases the hold and restores dim blue. Do not send `color` and `byte` together.
 
@@ -370,7 +370,7 @@ Wrong fields return **400** and do not change the hold:
 
 | `error` | When |
 | --- | --- |
-| `setup led only in AP mode` | Not in setup AP |
+| `setup only in AP mode` | Not in setup AP |
 | `color and byte conflict` | Both `color` and `byte` present |
 | `invalid color` | `color` not `R`, `G`, or `B` |
 | `invalid rgb_order` | `rgb_order` present but not a valid permutation |
@@ -380,7 +380,7 @@ Save the labeled permutation with `POST /settings` `{"rgb_order":"GRB"}` (setup 
 
 ### `POST /setup/audio`
 
-Setup AP only. Plays `welcome.wav` from LittleFS (`playWelcome()`, ~2.7 s). Same speaker gain as settings `volume`. No body. Does **not** require Wi-Fi credentials. Handler blocks until playback finishes. Outside provisioning → **400** `setup audio only in AP mode`. Missing/unreadable WAV → **500** `welcome playback failed`.
+Setup AP only. Plays `welcome.wav` from LittleFS (`playWelcome()`, ~2.7 s). Same speaker gain as settings `volume`. No body. Does **not** require Wi-Fi credentials. Handler blocks until playback finishes. Outside provisioning → **400** `setup only in AP mode`. Missing/unreadable WAV → **500** `welcome playback failed`.
 
 ```bash
 curl -X POST "http://192.168.4.1/setup/audio"
@@ -394,7 +394,7 @@ After STA is up, use `POST /test/audio/bell` (or `/test/audio` for tones).
 
 ### `POST /setup/oled`
 
-Setup AP only. Preview OLED 180° rotation without saving. Does **not** require Wi-Fi credentials. Outside provisioning → **400** `setup oled only in AP mode`.
+Setup AP only. Preview OLED 180° rotation without saving. Does **not** require Wi-Fi credentials. Outside provisioning → **400** `setup only in AP mode`.
 
 `{"rotate_180": true}` applies `setRotation(2)` and draws `THIS WAY UP`. `{"rotate_180": false}` applies `setRotation(0)` and draws the same test. An empty body restores the saved rotation and the provisioning join-AP text.
 
@@ -415,7 +415,7 @@ Wrong fields return **400**:
 
 | `error` | When |
 | --- | --- |
-| `setup oled only in AP mode` | Not in setup AP |
+| `setup only in AP mode` | Not in setup AP |
 | `invalid rotate_180` | `rotate_180` present but not a boolean |
 
 Save with `POST /settings` `{"oled_rotate_180":true}` (setup AP only). The saved value applies immediately and on the next boot.

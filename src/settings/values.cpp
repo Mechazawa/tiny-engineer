@@ -61,6 +61,10 @@ void SettingsValues::apply(const SettingsPatch& patch) {
 }
 
 void SettingsValues::log(const char* prefix) const {
+  if (!serialLog) {
+    return;
+  }
+
   String line = prefix;
 
   line += String(" sleep_timeout=") + sleepTimeoutMin + "min";

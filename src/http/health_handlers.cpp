@@ -41,7 +41,7 @@ void handleHealth(WebServer& server) {
   wifi["connected"] = connected;
   wifi["ip"] = connected ? wifiIpText() : "";
   wifi["rssi"] = connected ? WiFi.RSSI() : 0;
-  wifi["hostname"] = String(settingsHostname()) + ".local";
+  wifi["hostname"] = wifiMdnsHostname();
 
   body["wifi_configured"] = settingsWifiConfigured();
   body["provisioning"] = provisioning;

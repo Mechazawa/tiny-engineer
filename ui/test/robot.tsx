@@ -57,14 +57,11 @@ export function fakeRobot({
     settings: { ...DEFAULT_SETTINGS, wifi_configured: !provisioning, ...settings },
     // Runs before each reply, so a test can look at the page mid-request.
     onRequest: (request: RecordedRequest): void => void request,
-    posts(path: string) {
-      return this.requests.filter((request) => request.method === "POST" && request.path === path);
+    sent(method: string, path: string) {
+      return this.requests.filter((request) => request.method === method && request.path === path);
     },
     lastPost(path: string) {
-      return this.posts(path).at(-1);
-    },
-    puts(path: string) {
-      return this.requests.filter((request) => request.method === "PUT" && request.path === path);
+      return this.sent("POST", path).at(-1);
     },
   };
 

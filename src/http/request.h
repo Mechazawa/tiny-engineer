@@ -13,6 +13,7 @@ struct ServoMove {
   int index;
   float angle;
 
-  // Sends 400 and returns nullopt when the body holds no valid move.
+  // Sends 400 and returns nullopt when the body holds no valid move. A move that
+  // passes is one the servo driver accepts: the index is the only thing it checks.
   static std::optional<ServoMove> read(WebServer& server, JsonObjectConst body);
 };

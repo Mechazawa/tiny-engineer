@@ -7,7 +7,6 @@
 #include "http/routes.h"
 #include "network/wifi_connect.h"
 #include "serial_log.h"
-#include "settings/settings.h"
 
 namespace {
 
@@ -48,7 +47,7 @@ void startHttpServer() {
     return;
   }
 
-  const String mdnsHost = String(settingsHostname()) + ".local";
+  const String mdnsHost = wifiMdnsHostname();
 
   for (const char* path : {"/", "/health"}) {
     logUrl(wifiIpText(), path);

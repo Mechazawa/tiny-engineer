@@ -7,7 +7,9 @@ type StatusType = "loading" | "ok" | "err";
 export interface Action<T> {
   path: string;
   request?: Request;
-  pending: string;
+  // Shown while the request runs. Without it the action is a quick preview: it neither shows
+  // progress nor locks the controls, though it still waits for a running action to finish.
+  pending?: string;
   failure: string;
   // Runs before the controls unlock, for follow-up requests that belong to the same action.
   onSuccess?: (data: T) => unknown;
@@ -51,9 +53,13 @@ export function StatusProvider({ children }: { children: ComponentChildren }) {
         return null;
       }
 
-      runningRef.current = true;
-      setBusy(true);
-      setStatus(pending, "loading");
+      const locks = pending !== undefined;
+
+      if (locks) {
+        runningRef.current = true;
+        setBusy(true);
+        setStatus(pending, "loading");
+      }
 
       try {
         const result = await api<T>(path, request);
@@ -70,8 +76,10 @@ export function StatusProvider({ children }: { children: ComponentChildren }) {
 
         return null;
       } finally {
-        runningRef.current = false;
-        setBusy(false);
+        if (locks) {
+          runningRef.current = false;
+          setBusy(false);
+        }
       }
     },
     [setStatus],

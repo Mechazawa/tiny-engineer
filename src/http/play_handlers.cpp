@@ -6,8 +6,8 @@
 #include "audio/audio.h"
 #include "audio/audio_motion.h"
 #include "audio/wav_parser.h"
+#include "http/access.h"
 #include "http/handlers.h"
-#include "http/middleware.h"
 #include "http/response.h"
 #include "pins.h"
 #include "robot_tick.h"
@@ -25,17 +25,10 @@ class PlaySession : public WavStreamParser::Sink {
 public:
   void begin(WebServer& server) {
     parser_.reset();
-    rejectCode_ = 0;
-    rejectMessage_ = nullptr;
     started_ = false;
+    refusal_ = Refusal::check(server, Access::Configured);
 
-    if (!settingsWifiConfigured()) {
-      reject(503, "wifi not configured");
-      return;
-    }
-
-    if (!httpApiAuthorized(server)) {
-      reject(401, "unauthorized");
+    if (refusal_) {
       return;
     }
 
@@ -46,7 +39,7 @@ public:
     // Continuous animations and none play no sound of their own, so they cannot talk over the clip.
     if (!parseAnimationName(name, animation_) ||
         (animation_ != AnimationId::None && !animationIsContinuous(animation_))) {
-      reject(400, "name must be talking, typing, reading, thinking or none");
+      refusal_ = Refusal{400, "name must be talking, typing, reading, thinking or none"};
       return;
     }
 
@@ -79,8 +72,8 @@ public:
   }
 
   void respond(WebServer& server) {
-    if (rejectCode_ != 0) {
-      sendError(server, rejectCode_, rejectMessage_);
+    if (refusal_) {
+      refusal_->send(server);
       return;
     }
 
@@ -122,13 +115,7 @@ private:
   AnimationId animation_ = AnimationId::Talking;
   AnimationId previous_ = AnimationId::None;
   bool started_ = false;
-  int rejectCode_ = 0;
-  const char* rejectMessage_ = nullptr;
-
-  void reject(int code, const char* message) {
-    rejectCode_ = code;
-    rejectMessage_ = message;
-  }
+  std::optional<Refusal> refusal_;
 
   uint32_t playedMs() const {
     return static_cast<uint32_t>(parser_->samplesDelivered() * 1000ULL / SAMPLE_RATE);

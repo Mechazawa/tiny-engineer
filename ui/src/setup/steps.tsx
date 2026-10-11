@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from "preact/hooks";
-import type { Settings } from "../api/types";
+import type { Settings, WifiNetwork } from "../api/types";
 import { HostnameField } from "../config/HostnameField";
-import { withFirst } from "../config/wifiNetworks";
+import { MAX_NETWORKS } from "../config/wifiNetworks";
 import { useRobot } from "../robot";
 import { Button, useStatus } from "../status/status";
 import { useResettableState } from "../useResettableState";
+
+// The network to test first, then the saved ones that still fit.
+const withFirst = (saved: string[], ssid: string, password: string): WifiNetwork[] =>
+  [
+    { ssid, password },
+    ...saved.filter((name) => name !== ssid).map((name) => ({ ssid: name })),
+  ].slice(0, MAX_NETWORKS);
 
 export function ScreenStep({ onRotate }: { onRotate: () => void }) {
   return (

@@ -165,3 +165,19 @@ const char* SettingsPatch::invalidField() const {
 
   return nullptr;
 }
+
+const char* SettingsPatch::setupOnlyStep() const {
+  if (servoRanges) {
+    return "servo";
+  }
+
+  if (rgbOrder != nullptr) {
+    return "rgb";
+  }
+
+  if (oledRotate180) {
+    return "oled";
+  }
+
+  return nullptr;
+}

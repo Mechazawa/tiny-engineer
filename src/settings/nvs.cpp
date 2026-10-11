@@ -47,7 +47,7 @@ void SettingsValues::load() {
 
   const uint32_t storedVolume = g_settingsPrefs.getUInt(kKeyVolume, volume);
 
-  if (storedVolume <= SETTINGS_VOLUME_MAX) {
+  if (storedVolume <= UINT8_MAX && settingsValidateVolume(storedVolume)) {
     volume = static_cast<uint8_t>(storedVolume);
   }
 
@@ -110,11 +110,7 @@ bool SettingsValues::save(bool clearFirst) const {
   return true;
 }
 
-bool saveSettings(const SettingsPatch& patch, bool* rebootRequired) {
-  if (rebootRequired != nullptr) {
-    *rebootRequired = false;
-  }
-
+bool saveSettings(const SettingsPatch& patch) {
   if (patch.invalidField() != nullptr) {
     return false;
   }
@@ -127,11 +123,6 @@ bool saveSettings(const SettingsPatch& patch, bool* rebootRequired) {
   }
 
   g_settings = next;
-
-  if (rebootRequired != nullptr) {
-    *rebootRequired = strcmp(g_settings.hostname, g_bootHostname) != 0;
-  }
-
   g_settings.log("Settings saved:");
   return true;
 }

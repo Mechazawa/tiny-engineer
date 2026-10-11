@@ -60,6 +60,10 @@ struct SettingsPatch {
 
   // API name of the first field set to an invalid value, or nullptr.
   const char* invalidField() const;
+
+  // Name of the setup wizard step that owns a field the patch sets (servo
+  // ranges, RGB order, screen rotation), or nullptr. Those save only in setup AP mode.
+  const char* setupOnlyStep() const;
 };
 
 void initSettings();
@@ -97,9 +101,8 @@ bool settingsValidateWifiPassword(const char* wifiPassword);
 bool settingsValidateRgbOrder(const char* rgbOrder);
 
 // Saves the fields the patch sets and keeps the others. False when a field is
-// invalid (nothing is written) or NVS fails. *rebootRequired is set when the
-// saved hostname differs from the boot hostname.
-bool saveSettings(const SettingsPatch& patch, bool* rebootRequired);
+// invalid (nothing is written) or NVS fails.
+bool saveSettings(const SettingsPatch& patch);
 
 // Replaces every saved network in RAM and NVS.
 bool saveWifiNetworks(const WifiNetworkList& networks);

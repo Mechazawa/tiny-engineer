@@ -4,45 +4,34 @@ import { useResettableState } from "../useResettableState";
 
 const MASK = "********";
 
-// The field shows a mask while a token is saved; typing replaces it, the toggle stages removal.
-// Every settings reply starts it over, so a saved token shows masked again.
+// A saved token shows as a mask until the field is focused (`draft` stays null); typing replaces
+// it and the toggle stages removal. Every settings reply starts it over.
 export function useAccessToken(settings: Settings | null) {
   const configured = Boolean(settings?.access_token_set);
-  const [{ value, masked, clearPending }, setState] = useResettableState(settings, () => ({
-    value: configured ? MASK : "",
-    masked: configured,
+  const [{ draft, clearPending }, setState] = useResettableState(settings, () => ({
+    draft: null as string | null,
     clearPending: false,
   }));
 
-  // Value for the access_token param: "" clears, undefined leaves the saved token alone.
-  let pendingValue: string | undefined;
-
-  if (clearPending) {
-    pendingValue = "";
-  } else if (!masked && value) {
-    pendingValue = value;
-  }
-
   return {
-    pendingValue,
+    // Value for the access_token field: "" clears, undefined leaves the saved token alone.
+    pendingValue: clearPending ? "" : draft || undefined,
     field: {
       configured,
-      value: clearPending ? "" : value,
+      value: clearPending ? "" : (draft ?? (configured ? MASK : "")),
       clearPending,
-      onInput: (next: string) => setState({ value: next, masked, clearPending }),
+      onInput: (next: string) => setState({ draft: next, clearPending }),
       onFocus() {
-        if (masked) {
-          setState({ value: "", masked: false, clearPending });
+        if (draft === null) {
+          setState({ draft: "", clearPending });
         }
       },
       onBlur() {
-        if (configured && !clearPending && value.trim() === "") {
-          setState({ value: MASK, masked: true, clearPending });
+        if (configured && draft?.trim() === "") {
+          setState({ draft: null, clearPending });
         }
       },
-      onToggle() {
-        setState({ value: MASK, masked: clearPending, clearPending: !clearPending });
-      },
+      onToggle: () => setState({ draft: null, clearPending: !clearPending }),
     },
   };
 }

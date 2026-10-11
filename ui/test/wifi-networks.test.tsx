@@ -50,11 +50,11 @@ describe("wifi networks", () => {
     await rowButton("home");
 
     expect(rows().map((row) => row.note)).toEqual(["Added on save", "Removed on save"]);
-    expect(robot.puts("/settings/wifi")).toEqual([]);
+    expect(robot.sent("PUT", "/settings/wifi")).toEqual([]);
 
     await click("Save settings");
 
-    expect(robot.puts("/settings/wifi").map((request) => request.json)).toEqual([
+    expect(robot.sent("PUT", "/settings/wifi").map((request) => request.json)).toEqual([
       [{ ssid: "office", password: "secret" }],
     ]);
     expect(rows().map((row) => row.ssid)).toEqual(["office"]);
@@ -78,7 +78,7 @@ describe("wifi networks", () => {
 
     await click("Save settings");
 
-    expect(robot.puts("/settings/wifi")).toHaveLength(1);
+    expect(robot.sent("PUT", "/settings/wifi")).toHaveLength(1);
     expect(robot.settings.wifi_networks).toEqual(["f", "g", "h", "i", "e"]);
   });
 
@@ -88,7 +88,7 @@ describe("wifi networks", () => {
     await rowButton("office");
     await click("Save settings");
 
-    expect(robot.puts("/settings/wifi")[0].json).toEqual([{ ssid: "home" }]);
+    expect(robot.sent("PUT", "/settings/wifi")[0].json).toEqual([{ ssid: "home" }]);
   });
 
   it("clears a new password for a saved network once it is saved", async () => {
@@ -97,7 +97,7 @@ describe("wifi networks", () => {
     await stage("home", "new-secret");
     await click("Save settings");
 
-    expect(robot.puts("/settings/wifi")[0].json).toEqual([
+    expect(robot.sent("PUT", "/settings/wifi")[0].json).toEqual([
       { ssid: "home", password: "new-secret" },
     ]);
     expect(rows().map((row) => row.note)).toEqual([""]);
@@ -110,7 +110,7 @@ describe("wifi networks", () => {
     await rowButton("office");
     await click("Save settings");
 
-    expect(robot.puts("/settings/wifi")).toEqual([]);
+    expect(robot.sent("PUT", "/settings/wifi")).toEqual([]);
     expect(screen.getByRole("status").textContent).toBe("Settings saved.");
   });
 

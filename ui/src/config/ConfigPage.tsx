@@ -10,8 +10,8 @@ import { useWifiNetworks, WifiNetworksSection } from "./wifiNetworks";
 
 const EYES_STYLES = ["classic", "kaomoji", "cover", "dots"];
 
-const loadingMode = (settings: Settings): LoadingMode =>
-  settings.loading === "sleep_inertia" ? "sleep_inertia" : "progress";
+const loadingMode = (settings: Settings | null): LoadingMode =>
+  settings?.loading === "sleep_inertia" ? "sleep_inertia" : "progress";
 
 const clampVolume = (value: string) => {
   const parsed = parseInt(value, 10);
@@ -27,7 +27,7 @@ function draftFrom(settings: Settings | null) {
     volume: settings?.volume ?? 70,
     welcome: settings?.welcome !== false,
     serialLog: Boolean(settings?.serial_log),
-    loading: settings ? loadingMode(settings) : "progress",
+    loading: loadingMode(settings),
     eyesStyle:
       settings && EYES_STYLES.includes(settings.eyes_style) ? settings.eyes_style : "classic",
   };
@@ -203,10 +203,11 @@ function ConfigForm() {
             value={draft.eyesStyle}
             onChange={(event) => set({ eyesStyle: event.currentTarget.value })}
           >
-            <option value="classic">Classic</option>
-            <option value="kaomoji">Kaomoji</option>
-            <option value="cover">Cover</option>
-            <option value="dots">Dots</option>
+            {EYES_STYLES.map((style) => (
+              <option key={style} value={style}>
+                {style[0].toUpperCase() + style.slice(1)}
+              </option>
+            ))}
           </select>
           <p className="hint">
             Classic is the default procedural eyes. Kaomoji maps each animation to a face from the

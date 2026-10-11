@@ -4,19 +4,11 @@
 #include "http/handlers.h"
 #include "http/response.h"
 
-namespace {
-
-void sendAnimation(WebServer& server) {
+void handleAnimGet(WebServer& server) {
   JsonDocument body;
   body["ok"] = true;
   body["animation"] = animationName(getAnimation());
   sendJson(server, 200, body);
-}
-
-}  // namespace
-
-void handleAnimGet(WebServer& server) {
-  sendAnimation(server);
 }
 
 void handleAnimPost(WebServer& server) {
@@ -33,5 +25,5 @@ void handleAnimPost(WebServer& server) {
   }
 
   setAnimation(id);
-  sendAnimation(server);
+  handleAnimGet(server);
 }

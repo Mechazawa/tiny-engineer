@@ -132,6 +132,20 @@ void test_patch_names_the_first_invalid_field() {
   TEST_ASSERT_EQUAL_STRING("rgb_order", patch.invalidField());
 }
 
+void test_patch_names_its_setup_only_step() {
+  SettingsPatch patch;
+
+  patch.volume = 50;
+  patch.hostname = "tiny-engineer";
+  TEST_ASSERT_NULL(patch.setupOnlyStep());
+
+  patch.oledRotate180 = false;
+  TEST_ASSERT_EQUAL_STRING("oled", patch.setupOnlyStep());
+
+  patch.servoRanges = ServoRanges{{10, 20, 30, 40, 50}, {20, 30, 40, 50, 60}};
+  TEST_ASSERT_EQUAL_STRING("servo", patch.setupOnlyStep());
+}
+
 void test_rgb_order() {
   TEST_ASSERT_TRUE(settingsValidateRgbOrder("RGB"));
   TEST_ASSERT_TRUE(settingsValidateRgbOrder("RBG"));
@@ -158,6 +172,7 @@ int main() {
   RUN_TEST(test_wifi_password);
   RUN_TEST(test_servo_ranges);
   RUN_TEST(test_patch_names_the_first_invalid_field);
+  RUN_TEST(test_patch_names_its_setup_only_step);
   RUN_TEST(test_rgb_order);
   return UNITY_END();
 }

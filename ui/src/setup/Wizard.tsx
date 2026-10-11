@@ -24,7 +24,7 @@ const previewOled = (json?: { rotate_180: boolean }) =>
 
 export function Wizard() {
   const { settings, applySettings } = useRobot();
-  const { busy, perform, clearStatus } = useStatus();
+  const { perform, clearStatus } = useStatus();
   const [stepIndex, setStepIndex] = useState(0);
   const [oledRotate180, setOledRotate180] = useResettableState(
     Boolean(settings?.oled_rotate_180),
@@ -136,11 +136,7 @@ export function Wizard() {
         <div className="setup-footer">
           <Button onClick={retreat[step.id]}>Back</Button>
           {step.next && (
-            <Button
-              variant="primary"
-              disabled={blocked}
-              onClick={() => !busy && advance[step.id]?.()}
-            >
+            <Button variant="primary" disabled={blocked} onClick={() => advance[step.id]?.()}>
               {step.next}
             </Button>
           )}

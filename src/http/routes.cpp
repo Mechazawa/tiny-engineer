@@ -2,20 +2,13 @@
 
 #include <uri/UriBraces.h>
 
+#include "http/access.h"
 #include "http/handlers.h"
-#include "http/middleware.h"
 #include "http/response.h"
 #include "network/wifi_connect.h"
 #include "web_ui.h"
 
 namespace {
-
-enum class Access {
-  Public,
-  Token,
-  // Token, and refused with 503 until WiFi credentials are saved.
-  Configured,
-};
 
 struct Route {
   const char* path;
@@ -45,15 +38,11 @@ constexpr Route kRoutes[] = {
   {"/test/movement", HTTP_POST, handleMovementTest, Access::Configured},
   {"/test/led", HTTP_POST, handleLedTest, Access::Configured},
   {"/test/servo", HTTP_POST, handleServoTest, Access::Configured},
-  {"/setup/servo", HTTP_POST, handleSetupServo, Access::Token},
-  {"/setup/led", HTTP_POST, handleSetupLed, Access::Token},
-  {"/setup/audio", HTTP_POST, handleSetupAudio, Access::Token},
-  {"/setup/oled", HTTP_POST, handleSetupOled, Access::Token},
+  {"/setup/servo", HTTP_POST, handleSetupServo, Access::Setup},
+  {"/setup/led", HTTP_POST, handleSetupLed, Access::Setup},
+  {"/setup/audio", HTTP_POST, handleSetupAudio, Access::Setup},
+  {"/setup/oled", HTTP_POST, handleSetupOled, Access::Setup},
 };
-
-bool isPlayPath(const String& uri) {
-  return uri == "/play" || uri.startsWith("/play/");
-}
 
 bool isKnownPath(const String& uri) {
   for (const Route& route : kRoutes) {
@@ -62,20 +51,7 @@ bool isKnownPath(const String& uri) {
     }
   }
 
-  return isPlayPath(uri);
-}
-
-void registerRoute(WebServer& server, const Route& route) {
-  RequestHandler& handler =
-    server.on(route.path, route.method, [&server, fn = route.handler]() { fn(server); });
-
-  if (route.access == Access::Configured) {
-    handler.addMiddleware(requireWifiConfigured);
-  }
-
-  if (route.access != Access::Public) {
-    handler.addMiddleware(requireApiAuth);
-  }
+  return uri == "/play" || uri.startsWith("/play/");
 }
 
 void redirectToSetup(WebServer& server) {
@@ -112,7 +88,14 @@ void handleIndex(WebServer& server) {
 
 void registerHttpRoutes(WebServer& server) {
   for (const Route& route : kRoutes) {
-    registerRoute(server, route);
+    server.on(route.path, route.method, [&server, route]() {
+      if (const std::optional<Refusal> refusal = Refusal::check(server, route.access)) {
+        refusal->send(server);
+        return;
+      }
+
+      route.handler(server);
+    });
   }
 
   // /play runs `talking`; /play/<name> picks another animation for the clip.

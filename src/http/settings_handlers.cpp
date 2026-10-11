@@ -1,5 +1,7 @@
 #include <Arduino.h>
 
+#include <cstring>
+
 #include "display/oled.h"
 #include "http/handlers.h"
 #include "http/request.h"
@@ -11,13 +13,7 @@
 namespace {
 
 template <typename T>
-bool readValue(JsonObjectConst body, const char* key, std::optional<T>& out) {
-  const JsonVariantConst value = body[key];
-
-  if (value.isNull()) {
-    return true;
-  }
-
+bool readField(JsonVariantConst value, std::optional<T>& out) {
   if (!value.is<T>()) {
     return false;
   }
@@ -26,18 +22,12 @@ bool readValue(JsonObjectConst body, const char* key, std::optional<T>& out) {
   return true;
 }
 
-bool readText(JsonObjectConst body, const char* key, const char*& out) {
-  const JsonVariantConst value = body[key];
-
-  if (value.isNull()) {
-    return true;
-  }
-
+bool readField(JsonVariantConst value, const char*& out) {
   out = value.as<const char*>();
   return out != nullptr;
 }
 
-bool readServoList(JsonVariantConst list, uint8_t (&out)[SETTINGS_SERVO_COUNT]) {
+bool readField(JsonVariantConst list, uint8_t (&out)[SETTINGS_SERVO_COUNT]) {
   if (!list.is<JsonArrayConst>() || list.size() != SETTINGS_SERVO_COUNT) {
     return false;
   }
@@ -55,79 +45,36 @@ bool readServoList(JsonVariantConst list, uint8_t (&out)[SETTINGS_SERVO_COUNT]) 
 
 // Name of the first field with the wrong JSON type, or nullptr once the patch holds every field.
 const char* readPatch(JsonObjectConst body, SettingsPatch& patch) {
-  if (!readValue(body, "sleep_timeout", patch.sleepTimeoutMin)) {
-    return "sleep_timeout";
-  }
+  const char* wrong = nullptr;
+  auto read = [&](const char* key, auto& out) {
+    if (wrong == nullptr && !body[key].isNull() && !readField(body[key], out)) {
+      wrong = key;
+    }
+  };
 
-  if (!readText(body, "hostname", patch.hostname)) {
-    return "hostname";
-  }
+  read("sleep_timeout", patch.sleepTimeoutMin);
+  read("hostname", patch.hostname);
+  read("volume", patch.volume);
+  read("welcome", patch.welcome);
+  read("serial_log", patch.serialLog);
+  read("continuous_timeout", patch.continuousTimeoutMin);
+  read("loading", patch.loading);
+  read("eyes_style", patch.eyesStyle);
+  read("access_token", patch.accessToken);
+  read("rgb_order", patch.rgbOrder);
+  read("oled_rotate_180", patch.oledRotate180);
 
-  if (!readValue(body, "volume", patch.volume)) {
-    return "volume";
-  }
-
-  if (!readValue(body, "welcome", patch.welcome)) {
-    return "welcome";
-  }
-
-  if (!readValue(body, "serial_log", patch.serialLog)) {
-    return "serial_log";
-  }
-
-  if (!readValue(body, "continuous_timeout", patch.continuousTimeoutMin)) {
-    return "continuous_timeout";
-  }
-
-  if (!readText(body, "loading", patch.loading)) {
-    return "loading";
-  }
-
-  if (!readText(body, "eyes_style", patch.eyesStyle)) {
-    return "eyes_style";
-  }
-
-  if (!readText(body, "access_token", patch.accessToken)) {
-    return "access_token";
-  }
-
-  if (!readText(body, "rgb_order", patch.rgbOrder)) {
-    return "rgb_order";
-  }
-
-  if (!readValue(body, "oled_rotate_180", patch.oledRotate180)) {
-    return "oled_rotate_180";
-  }
-
-  if (!body["servo_mins"].isNull() || !body["servo_maxs"].isNull()) {
+  if (wrong == nullptr && (!body["servo_mins"].isNull() || !body["servo_maxs"].isNull())) {
     ServoRanges ranges{};
 
-    if (!readServoList(body["servo_mins"], ranges.mins) ||
-        !readServoList(body["servo_maxs"], ranges.maxs)) {
+    if (!readField(body["servo_mins"], ranges.mins) || !readField(body["servo_maxs"], ranges.maxs)) {
       return "servo_mins or servo_maxs";
     }
 
     patch.servoRanges = ranges;
   }
 
-  return nullptr;
-}
-
-// Servo ranges, RGB mapping and screen rotation belong to the setup wizard.
-const char* setupOnlyStep(const SettingsPatch& patch) {
-  if (patch.servoRanges) {
-    return "servo";
-  }
-
-  if (patch.rgbOrder != nullptr) {
-    return "rgb";
-  }
-
-  if (patch.oledRotate180) {
-    return "oled";
-  }
-
-  return nullptr;
+  return wrong;
 }
 
 JsonDocument settingsJson() {
@@ -196,16 +143,14 @@ void handleSettingsPost(WebServer& server) {
     return;
   }
 
-  const char* setupStep = setupOnlyStep(patch);
+  const char* setupStep = patch.setupOnlyStep();
 
   if (setupStep != nullptr && !wifiProvisioningMode()) {
     sendError(server, 400, (String(setupStep) + " setup only in AP mode").c_str());
     return;
   }
 
-  bool rebootRequired = false;
-
-  if (!saveSettings(patch, &rebootRequired)) {
+  if (!saveSettings(patch)) {
     sendError(server, 400, "save failed");
     return;
   }
@@ -216,7 +161,7 @@ void handleSettingsPost(WebServer& server) {
   }
 
   JsonDocument reply = settingsJson();
-  reply["reboot_required"] = rebootRequired;
+  reply["reboot_required"] = strcmp(settingsHostname(), settingsBootHostname()) != 0;
   sendJson(server, 200, reply);
 }
 
@@ -291,7 +236,7 @@ void handleSettingsWifiPut(WebServer& server) {
   if (tested) {
     reply["wifi_connect_success"] = true;
     reply["wifi_ip"] = wifiIpText();
-    reply["wifi_hostname"] = String(settingsHostname()) + ".local";
+    reply["wifi_hostname"] = wifiMdnsHostname();
   }
 
   sendJson(server, 200, reply);

@@ -12,21 +12,24 @@
 
 namespace {
 
-// Every test leaves the OLED on its idle screen before it answers.
-void finishTest(WebServer& server, const char* test) {
-  showIdleScreen();
+JsonDocument testReply(const char* test) {
+  JsonDocument reply;
+  reply["ok"] = true;
+  reply["test"] = test;
+  return reply;
+}
 
-  JsonDocument body;
-  body["ok"] = true;
-  body["test"] = test;
-  sendJson(server, 200, body);
+// Every test leaves the OLED on its idle screen before it answers.
+void finishTest(WebServer& server, const JsonDocument& reply) {
+  showIdleScreen();
+  sendJson(server, 200, reply);
 }
 
 }  // namespace
 
 void handleAudioTest(WebServer& server) {
   runSoundTest();
-  finishTest(server, "audio");
+  finishTest(server, testReply("audio"));
 }
 
 void handleBellTest(WebServer& server) {
@@ -36,23 +39,23 @@ void handleBellTest(WebServer& server) {
     return;
   }
 
-  finishTest(server, "bell");
+  finishTest(server, testReply("bell"));
 }
 
 void handleScreenTest(WebServer& server) {
   runOledTest();
-  finishTest(server, "screen");
+  finishTest(server, testReply("screen"));
 }
 
 void handleMovementTest(WebServer& server) {
   runServoTest();
-  finishTest(server, "movement");
+  finishTest(server, testReply("movement"));
 }
 
 void handleLedTest(WebServer& server) {
   runRgbTest();
   setRgbForAnimation(getAnimation(), millis());
-  finishTest(server, "led");
+  finishTest(server, testReply("led"));
 }
 
 void handleServoTest(WebServer& server) {
@@ -68,14 +71,10 @@ void handleServoTest(WebServer& server) {
     return;
   }
 
-  // ServoMove::read checked the index, the only thing the move can refuse.
   moveServoSmooth(move->index, move->angle);
-  showIdleScreen();
 
-  JsonDocument body;
-  body["ok"] = true;
-  body["test"] = "servo";
-  body["index"] = move->index;
-  body["angle"] = move->angle;
-  sendJson(server, 200, body);
+  JsonDocument reply = testReply("servo");
+  reply["index"] = move->index;
+  reply["angle"] = move->angle;
+  finishTest(server, reply);
 }

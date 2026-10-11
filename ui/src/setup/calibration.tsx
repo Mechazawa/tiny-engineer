@@ -94,7 +94,7 @@ export function PlaceParts({ calibration }: { calibration: Calibration }) {
 }
 
 export function FindRanges({ calibration }: { calibration: Calibration }) {
-  const { busy, setStatus } = useStatus();
+  const { setStatus } = useStatus();
   const moveServos = useSetupServo();
   const { joint, angles, ranges } = calibration;
   const angle = angles[joint];
@@ -106,7 +106,7 @@ export function FindRanges({ calibration }: { calibration: Calibration }) {
   async function nudge(delta: number) {
     const next = Math.max(0, Math.min(180, angle + delta));
 
-    if (busy || next === angle) {
+    if (next === angle) {
       return;
     }
 

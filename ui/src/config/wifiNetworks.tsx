@@ -6,13 +6,6 @@ import { Button, useStatus } from "../status/status";
 
 export const MAX_NETWORKS = 5;
 
-// The setup wizard's list: the network to test first, then the saved ones that still fit.
-export const withFirst = (saved: string[], ssid: string, password: string): WifiNetwork[] =>
-  [
-    { ssid, password },
-    ...saved.filter((name) => name !== ssid).map((name) => ({ ssid: name })),
-  ].slice(0, MAX_NETWORKS);
-
 // Adds and removals wait here until the config form is saved.
 export function useWifiNetworks(saved: string[], onSaved: (settings: Settings) => void) {
   const savedKey = saved.join("\n");
