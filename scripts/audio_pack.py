@@ -258,6 +258,11 @@ def pack_audio(assets_dir, dest_dir, partition_bytes, mod_dir=None):
         if leftover.is_file():
             leftover.unlink()
 
+    # The firmware reads only top-level files, so any directory here is stale build output.
+    for leftover in dest_dir.iterdir():
+        if leftover.is_dir():
+            shutil.rmtree(leftover)
+
     for name in STOCK_WAVS:
         source = assets_dir / name
         if not source.is_file():
