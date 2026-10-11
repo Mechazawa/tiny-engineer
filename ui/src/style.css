@@ -682,6 +682,10 @@ body.locked footer {
   background: #fde8e8;
 }
 
+#config-form {
+  margin-bottom: 1rem;
+}
+
 .wifi-network-list {
   list-style: none;
   margin: 0 0 1rem;
