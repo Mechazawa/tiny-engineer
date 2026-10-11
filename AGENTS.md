@@ -76,6 +76,8 @@ Breaking rules, SemVer mapping, and examples: [CONTRIBUTING.md](CONTRIBUTING.md)
 
 - **Firmware** — `pio run`; also `pio test -e native` when touching settings validation. Pin changes update `include/pins.h` **and** `docs/hardware/` together.
 - **Settings** — layer checklist in [docs/settings.md](docs/settings.md). Never log raw `access_token`.
+- **HTTP routes** — add the route to `kRoutes` in `src/http/routes.cpp` with its `Access` level; `Refusal::check` enforces it. Routes with fields read a JSON body through `readJsonBody`; only `POST /anim` (`name`) and `/play` take other input, because the agent packages depend on them.
+- **Web UI** — Preact + TypeScript in `ui/src`, plain `preact` / `preact/hooks` imports (no compat). One component per file; shared components in `ui/src/components`, helpers in `ui/src/lib`. `npm run lint --prefix ui` runs `tsc` and type-checked ESLint, which forbids `.then` / `.catch` chains (use try/catch). Keep markup and class names when refactoring: the CSS styles them by class and id.
 - **Integrations** — add/extend package tests; prefer short timeouts and ignore network errors so a missing robot does not stall the agent.
 - **CAD** — edit `.f3d` **and** export affected `3mf`. CERN-OHL-S. Do not swap `AiEmblem.3mf` as branding. New parts: [docs/3d/adding-parts.md](docs/3d/adding-parts.md).
 - **Mods** — optional add-ons under `mods/<mod_name>/`. Models live in `3d_models/{cad,parts}/`. Commit `type(mods)` and name the mod in the summary. `feat(mods)` / `fix(mods)` do not version stock CAD. See [mods/README.md](mods/README.md).
