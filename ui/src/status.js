@@ -31,8 +31,9 @@ function setBusy(on) {
 }
 
 // POSTs with the controls locked, reporting progress and failures in the status bar.
+// onSuccess runs before the controls unlock, for follow-up requests that belong to the same action.
 // Resolves to the apiPost result, or null when already busy or the request failed to send.
-export async function perform({ path, params, pending, failure }) {
+export async function perform({ path, params, pending, failure, onSuccess }) {
   if (busy) {
     return null;
   }
@@ -45,6 +46,8 @@ export async function perform({ path, params, pending, failure }) {
 
     if (!result.ok) {
       setStatus(result.data.error || failure, "err");
+    } else if (onSuccess) {
+      await onSuccess(result.data);
     }
 
     return result;

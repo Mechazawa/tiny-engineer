@@ -151,39 +151,36 @@ async function saveConfig() {
     params.access_token = newToken;
   }
 
-  const result = await perform({
+  await perform({
     path: "/settings",
     params,
     pending: "Saving…",
     failure: "Save failed",
+    onSuccess: async (saved) => {
+      applyConfigSettings(saved, {
+        hostname: host,
+        continuous_timeout: params.continuous_timeout,
+        volume: params.volume,
+      });
+
+      if (newToken !== undefined) {
+        token.set(newToken);
+      }
+
+      const wifiChanged = wifiNetworks.pending;
+      const wifiErrors = await wifiNetworks.save();
+
+      if (wifiErrors.length > 0) {
+        setStatus(`Settings saved. WiFi changes failed: ${wifiErrors.join("; ")}`, "err");
+
+        return;
+      }
+
+      const wifiNote = wifiChanged ? " WiFi networks apply after reboot." : "";
+
+      setStatus(saveMessage(host, previousLoading, saved) + wifiNote, "ok");
+    },
   });
-
-  if (!result?.ok) {
-    return;
-  }
-
-  applyConfigSettings(result.data, {
-    hostname: host,
-    continuous_timeout: params.continuous_timeout,
-    volume: params.volume,
-  });
-
-  if (newToken !== undefined) {
-    token.set(newToken);
-  }
-
-  const wifiChanged = wifiNetworks.pending;
-  const wifiErrors = await wifiNetworks.save();
-
-  if (wifiErrors.length > 0) {
-    setStatus(`Settings saved. WiFi changes failed: ${wifiErrors.join("; ")}`, "err");
-
-    return;
-  }
-
-  const wifiNote = wifiChanged ? " WiFi networks apply after reboot." : "";
-
-  setStatus(saveMessage(host, previousLoading, result.data) + wifiNote, "ok");
 }
 
 async function factoryReset() {

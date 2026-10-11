@@ -48,6 +48,28 @@ describe("wifi networks", () => {
     expect($("#status").textContent).toBe("Settings saved. WiFi networks apply after reboot.");
   });
 
+  it("keeps the controls locked until the wifi requests finish", async () => {
+    fakeRobot({ settings: { wifi_networks: ["home", "office"] } });
+
+    await loadApp("/config");
+    await click("#wifi-network-list .wifi-network:first-child .btn");
+
+    const robotFetch = globalThis.fetch;
+    let saveDisabledDuringRemove = null;
+
+    globalThis.fetch = (input, options) => {
+      if (String(input).startsWith("/settings/wifi/remove")) {
+        saveDisabledDuringRemove = $("#config-form [type=submit]").disabled;
+      }
+
+      return robotFetch(input, options);
+    };
+    await submit("#config-form");
+
+    expect(saveDisabledDuringRemove).toBe(true);
+    expect($("#config-form [type=submit]").disabled).toBe(false);
+  });
+
   it("drops a staged change on undo", async () => {
     const robot = fakeRobot({ settings: { wifi_networks: ["home"] } });
 
