@@ -3,7 +3,11 @@
 #include <ESPmDNS.h>
 #include <DNSServer.h>
 
+#include <algorithm>
+#include <cstdint>
+
 #include "settings/settings.h"
+#include "settings/wifi_network_list.h"
 #include "network/wifi_connect.h"
 #include "serial_log.h"
 
@@ -116,10 +120,13 @@ void stopCaptiveDns() {
   dnsStarted = false;
 }
 
+// stopWhenNotFound ends the wait early once the radio reports the SSID
+// missing; use it only for networks the boot scan did not see.
 bool connectSta(
   const char* ssid,
   const char* password,
-  const char* hostnameOverride = nullptr
+  const char* hostnameOverride = nullptr,
+  bool stopWhenNotFound = false
 ) {
   const char* hostname =
     (hostnameOverride != nullptr && hostnameOverride[0] != '\0')
@@ -141,6 +148,7 @@ bool connectSta(
 
   while (
       WiFi.status() != WL_CONNECTED &&
+      !(stopWhenNotFound && WiFi.status() == WL_NO_SSID_AVAIL) &&
       millis() - startMs < WIFI_TIMEOUT_MS
   ) {
     delay(WIFI_POLL_MS);
@@ -171,6 +179,59 @@ bool connectSta(
   waitForLinkLocalIpv6();
   startMdns(hostname);
   return true;
+}
+
+// Leaves INT32_MIN for networks the scan did not see. Skips the scan for a
+// single network, which is tried either way.
+void scanSignalStrengths(const WifiNetworkList& networks, int32_t* rssi) {
+  std::fill(rssi, rssi + networks.count(), INT32_MIN);
+
+  if (networks.count() < 2) {
+    return;
+  }
+
+  const int found = WiFi.scanNetworks();
+
+  for (int i = 0; i < found; i++) {
+    const int index = networks.find(WiFi.SSID(i).c_str());
+
+    if (index >= 0) {
+      rssi[index] = std::max(rssi[index], WiFi.RSSI(i));
+    }
+  }
+
+  WiFi.scanDelete();
+}
+
+// Strongest visible network first. Networks the scan missed keep their saved
+// order at the end, since a hidden SSID never shows up in a scan.
+bool connectSavedNetworks() {
+  const WifiNetworkList& networks = settingsWifiNetworks();
+  int32_t rssi[SETTINGS_WIFI_NETWORK_MAX];
+  size_t order[SETTINGS_WIFI_NETWORK_MAX];
+
+  scanSignalStrengths(networks, rssi);
+
+  for (size_t i = 0; i < networks.count(); i++) {
+    order[i] = i;
+  }
+
+  std::stable_sort(
+    order,
+    order + networks.count(),
+    [&rssi](size_t a, size_t b) { return rssi[a] > rssi[b]; }
+  );
+
+  return std::any_of(
+    order,
+    order + networks.count(),
+    [&](size_t index) {
+      const WifiNetwork& network = networks.at(index);
+      const bool missing = rssi[index] == INT32_MIN && networks.count() > 1;
+
+      return connectSta(network.ssid, network.password, nullptr, missing);
+    }
+  );
 }
 
 void startProvisioningAp() {
@@ -300,7 +361,7 @@ void runWifiSetup() {
     WiFi.persistent(false);
     WiFi.mode(WIFI_STA);
 
-    if (connectSta(settingsWifiSsid(), settingsWifiPassword())) {
+    if (connectSavedNetworks()) {
       provisioning = false;
       delay(500);
       return;

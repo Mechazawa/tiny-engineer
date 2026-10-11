@@ -107,6 +107,9 @@ void registerHttpRoutes() {
   server.on("/settings/reset", HTTP_POST, []() {
     httpWithApiAuth(httpServer(), handleSettingsReset);
   });
+  server.on("/settings/wifi/remove", HTTP_POST, []() {
+    httpWithApiAuth(httpServer(), handleSettingsWifiRemove);
+  });
   registerHttpTestRoutes(server);
   registerHttpSetupRoutes(server);
   server.onNotFound(handleNotFound);

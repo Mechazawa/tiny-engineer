@@ -6,6 +6,24 @@
 #include <Arduino.h>
 #include <cstring>
 
+namespace {
+
+void loadWifiNetworks() {
+  if (g_settingsPrefs.isKey(kKeyWifiNets)) {
+    uint8_t blob[sizeof(WifiNetwork) * SETTINGS_WIFI_NETWORK_MAX] = {};
+    const size_t length =
+      g_settingsPrefs.getBytes(kKeyWifiNets, blob, sizeof(blob));
+    g_wifiNetworks.load(blob, length);
+    return;
+  }
+
+  const String ssid = g_settingsPrefs.getString(kKeyWifiSsid, "");
+  const String password = g_settingsPrefs.getString(kKeyWifiPass, "");
+  g_wifiNetworks.add(ssid.c_str(), password.c_str());
+}
+
+}  // namespace
+
 void initSettings() {
   setHostnameCache(g_hostname, SETTINGS_DEFAULT_HOSTNAME);
   g_volume = SETTINGS_DEFAULT_VOLUME;
@@ -15,8 +33,7 @@ void initSettings() {
   setLoadingCache(g_loading, SETTINGS_DEFAULT_LOADING);
   setEyesStyleCache(g_eyesStyle, SETTINGS_DEFAULT_EYES_STYLE);
   setAccessTokenCache(g_accessToken, SETTINGS_DEFAULT_ACCESS_TOKEN);
-  setWifiSsidCache(g_wifiSsid, "");
-  setWifiPasswordCache(g_wifiPassword, "");
+  g_wifiNetworks.clear();
   fillDefaultServoRanges(g_servoMin, g_servoMax);
   setRgbOrderCache(g_rgbOrder, SETTINGS_DEFAULT_RGB_ORDER);
   g_oledRotate180 = SETTINGS_DEFAULT_OLED_ROTATE_180;
@@ -91,21 +108,7 @@ void initSettings() {
     setAccessTokenCache(g_accessToken, SETTINGS_DEFAULT_ACCESS_TOKEN);
   }
 
-  String wifiSsid = g_settingsPrefs.getString(kKeyWifiSsid, "");
-
-  if (settingsValidateWifiSsid(wifiSsid.c_str())) {
-    setWifiSsidCache(g_wifiSsid, wifiSsid.c_str());
-  } else {
-    setWifiSsidCache(g_wifiSsid, "");
-  }
-
-  String wifiPass = g_settingsPrefs.getString(kKeyWifiPass, "");
-
-  if (settingsValidateWifiPassword(wifiPass.c_str())) {
-    setWifiPasswordCache(g_wifiPassword, wifiPass.c_str());
-  } else {
-    setWifiPasswordCache(g_wifiPassword, "");
-  }
+  loadWifiNetworks();
 
   uint8_t servoBlob[kServoRangesLen] = {};
   const size_t servoBytes =

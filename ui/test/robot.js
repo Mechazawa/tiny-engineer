@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS = {
   eyes_style: "classic",
   access_token_set: false,
   wifi_configured: true,
+  wifi_networks: ["home"],
   servo_mins: [60, 40, 45, 35, 40],
   servo_maxs: [130, 130, 135, 125, 130],
   rgb_order: "GRB",
@@ -31,6 +32,10 @@ function applySettingsParams(settings, params) {
   for (const [key, value] of Object.entries(params)) {
     if (key === "servo_mins" || key === "servo_maxs") {
       next[key] = value.split(",").map(Number);
+    } else if (key === "wifi_ssid") {
+      next.wifi_networks = [value, ...settings.wifi_networks.filter((ssid) => ssid !== value)];
+    } else if (key === "wifi_password") {
+      continue;
     } else if (key === "access_token") {
       next.access_token_set = value !== "";
     } else if (key === "welcome" || key === "serial_log" || key === "oled_rotate_180") {
@@ -98,7 +103,13 @@ export function fakeRobot({
       robot.settings = applySettingsParams(robot.settings, request.params);
     }
 
-    if (request.path === "/settings") {
+    if (request.path === "/settings/wifi/remove") {
+      robot.settings.wifi_networks = robot.settings.wifi_networks.filter(
+        (ssid) => ssid !== request.params.wifi_ssid,
+      );
+    }
+
+    if (request.path.startsWith("/settings")) {
       return json(robot.settings);
     }
 

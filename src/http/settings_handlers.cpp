@@ -10,6 +10,7 @@
 #include "http/server_context.h"
 #include "network/wifi_connect.h"
 #include "settings/settings.h"
+#include "settings/wifi_network_list.h"
 
 namespace {
 
@@ -67,6 +68,22 @@ bool parseServoCsv(const String& raw, uint8_t out[SETTINGS_SERVO_COUNT]) {
   return true;
 }
 
+void appendWifiNetworksJson(String& body) {
+  const WifiNetworkList& networks = settingsWifiNetworks();
+
+  body += ",\"wifi_networks\":[";
+
+  for (size_t i = 0; i < networks.count(); i++) {
+    if (i > 0) {
+      body += ',';
+    }
+
+    httpAppendJsonString(body, networks.at(i).ssid);
+  }
+
+  body += ']';
+}
+
 void sendSettingsJson(
   WebServer& server,
   bool rebootRequired,
@@ -74,127 +91,61 @@ void sendSettingsJson(
 ) {
   char servoJson[176];
   formatServoRangeJson(servoJson, sizeof(servoJson));
-  char body[1100];
-  const char* tokenSet =
-    settingsAccessTokenSet() ? "true" : "false";
-  const char* wifiConfigured =
-    settingsWifiConfigured() ? "true" : "false";
-  const char* wifiPasswordSet =
-    settingsWifiPasswordSet() ? "true" : "false";
+  char head[1000];
+
+  snprintf(
+    head,
+    sizeof(head),
+    "{"
+    "\"ok\":true,"
+    "\"sleep_timeout\":%lu,"
+    "\"hostname\":\"%s\","
+    "\"volume\":%u,"
+    "\"welcome\":%s,"
+    "\"serial_log\":%s,"
+    "\"continuous_timeout\":%lu,"
+    "\"loading\":\"%s\","
+    "\"eyes_style\":\"%s\","
+    "\"access_token_set\":%s,"
+    "\"wifi_configured\":%s,"
+    "%s",
+    (unsigned long)settingsSleepTimeoutMin(),
+    settingsHostname(),
+    static_cast<unsigned>(settingsVolume()),
+    settingsWelcomeEnabled() ? "true" : "false",
+    settingsSerialLogEnabled() ? "true" : "false",
+    (unsigned long)settingsContinuousTimeoutMin(),
+    settingsLoading(),
+    settingsEyesStyle(),
+    settingsAccessTokenSet() ? "true" : "false",
+    settingsWifiConfigured() ? "true" : "false",
+    servoJson
+  );
+
+  String body(head);
+  appendWifiNetworksJson(body);
 
   if (wifiConnectSuccess) {
+    char wifiJson[96];
+
     snprintf(
-      body,
-      sizeof(body),
-      "{"
-      "\"ok\":true,"
-      "\"sleep_timeout\":%lu,"
-      "\"hostname\":\"%s\","
-      "\"volume\":%u,"
-      "\"welcome\":%s,"
-      "\"serial_log\":%s,"
-      "\"continuous_timeout\":%lu,"
-      "\"loading\":\"%s\","
-      "\"eyes_style\":\"%s\","
-      "\"access_token_set\":%s,"
-      "\"wifi_configured\":%s,"
-      "\"wifi_ssid\":\"%s\","
-      "\"wifi_password_set\":%s,"
-      "%s,"
-      "\"wifi_connect_success\":true,"
+      wifiJson,
+      sizeof(wifiJson),
+      ",\"wifi_connect_success\":true,"
       "\"wifi_ip\":\"%s\","
-      "\"wifi_hostname\":\"%s\""
-      "%s"
-      "}",
-      (unsigned long)settingsSleepTimeoutMin(),
-      settingsHostname(),
-      static_cast<unsigned>(settingsVolume()),
-      settingsWelcomeEnabled() ? "true" : "false",
-      settingsSerialLogEnabled() ? "true" : "false",
-      (unsigned long)settingsContinuousTimeoutMin(),
-      settingsLoading(),
-      settingsEyesStyle(),
-      tokenSet,
-      wifiConfigured,
-      settingsWifiSsid(),
-      wifiPasswordSet,
-      servoJson,
+      "\"wifi_hostname\":\"%s\"",
       wifiIpText(),
-      httpMdnsHostname(),
-      rebootRequired ? ",\"reboot_required\":true" : ""
+      httpMdnsHostname()
     );
-  } else if (rebootRequired) {
-    snprintf(
-      body,
-      sizeof(body),
-      "{"
-      "\"ok\":true,"
-      "\"sleep_timeout\":%lu,"
-      "\"hostname\":\"%s\","
-      "\"volume\":%u,"
-      "\"welcome\":%s,"
-      "\"serial_log\":%s,"
-      "\"continuous_timeout\":%lu,"
-      "\"loading\":\"%s\","
-      "\"eyes_style\":\"%s\","
-      "\"access_token_set\":%s,"
-      "\"wifi_configured\":%s,"
-      "\"wifi_ssid\":\"%s\","
-      "\"wifi_password_set\":%s,"
-      "%s,"
-      "\"reboot_required\":true"
-      "}",
-      (unsigned long)settingsSleepTimeoutMin(),
-      settingsHostname(),
-      static_cast<unsigned>(settingsVolume()),
-      settingsWelcomeEnabled() ? "true" : "false",
-      settingsSerialLogEnabled() ? "true" : "false",
-      (unsigned long)settingsContinuousTimeoutMin(),
-      settingsLoading(),
-      settingsEyesStyle(),
-      tokenSet,
-      wifiConfigured,
-      settingsWifiSsid(),
-      wifiPasswordSet,
-      servoJson
-    );
-  } else {
-    snprintf(
-      body,
-      sizeof(body),
-      "{"
-      "\"ok\":true,"
-      "\"sleep_timeout\":%lu,"
-      "\"hostname\":\"%s\","
-      "\"volume\":%u,"
-      "\"welcome\":%s,"
-      "\"serial_log\":%s,"
-      "\"continuous_timeout\":%lu,"
-      "\"loading\":\"%s\","
-      "\"eyes_style\":\"%s\","
-      "\"access_token_set\":%s,"
-      "\"wifi_configured\":%s,"
-      "\"wifi_ssid\":\"%s\","
-      "\"wifi_password_set\":%s,"
-      "%s"
-      "}",
-      (unsigned long)settingsSleepTimeoutMin(),
-      settingsHostname(),
-      static_cast<unsigned>(settingsVolume()),
-      settingsWelcomeEnabled() ? "true" : "false",
-      settingsSerialLogEnabled() ? "true" : "false",
-      (unsigned long)settingsContinuousTimeoutMin(),
-      settingsLoading(),
-      settingsEyesStyle(),
-      tokenSet,
-      wifiConfigured,
-      settingsWifiSsid(),
-      wifiPasswordSet,
-      servoJson
-    );
+    body += wifiJson;
   }
 
-  httpSendJson(server, 200, body);
+  if (rebootRequired) {
+    body += ",\"reboot_required\":true";
+  }
+
+  body += '}';
+  httpSendJson(server, 200, body.c_str());
 }
 
 }  // namespace
@@ -250,10 +201,7 @@ void handleSettingsPost(WebServer& server) {
   const char* eyesStylePtr = nullptr;
   String accessTokenArg;
   const char* accessTokenPtr = nullptr;
-  String wifiSsidArg;
-  const char* wifiSsidPtr = nullptr;
-  String wifiPasswordArg;
-  const char* wifiPasswordPtr = nullptr;
+  WifiNetworkList wifiNetworks = settingsWifiNetworks();
   uint8_t servoMins[SETTINGS_SERVO_COUNT] = {};
   uint8_t servoMaxs[SETTINGS_SERVO_COUNT] = {};
   const uint8_t* servoMinsPtr = nullptr;
@@ -446,15 +394,6 @@ void handleSettingsPost(WebServer& server) {
   }
 
   if (hasWifiSsid || hasWifiPassword) {
-    if (!wifiProvisioningMode()) {
-      httpSendJson(
-        server,
-        400,
-        "{\"ok\":false,\"error\":\"wifi setup only in AP mode\"}"
-      );
-      return;
-    }
-
     if (!hasWifiSsid || !hasWifiPassword) {
       httpSendJson(
         server,
@@ -464,12 +403,10 @@ void handleSettingsPost(WebServer& server) {
       return;
     }
 
-    wifiSsidArg = server.arg("wifi_ssid");
-    wifiPasswordArg = server.arg("wifi_password");
-    wifiSsidPtr = wifiSsidArg.c_str();
-    wifiPasswordPtr = wifiPasswordArg.c_str();
+    const String wifiSsidArg = server.arg("wifi_ssid");
+    const String wifiPasswordArg = server.arg("wifi_password");
 
-    if (!settingsValidateWifiSsid(wifiSsidPtr)) {
+    if (!settingsValidateWifiSsid(wifiSsidArg.c_str())) {
       httpSendJson(
         server,
         400,
@@ -478,7 +415,7 @@ void handleSettingsPost(WebServer& server) {
       return;
     }
 
-    if (!settingsValidateWifiPassword(wifiPasswordPtr)) {
+    if (!settingsValidateWifiPassword(wifiPasswordArg.c_str())) {
       httpSendJson(
         server,
         400,
@@ -487,21 +424,36 @@ void handleSettingsPost(WebServer& server) {
       return;
     }
 
-    if (!wifiTestCredentials(wifiSsidPtr, wifiPasswordPtr, hostPtr)) {
-      char body[96];
-      snprintf(
-        body,
-        sizeof(body),
-        "{\"ok\":false,\"error\":\"%s\"}",
-        wifiLastConnectError()
+    if (!wifiNetworks.add(wifiSsidArg.c_str(), wifiPasswordArg.c_str())) {
+      httpSendJson(
+        server,
+        400,
+        "{\"ok\":false,\"error\":\"wifi network list full\"}"
       );
-      httpSendJson(server, 400, body);
       return;
     }
 
-    wifiConnectSuccess = true;
-    wifiSsidPtr = wifiSsidArg.c_str();
-    wifiPasswordPtr = wifiPasswordArg.c_str();
+    // Outside setup mode the robot cannot test a network without dropping
+    // the connection serving this request, so it saves untested.
+    if (wifiProvisioningMode()) {
+      if (!wifiTestCredentials(
+            wifiSsidArg.c_str(),
+            wifiPasswordArg.c_str(),
+            hostPtr
+          )) {
+        char body[96];
+        snprintf(
+          body,
+          sizeof(body),
+          "{\"ok\":false,\"error\":\"%s\"}",
+          wifiLastConnectError()
+        );
+        httpSendJson(server, 400, body);
+        return;
+      }
+
+      wifiConnectSuccess = true;
+    }
   }
 
   if (hasServoMins || hasServoMaxs) {
@@ -599,8 +551,13 @@ void handleSettingsPost(WebServer& server) {
   }
 
   bool rebootRequired = false;
-
-  if (!saveSettings(
+  const bool hasOtherSettings =
+    hasSleep || hasHost || hasVolume || hasWelcome || hasSerialLog ||
+    hasContTo || hasLoading || hasEyesStyle || hasAccessToken ||
+    hasServoMins || hasServoMaxs || hasRgbOrder || hasOledRotate180;
+  const bool settingsSaved =
+    !hasOtherSettings ||
+    saveSettings(
         sleepPtr,
         hostPtr,
         volumePtr,
@@ -610,14 +567,16 @@ void handleSettingsPost(WebServer& server) {
         loadingPtr,
         eyesStylePtr,
         accessTokenPtr,
-        wifiSsidPtr,
-        wifiPasswordPtr,
         servoMinsPtr,
         servoMaxsPtr,
         rgbOrderPtr,
         oledRotate180Ptr,
         &rebootRequired
-      )) {
+      );
+  const bool wifiSaved =
+    settingsSaved && (!hasWifiSsid || saveWifiNetworks(wifiNetworks));
+
+  if (!wifiSaved) {
     if (wifiConnectSuccess) {
       wifiRestoreProvisioningAp();
     }
@@ -646,6 +605,50 @@ void handleSettingsPost(WebServer& server) {
   }
 }
 
+void handleSettingsWifiRemove(WebServer& server) {
+  if (!server.hasArg("wifi_ssid")) {
+    httpSendJson(
+      server,
+      400,
+      "{\"ok\":false,\"error\":\"missing wifi_ssid\"}"
+    );
+    return;
+  }
+
+  WifiNetworkList wifiNetworks = settingsWifiNetworks();
+
+  if (!wifiNetworks.remove(server.arg("wifi_ssid").c_str())) {
+    httpSendJson(
+      server,
+      404,
+      "{\"ok\":false,\"error\":\"unknown wifi_ssid\"}"
+    );
+    return;
+  }
+
+  // Factory reset is the way to clear WiFi; an empty list would drop the
+  // robot into setup AP mode on the next boot.
+  if (wifiNetworks.count() == 0) {
+    httpSendJson(
+      server,
+      400,
+      "{\"ok\":false,\"error\":\"cannot remove the last wifi network\"}"
+    );
+    return;
+  }
+
+  if (!saveWifiNetworks(wifiNetworks)) {
+    httpSendJson(
+      server,
+      400,
+      "{\"ok\":false,\"error\":\"save failed\"}"
+    );
+    return;
+  }
+
+  sendSettingsJson(server, false, false);
+}
+
 void handleSettingsReset(WebServer& server) {
   bool rebootRequired = false;
 
@@ -664,5 +667,6 @@ void handleSettingsReset(WebServer& server) {
 bool isSettingsOrAnimPath(const String& uri) {
   return uri == "/anim" || uri == "/play" || uri.startsWith("/play/") ||
          uri == "/settings" || uri == "/settings/reset" ||
+         uri == "/settings/wifi/remove" ||
          uri == "/auth" || uri == "/setup/servo";
 }

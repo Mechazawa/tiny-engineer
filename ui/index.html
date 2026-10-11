@@ -67,9 +67,9 @@
         <a class="card" href="/config"
           ><h3>Config</h3>
           <p>
-            Device name, timeouts, volume, eyes style, boot behavior, serial logging, and API token.
-            WiFi is set in setup mode after factory reset; servo ranges, screen orientation, and RGB
-            mapping can be retuned there too.
+            Device name, timeouts, volume, eyes style, boot behavior, serial logging, API token, and
+            saved WiFi networks. Servo ranges, screen orientation, and RGB mapping are retuned in
+            setup mode after factory reset.
           </p></a
         >
         <a class="card" href="/api"
@@ -156,6 +156,11 @@
             <td>POST</td>
             <td><code>/settings/reset</code></td>
             <td>Factory reset all settings to defaults</td>
+          </tr>
+          <tr>
+            <td>POST</td>
+            <td><code>/settings/wifi/remove</code></td>
+            <td>Remove a saved WiFi network (<code>wifi_ssid</code>)</td>
           </tr>
           <tr>
             <td>GET</td>
@@ -286,14 +291,16 @@
             <td><code>wifi_ssid</code></td>
             <td>string</td>
             <td>
-              1&ndash;32 chars; setup AP only; requires
-              <code>wifi_password</code>
+              1&ndash;32 chars; must be sent with <code>wifi_password</code>; up to 5 saved networks
             </td>
           </tr>
           <tr>
             <td><code>wifi_password</code></td>
             <td>string</td>
-            <td>0&ndash;63 chars; setup AP only; tested before save</td>
+            <td>
+              0&ndash;63 chars; empty allowed for open networks; tested before save in setup AP mode
+              only
+            </td>
           </tr>
           <tr>
             <td><code>servo_mins</code></td>
@@ -327,14 +334,15 @@
         </tbody>
       </table>
       <p>
-        WiFi credentials, servo min/max, RGB LED mapping, and OLED rotation can only be set in setup
-        AP mode. During setup, <code>hostname</code> may be sent with <code>wifi_ssid</code> and
+        Servo min/max, RGB LED mapping, and OLED rotation can only be set in setup AP mode. WiFi
+        networks added outside setup AP mode are saved without a test. During setup,
+        <code>hostname</code> may be sent with <code>wifi_ssid</code> and
         <code>wifi_password</code> (same hostname rules as Config). During setup (credentials not
         saved), control APIs return <strong>503</strong> <code>wifi not configured</code>;
         <code>POST /setup/servo</code>, <code>POST /setup/led</code>,
-        <code>POST /setup/audio</code>, and <code>POST /setup/oled</code> stay available. Change
-        WiFi later via factory reset. Servo ranges, RGB mapping, and screen rotation survive factory
-        reset and can be retuned in the setup wizard.
+        <code>POST /setup/audio</code>, and <code>POST /setup/oled</code> stay available. Servo
+        ranges, RGB mapping, and screen rotation survive factory reset and can be retuned in the
+        setup wizard.
       </p>
       <p>POST <code>/anim</code> &mdash; query param <code>name</code>:</p>
       <table>
@@ -1023,6 +1031,34 @@
         </div>
         <button type="submit" class="btn btn-primary">Save settings</button>
       </form>
+      <div id="wifi-networks-section" class="config-section">
+        <div class="config-section-head">
+          <h3>WiFi networks</h3>
+          <span class="apply-badge apply-reboot">After reboot</span>
+        </div>
+        <p class="config-section-desc">
+          At boot the robot joins the strongest saved network in range. Up to 5 networks. Networks
+          added here are not tested, so check the password.
+        </p>
+        <ul id="wifi-network-list" class="wifi-network-list"></ul>
+        <form id="wifi-network-form">
+          <div class="form-group">
+            <label for="wifi-network-ssid">Network name (SSID)</label>
+            <input type="text" id="wifi-network-ssid" maxlength="32" autocomplete="off" required />
+          </div>
+          <div class="form-group">
+            <label for="wifi-network-password">Password</label>
+            <input
+              type="password"
+              id="wifi-network-password"
+              maxlength="63"
+              autocomplete="new-password"
+            />
+            <p class="hint">Leave empty only for open networks.</p>
+          </div>
+          <button type="submit" class="btn btn-primary">Add network</button>
+        </form>
+      </div>
       <div class="config-section config-danger">
         <h3>Factory reset</h3>
         <p class="hint">
