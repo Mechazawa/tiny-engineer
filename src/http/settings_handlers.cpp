@@ -499,11 +499,24 @@ void handleSettingsWifiPut(WebServer& server) {
   WifiNetworkList next;
 
   for (const JsonObjectConst entry : entries) {
-    const char* ssid = entry["ssid"] | "";
-    const int savedIndex = saved.find(ssid);
     const JsonVariantConst password = entry["password"];
+    // A missing key keeps the saved password; an explicit null is an error.
+    const bool keepsPassword = password.isUnbound();
 
-    if (password.isNull() && savedIndex < 0) {
+    if (!entry["ssid"].is<const char*>() ||
+        !(keepsPassword || password.is<const char*>())) {
+      httpSendJson(
+        server,
+        400,
+        "{\"ok\":false,\"error\":\"each network needs a string ssid and an optional string password\"}"
+      );
+      return;
+    }
+
+    const char* ssid = entry["ssid"];
+    const int savedIndex = saved.find(ssid);
+
+    if (keepsPassword && savedIndex < 0) {
       httpSendJson(
         server,
         400,
@@ -523,8 +536,8 @@ void handleSettingsWifiPut(WebServer& server) {
 
     if (!next.add(
           ssid,
-          password.isNull() ? saved.at(savedIndex).password
-                            : password.as<const char*>()
+          keepsPassword ? saved.at(savedIndex).password
+                        : password.as<const char*>()
         )) {
       httpSendJson(
         server,
