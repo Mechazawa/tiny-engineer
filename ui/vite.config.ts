@@ -1,5 +1,5 @@
-import { minify } from "html-minifier-terser";
-import { defineConfig } from "vite";
+import preact from "@preact/preset-vite";
+import { defineConfig } from "vitest/config";
 import { viteSingleFile } from "vite-plugin-singlefile";
 
 const robot = process.env.TINY_ENGINEER_URL || "http://tiny-engineer.local";
@@ -14,17 +14,9 @@ const apiRoutes = [
   "^/setup/",
 ];
 
-const minifyHtml = {
-  name: "minify-html",
-  apply: "build",
-  enforce: "post",
-  transformIndexHtml: (html) =>
-    minify(html, { collapseWhitespace: true, removeComments: true, minifyCSS: true }),
-};
-
 export default defineConfig({
   // One self-contained page: the firmware embeds it gzipped and serves it as-is.
-  plugins: [viteSingleFile(), minifyHtml],
+  plugins: [preact({ reactAliasesEnabled: false }), viteSingleFile()],
   test: {
     environment: "jsdom",
   },

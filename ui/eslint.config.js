@@ -1,6 +1,8 @@
 import js from "@eslint/js";
 import stylistic from "@stylistic/eslint-plugin";
+import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
+import tseslint from "typescript-eslint";
 
 const controlFlow = [
   "if",
@@ -15,9 +17,11 @@ const controlFlow = [
   "continue",
 ];
 
-export default [
+export default tseslint.config(
   { ignores: ["dist/"] },
   js.configs.recommended,
+  tseslint.configs.strict,
+  reactHooks.configs.flat.recommended,
   {
     plugins: { "@stylistic": stylistic },
     languageOptions: { globals: globals.browser },
@@ -39,7 +43,7 @@ export default [
     },
   },
   {
-    files: ["*.config.js"],
+    files: ["*.config.*"],
     languageOptions: { globals: globals.node },
   },
-];
+);

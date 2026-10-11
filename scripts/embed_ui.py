@@ -19,7 +19,7 @@ def npm(*args):
 
 
 def newest_source_mtime():
-    sources = [ui_dir / "index.html", ui_dir / "vite.config.js", ui_dir / "package.json", ui_dir / "package-lock.json"]
+    sources = [ui_dir / name for name in ("index.html", "vite.config.ts", "tsconfig.json", "package.json", "package-lock.json")]
     sources += [path for path in (ui_dir / "src").rglob("*") if path.is_file()]
     return max(path.stat().st_mtime for path in sources)
 

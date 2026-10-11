@@ -49,9 +49,9 @@ Call the getter wherever the value affects behavior (e.g. `settingsVolume()` in 
 
 ### 4. Web UI — [`ui/`](../ui/)
 
-1. Config form control (`#config-foo`). Use `.range-row` + range/number for 0–N scales (see volume).
-2. `loadSettings()` reads `j.foo`; save POST includes `&foo=…`.
-3. API reference table under POST `/settings`: param, type, range.
+1. Add the field to `Settings` in [`ui/src/api/types.ts`](../ui/src/api/types.ts).
+2. Add a control to `ConfigForm` in [`ui/src/config/ConfigPage.tsx`](../ui/src/config/ConfigPage.tsx): read it in `draftFrom()` and send it from `save()`. Use `.range-row` + range/number for 0–N scales (see volume).
+3. API reference table under POST `/settings` in [`ui/src/views/ApiReference.tsx`](../ui/src/views/ApiReference.tsx): param, type, range.
 4. Home Config card blurb if the setting is user-facing.
 
 ### 5. Docs (required with the same change)

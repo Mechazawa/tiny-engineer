@@ -11,7 +11,7 @@ Tiny Engineer is an open-source ESP32-C3 Wi-Fi desk robot: 3D-printed mechanics,
 | Path | Role |
 | --- | --- |
 | `src/`, `include/`, `lib/`, `data/` | Firmware (PlatformIO) |
-| `ui/` | Web control panel (Vite + ES modules); `pio run` builds it into one minified page and embeds it gzipped in the firmware |
+| `ui/` | Web control panel (Vite, TypeScript, Preact); `pio run` builds it into one minified page and embeds it gzipped in the firmware |
 | `packages/` | HTTP / hook CLIs (Cursor, Antigravity, Claude Code, …) — scope `integrations` |
 | `skills/` | Agent skills shared by Claude Code, Cursor and Antigravity — scope `integrations` |
 | `3d_models/` | CAD and printables (CERN-OHL-S) |
@@ -55,12 +55,12 @@ Significant: logic, types, APIs, headers, firmware under `src/` / `include/` / `
 
 When adding, removing, or changing method, path, or query params of any HTTP route, update in the **same** change:
 
-1. **HTML index** — [`ui/index.html`](ui/index.html): endpoint table and param lists for `/anim`, `/settings`, `/test/servo`
+1. **Web UI API page** — [`ui/src/views/ApiReference.tsx`](ui/src/views/ApiReference.tsx): endpoint table and param lists for `/anim`, `/settings`, `/test/servo`
 2. **API reference** — [`docs/api.md`](docs/api.md)
 3. **Summaries** — if the endpoint list, params, or boot URLs changed: [`README.md`](README.md) and [`docs/hardware/testing.md`](docs/hardware/testing.md)
 4. **Route table** — add the route to `kRoutes` in [`src/http/routes.cpp`](src/http/routes.cpp) with its access rule. 404 and 405 answers come from that table
 
-HTML index: one-line route descriptions only (except supported-parameter lists). Param values must match `docs/api.md` exactly.
+Web UI API page: one-line route descriptions only (except supported-parameter lists). Param values must match `docs/api.md` exactly.
 
 ## Commits
 
