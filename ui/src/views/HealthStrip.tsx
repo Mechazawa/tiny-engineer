@@ -2,7 +2,6 @@ import { useEffect, useState } from "preact/hooks";
 import { api } from "../api/client";
 import type { Health } from "../api/types";
 import { formatBytes, formatDuration } from "../lib/format";
-import { useRobot } from "../robot";
 
 function describeHealth(health: Health) {
   const heapUsed = health.heap_size
@@ -10,7 +9,7 @@ function describeHealth(health: Health) {
     : 0;
 
   return [
-    `IP: ${health.wifi?.connected ? health.wifi.ip : "offline"}`,
+    `IP: ${health.wifi.connected ? health.wifi.ip : "offline"}`,
     `Uptime: ${formatDuration(health.uptime_ms)}`,
     `Heap: ${heapUsed}% used (${formatBytes(health.free_heap)} free)`,
     typeof health.cpu_temp_c === "number" && `Temp: ${health.cpu_temp_c.toFixed(1)} °C`,
@@ -21,39 +20,40 @@ function describeHealth(health: Health) {
 }
 
 export function HealthStrip() {
-  const { applyHealth } = useRobot();
   const [text, setText] = useState("Loading status…");
 
   useEffect(() => {
     const controller = new AbortController();
-    const { signal } = controller;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
-    // Each poll waits for the previous reply, so a slow robot never gets overlapping requests.
+    // The next poll starts once this one has answered, so a slow robot never gets overlapping requests.
     async function poll() {
-      while (!signal.aborted) {
-        try {
-          const health = await api<Health>("/health", { signal });
+      try {
+        const health = await api<Health>("/health", { signal: controller.signal });
 
-          if (!health.ok) {
-            throw new Error(health.data.error);
-          }
-
-          applyHealth(health.data);
-          setText(describeHealth(health.data));
-        } catch {
-          if (!signal.aborted) {
-            setText("Could not load status.");
-          }
+        if (!health.ok) {
+          throw new Error(health.data.error);
         }
 
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setText(describeHealth(health.data));
+      } catch {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        setText("Could not load status.");
       }
+
+      timer = setTimeout(() => void poll(), 1000);
     }
 
-    poll();
+    void poll();
 
-    return () => controller.abort();
-  }, [applyHealth]);
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, []);
 
   return (
     <div id="health-info" className="info-strip">

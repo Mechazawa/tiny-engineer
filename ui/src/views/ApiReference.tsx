@@ -1,4 +1,36 @@
 // Keep the routes and parameter values identical to docs/api.md.
+const ROUTES = [
+  ["GET", "/", "Web control panel"],
+  ["GET", "/animations", "Animations page"],
+  ["GET", "/tests", "Hardware tests page"],
+  ["GET", "/servo", "Servo control page"],
+  ["GET", "/config", "Config page"],
+  ["GET", "/api", "This API reference"],
+  ["GET", "/auth", "Whether API auth is required (always public)"],
+  ["GET", "/health", "Health JSON, no side effects"],
+  ["GET", "/settings", "Persistent settings"],
+  ["POST", "/settings", "Update settings (see parameters below)"],
+  ["POST", "/settings/reset", "Factory reset all settings to defaults"],
+  ["PUT", "/settings/wifi", "Replace the saved WiFi networks (JSON body)"],
+  ["GET", "/anim", "Current animation name"],
+  ["POST", "/anim", "Set animation (see parameters below)"],
+  ["POST", "/play", "Stream a WAV while an animation runs (see parameters below)"],
+  ["POST", "/test/audio", "Play tone test"],
+  ["POST", "/test/audio/bell", "Play bell WAV from LittleFS"],
+  ["POST", "/test/screen", "OLED demo"],
+  ["POST", "/test/movement", "All servos exercise"],
+  ["POST", "/test/led", "RGB LED cycle"],
+  ["POST", "/test/servo", "Move one servo (see parameters below)"],
+  ["POST", "/setup/servo", "Setup AP only: slow 0–180° move (see parameters below)"],
+  [
+    "POST",
+    "/setup/led",
+    "Setup AP only: light logical RGB or one WS2812 wire byte (see parameters below)",
+  ],
+  ["POST", "/setup/audio", "Setup AP only: play welcome.wav from LittleFS"],
+  ["POST", "/setup/oled", "Setup AP only: preview OLED 180° rotation (see parameters below)"],
+] as const;
+
 export function ApiReference() {
   return (
     <section>
@@ -18,181 +50,15 @@ export function ApiReference() {
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>GET</td>
-            <td>
-              <code>/</code>
-            </td>
-            <td>Web control panel</td>
-          </tr>
-          <tr>
-            <td>GET</td>
-            <td>
-              <code>/animations</code>
-            </td>
-            <td>Animations page</td>
-          </tr>
-          <tr>
-            <td>GET</td>
-            <td>
-              <code>/tests</code>
-            </td>
-            <td>Hardware tests page</td>
-          </tr>
-          <tr>
-            <td>GET</td>
-            <td>
-              <code>/servo</code>
-            </td>
-            <td>Servo control page</td>
-          </tr>
-          <tr>
-            <td>GET</td>
-            <td>
-              <code>/config</code>
-            </td>
-            <td>Config page</td>
-          </tr>
-          <tr>
-            <td>GET</td>
-            <td>
-              <code>/api</code>
-            </td>
-            <td>This API reference</td>
-          </tr>
-          <tr>
-            <td>GET</td>
-            <td>
-              <code>/auth</code>
-            </td>
-            <td>Whether API auth is required (always public)</td>
-          </tr>
-          <tr>
-            <td>GET</td>
-            <td>
-              <code>/health</code>
-            </td>
-            <td>Health JSON, no side effects</td>
-          </tr>
-          <tr>
-            <td>GET</td>
-            <td>
-              <code>/settings</code>
-            </td>
-            <td>Persistent settings</td>
-          </tr>
-          <tr>
-            <td>POST</td>
-            <td>
-              <code>/settings</code>
-            </td>
-            <td>Update settings (see parameters below)</td>
-          </tr>
-          <tr>
-            <td>POST</td>
-            <td>
-              <code>/settings/reset</code>
-            </td>
-            <td>Factory reset all settings to defaults</td>
-          </tr>
-          <tr>
-            <td>PUT</td>
-            <td>
-              <code>/settings/wifi</code>
-            </td>
-            <td>Replace the saved WiFi networks (JSON body)</td>
-          </tr>
-          <tr>
-            <td>GET</td>
-            <td>
-              <code>/anim</code>
-            </td>
-            <td>Current animation name</td>
-          </tr>
-          <tr>
-            <td>POST</td>
-            <td>
-              <code>/anim</code>
-            </td>
-            <td>Set animation (see parameters below)</td>
-          </tr>
-          <tr>
-            <td>POST</td>
-            <td>
-              <code>/play</code>
-            </td>
-            <td>Stream a WAV while an animation runs (see parameters below)</td>
-          </tr>
-          <tr>
-            <td>POST</td>
-            <td>
-              <code>/test/audio</code>
-            </td>
-            <td>Play tone test</td>
-          </tr>
-          <tr>
-            <td>POST</td>
-            <td>
-              <code>/test/audio/bell</code>
-            </td>
-            <td>Play bell WAV from LittleFS</td>
-          </tr>
-          <tr>
-            <td>POST</td>
-            <td>
-              <code>/test/screen</code>
-            </td>
-            <td>OLED demo</td>
-          </tr>
-          <tr>
-            <td>POST</td>
-            <td>
-              <code>/test/movement</code>
-            </td>
-            <td>All servos exercise</td>
-          </tr>
-          <tr>
-            <td>POST</td>
-            <td>
-              <code>/test/led</code>
-            </td>
-            <td>RGB LED cycle</td>
-          </tr>
-          <tr>
-            <td>POST</td>
-            <td>
-              <code>/test/servo</code>
-            </td>
-            <td>Move one servo (see parameters below)</td>
-          </tr>
-          <tr>
-            <td>POST</td>
-            <td>
-              <code>/setup/servo</code>
-            </td>
-            <td>Setup AP only: slow 0&ndash;180&deg; move (see parameters below)</td>
-          </tr>
-          <tr>
-            <td>POST</td>
-            <td>
-              <code>/setup/led</code>
-            </td>
-            <td>Setup AP only: light logical RGB or one WS2812 wire byte (see parameters below)</td>
-          </tr>
-          <tr>
-            <td>POST</td>
-            <td>
-              <code>/setup/audio</code>
-            </td>
-            <td>Setup AP only: play welcome.wav from LittleFS</td>
-          </tr>
-          <tr>
-            <td>POST</td>
-            <td>
-              <code>/setup/oled</code>
-            </td>
-            <td>Setup AP only: preview OLED 180&deg; rotation (see parameters below)</td>
-          </tr>
+          {ROUTES.map(([method, path, description]) => (
+            <tr key={`${method} ${path}`}>
+              <td>{method}</td>
+              <td>
+                <code>{path}</code>
+              </td>
+              <td>{description}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
       <p>
@@ -273,7 +139,9 @@ export function ApiReference() {
               <code>access_token</code>
             </td>
             <td>string</td>
-            <td>0&ndash;64 printable ASCII; empty clears (disables auth)</td>
+            <td>
+              0&ndash;64 printable ASCII, no space at either end; empty clears (disables auth)
+            </td>
           </tr>
           <tr>
             <td>

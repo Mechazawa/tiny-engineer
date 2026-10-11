@@ -1,7 +1,7 @@
 import { useStatus } from "../status/status";
 
 export function useSetupServo() {
-  const { perform, clearStatus } = useStatus();
+  const { perform } = useStatus();
 
   return async (json: { all: number } | { index: number; angle: number }) => {
     const result = await perform({
@@ -11,10 +11,6 @@ export function useSetupServo() {
       failure: "Move failed",
     });
 
-    if (result?.ok) {
-      clearStatus();
-    }
-
-    return Boolean(result?.ok);
+    return result?.ok === true;
   };
 }

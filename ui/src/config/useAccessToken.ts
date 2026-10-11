@@ -11,6 +11,9 @@ export function useAccessToken(settings: Settings) {
     draft: null as string | null,
     clearPending: false,
   }));
+  const update = (changes: { draft: string | null; clearPending?: boolean }) => {
+    setState((state) => ({ ...state, ...changes }));
+  };
 
   return {
     // Value for the access_token field: "" clears, undefined leaves the saved token alone.
@@ -19,16 +22,22 @@ export function useAccessToken(settings: Settings) {
       configured,
       value: clearPending ? "" : (draft ?? (configured ? MASK : "")),
       clearPending,
-      onInput: (next: string) => setState((state) => ({ ...state, draft: next })),
-      onFocus() {
-        setState((state) => (state.draft === null ? { ...state, draft: "" } : state));
+      onInput: (next: string) => {
+        update({ draft: next });
       },
-      onBlur() {
-        if (configured) {
-          setState((state) => (state.draft?.trim() === "" ? { ...state, draft: null } : state));
+      onFocus: () => {
+        if (draft === null) {
+          update({ draft: "" });
         }
       },
-      onToggle: () => setState((state) => ({ draft: null, clearPending: !state.clearPending })),
+      onBlur: () => {
+        if (configured && draft?.trim() === "") {
+          update({ draft: null });
+        }
+      },
+      onToggle: () => {
+        update({ draft: null, clearPending: !clearPending });
+      },
     },
   };
 }

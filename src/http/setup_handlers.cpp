@@ -89,8 +89,7 @@ void handleSetupServo(WebServer& server) {
   moveServoSmoothElectrical(move->index, move->angle);
 
   JsonDocument reply = setupReply("servo");
-  reply["index"] = move->index;
-  reply["angle"] = move->angle;
+  move->addTo(reply);
   sendJson(server, 200, reply);
 }
 

@@ -5,7 +5,8 @@
 
 SettingsValues g_settings = SettingsValues::defaults();
 WifiNetworkList g_wifiNetworks;
-char g_bootHostname[SETTINGS_HOSTNAME_MAX_LEN + 1] = {};
+SettingsValues g_bootSettings = g_settings;
+bool g_wifiChangedSinceBoot = false;
 
 SettingsValues SettingsValues::defaults() {
   SettingsValues values{};
@@ -65,25 +66,25 @@ void SettingsValues::log(const char* prefix) const {
     return;
   }
 
-  String line = prefix;
+  const ServoRanges& r = servoRanges;
 
-  line += String(" sleep_timeout=") + sleepTimeoutMin + "min";
-  line += String(" hostname=") + hostname;
-  line += String(" volume=") + volume;
-  line += String(" welcome=") + (welcome ? "on" : "off");
-  line += String(" serial_log=") + (serialLog ? "on" : "off");
-  line += String(" continuous_timeout=") + continuousTimeoutMin + "min";
-  line += String(" loading=") + loading;
-  line += String(" eyes_style=") + eyesStyle;
-  line += String(" access_token=") + (accessToken[0] != '\0' ? "set" : "unset");
-  line += String(" wifi_networks=") + g_wifiNetworks.count();
-  line += " servos=";
-
-  for (size_t i = 0; i < SETTINGS_SERVO_COUNT; i++) {
-    line += String(i > 0 ? ";" : "") + servoRanges.mins[i] + "-" + servoRanges.maxs[i];
-  }
-
-  line += String(" rgb_order=") + rgbOrder;
-  line += String(" oled_rotate_180=") + (oledRotate180 ? "on" : "off");
-  serialLogPrintln(line);
+  Serial.printf(
+    "%s sleep_timeout=%umin hostname=%s volume=%u welcome=%s serial_log=on "
+    "continuous_timeout=%umin loading=%s eyes_style=%s access_token=%s wifi_networks=%u "
+    "servos=%u-%u;%u-%u;%u-%u;%u-%u;%u-%u rgb_order=%s oled_rotate_180=%s\n",
+    prefix,
+    static_cast<unsigned>(sleepTimeoutMin),
+    hostname,
+    volume,
+    welcome ? "on" : "off",
+    static_cast<unsigned>(continuousTimeoutMin),
+    loading,
+    eyesStyle,
+    accessToken[0] != '\0' ? "set" : "unset",
+    static_cast<unsigned>(g_wifiNetworks.count()),
+    r.mins[0], r.maxs[0], r.mins[1], r.maxs[1], r.mins[2], r.maxs[2], r.mins[3], r.maxs[3],
+    r.mins[4], r.maxs[4],
+    rgbOrder,
+    oledRotate180 ? "on" : "off"
+  );
 }

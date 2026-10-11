@@ -22,7 +22,3 @@ constexpr const char* kKeyRgbOrder = "rgb_ord";
 constexpr const char* kKeyOledRot = "oled_rot";
 
 extern Preferences g_settingsPrefs;
-
-bool settingsNvsBeginRead();
-bool settingsNvsBeginWrite();
-void settingsNvsEnd();

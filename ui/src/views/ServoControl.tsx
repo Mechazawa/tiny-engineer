@@ -1,12 +1,13 @@
 import { useState } from "preact/hooks";
 import { useRobot } from "../robot";
-import { DEFAULT_SERVO_RANGES, SERVO_NAMES, savedRanges } from "../servos";
 import { Button } from "../components/Button";
+import { ServoTrack } from "../components/ServoTrack";
+import { DEFAULT_SERVO_RANGES, inRange, SERVO_NAMES, savedRanges } from "../servos";
 import { useStatus } from "../status/status";
 
 export function ServoControl() {
   const { settings } = useRobot();
-  const { perform, setStatus } = useStatus();
+  const { perform } = useStatus();
   // Until the settings load, the stock ranges stand in.
   const ranges = settings ? savedRanges(settings) : DEFAULT_SERVO_RANGES;
   const [index, setIndex] = useState(0);
@@ -14,29 +15,26 @@ export function ServoControl() {
   const [min, max] = ranges[index];
   const mid = (min + max) / 2;
   const value = parseFloat(angle);
-  const safe = value >= min && value <= max;
+  const safe = inRange(value, ranges[index]);
 
   function selectServo(next: number) {
     const [nextMin, nextMax] = ranges[next];
 
     setIndex(next);
 
-    if (!(value >= nextMin && value <= nextMax)) {
+    if (!inRange(value, ranges[next])) {
       setAngle(String((nextMin + nextMax) / 2));
     }
   }
 
   async function move(target: string) {
-    const result = await perform({
+    await perform({
       path: "/test/servo",
       request: { method: "POST", json: { index, angle: Number(target) } },
       pending: "Moving servo…",
       failure: "Move failed",
+      done: `Servo ${index} moved to ${target}°.`,
     });
-
-    if (result?.ok) {
-      setStatus(`Servo ${index} moved to ${target}°.`, "ok");
-    }
   }
 
   return (
@@ -46,7 +44,7 @@ export function ServoControl() {
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          move(angle);
+          void move(angle);
         }}
       >
         <div className="form-group">
@@ -71,31 +69,25 @@ export function ServoControl() {
         <div className="form-group">
           <label htmlFor="servo-angle">Angle</label>
           <div className="range-row servo-range">
-            <div className="servo-slider-wrap">
-              <div className="servo-slider-track">
-                <div className="servo-slider-bg">
-                  <div className="servo-safe-band"></div>
-                </div>
-                <input
-                  type="range"
-                  className="servo-slider"
-                  aria-label="Angle slider"
-                  min={min}
-                  max={max}
-                  value={angle}
-                  onInput={(event) => setAngle(event.currentTarget.value)}
-                />
-              </div>
-              <div className="servo-scale">
-                <span>{min}°</span>
-                <span>{Math.round(mid)}°</span>
-                <span>{max}°</span>
-              </div>
-            </div>
+            <ServoTrack
+              background={<div className="servo-safe-band"></div>}
+              scale={[min, Math.round(mid), max]}
+            >
+              <input
+                type="range"
+                className="servo-slider"
+                aria-label="Angle slider"
+                min={min}
+                max={max}
+                value={angle}
+                onInput={(event) => setAngle(event.currentTarget.value)}
+              />
+            </ServoTrack>
             <input
               type="number"
               id="servo-angle"
               aria-describedby="servo-range-hint"
+              required
               min={min}
               max={max}
               value={angle}
@@ -107,7 +99,7 @@ export function ServoControl() {
           <Button
             onClick={() => {
               setAngle(String(mid));
-              move(String(mid));
+              void move(String(mid));
             }}
           >
             Center

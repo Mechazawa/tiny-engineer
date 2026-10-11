@@ -26,7 +26,7 @@ const DEFAULT_SETTINGS: Settings = {
 export interface RecordedRequest {
   method: string;
   path: string;
-  params: Record<string, string>;
+  params: Partial<Record<string, string>>;
   authorization?: string;
   json?: unknown;
 }
@@ -44,19 +44,26 @@ function applySettingsPatch(
 }
 
 // Stands in for the firmware HTTP API and records every request the UI makes.
+interface FakeRobotOptions {
+  authRequired?: boolean;
+  token?: string;
+  provisioning?: boolean;
+  settings?: Partial<Settings>;
+}
+
 export function fakeRobot({
   authRequired = false,
   token = "",
   provisioning = false,
-  settings = {} as Partial<Settings>,
-} = {}) {
+  settings = {},
+}: FakeRobotOptions = {}) {
   const robot = {
     requests: [] as RecordedRequest[],
     failing: new Set<string>(),
     provisioning,
     settings: { ...DEFAULT_SETTINGS, wifi_configured: !provisioning, ...settings },
     // Runs before each reply, so a test can look at the page mid-request.
-    onRequest: (request: RecordedRequest): void => void request,
+    onRequest: undefined as ((request: RecordedRequest) => void) | undefined,
     sent(method: string, path: string) {
       return this.requests.filter((request) => request.method === method && request.path === path);
     },
@@ -67,7 +74,7 @@ export function fakeRobot({
 
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (input: string, options: RequestInit = {}) => {
+    vi.fn((input: string, options: RequestInit = {}) => {
       const url = new URL(input, "http://robot.test");
       const headers = (options.headers ?? {}) as Record<string, string>;
       const request: RecordedRequest = {
@@ -77,10 +84,11 @@ export function fakeRobot({
         authorization: headers.Authorization,
         json: typeof options.body === "string" ? JSON.parse(options.body) : undefined,
       };
-      const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
+      const json = (body: unknown, status = 200) =>
+        Promise.resolve(Response.json(body, { status }));
 
       robot.requests.push(request);
-      robot.onRequest(request);
+      robot.onRequest?.(request);
 
       if (request.path === "/auth") {
         return json({ ok: true, required: authRequired });
@@ -146,7 +154,7 @@ export function renderApp(path = "/") {
   return {
     user,
     // Waits until the button is enabled, so a click never lands while the last action runs.
-    async click(name: string | RegExp) {
+    click: async (name: string | RegExp) => {
       const button = await screen.findByRole<HTMLButtonElement>("button", { name });
 
       await waitFor(() => expect(button.disabled).toBe(false));

@@ -10,14 +10,10 @@ const TESTS = [
 ] as const;
 
 export function Tests() {
-  const { perform, setStatus } = useStatus();
+  const { perform } = useStatus();
 
   async function run(path: string) {
-    const result = await perform({ path, pending: "Running…", failure: "Request failed" });
-
-    if (result?.ok) {
-      setStatus("Done.", "ok");
-    }
+    await perform({ path, pending: "Running…", failure: "Request failed", done: "Done." });
   }
 
   return (

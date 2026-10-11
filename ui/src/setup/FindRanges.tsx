@@ -1,6 +1,7 @@
 import { Button } from "../components/Button";
 import { clamp } from "../lib/math";
 import { ConfigSection } from "../components/ConfigSection";
+import { ServoTrack } from "../components/ServoTrack";
 import { DEFAULT_SERVO_RANGES, type Range, SERVO_NAMES } from "../servos";
 import { useStatus } from "../status/status";
 import { type Calibration, CENTER } from "./useCalibration";
@@ -90,22 +91,18 @@ export function FindRanges({ calibration }: { calibration: Calibration }) {
           <span data-testid="calib-angle">{angle}</span>°
         </div>
         <div className="calib-guide" aria-hidden="true">
-          <div className="servo-slider-wrap">
-            <div className="servo-slider-track">
-              <div className="servo-slider-bg">
+          <ServoTrack
+            scale={[0, 90, 180]}
+            background={
+              <>
                 <div
                   className="servo-safe-band"
                   style={{ left: percent(min), width: percent(max - min) }}
                 ></div>
                 <div className="calib-marker" style={{ left: percent(angle) }}></div>
-              </div>
-            </div>
-            <div className="servo-scale">
-              <span>0°</span>
-              <span>90°</span>
-              <span>180°</span>
-            </div>
-          </div>
+              </>
+            }
+          />
         </div>
       </div>
       <div className="calib-nudge">

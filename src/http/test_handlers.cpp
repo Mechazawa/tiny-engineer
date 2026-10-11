@@ -74,7 +74,6 @@ void handleServoTest(WebServer& server) {
   moveServoSmooth(move->index, move->angle);
 
   JsonDocument reply = testReply("servo");
-  reply["index"] = move->index;
-  reply["angle"] = move->angle;
+  move->addTo(reply);
   finishTest(server, reply);
 }

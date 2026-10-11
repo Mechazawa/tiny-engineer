@@ -27,27 +27,32 @@ export function Animations() {
   useEffect(() => {
     const controller = new AbortController();
 
-    api<AnimationReply>("/anim", { signal: controller.signal })
-      .then((reply) => reply.ok && setCurrent(reply.data.animation))
-      .catch(() => {
+    void (async () => {
+      try {
+        const reply = await api<AnimationReply>("/anim", { signal: controller.signal });
+
+        if (reply.ok) {
+          setCurrent(reply.data.animation);
+        }
+      } catch {
         // The badge keeps its last value.
-      });
+      }
+    })();
 
     return () => controller.abort();
   }, []);
 
   async function play(name: string) {
-    const result = await perform<AnimationReply>({
+    await perform<AnimationReply>({
       path: "/anim",
       request: { method: "POST", params: { name } },
       pending: "Setting animation…",
       failure: "Failed",
+      onSuccess: ({ animation }) => {
+        setStatus(`Animation: ${animation}`, "ok");
+        setCurrent(animation);
+      },
     });
-
-    if (result?.ok) {
-      setStatus(`Animation: ${result.data.animation}`, "ok");
-      setCurrent(result.data.animation);
-    }
   }
 
   return (

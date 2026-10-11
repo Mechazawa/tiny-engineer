@@ -103,7 +103,18 @@ describe("setup wizard", () => {
       servo_mins: [80, 40, 45, 35, 40],
       servo_maxs: [130, 130, 135, 125, 130],
     });
-    expect(robot.lastPost("/setup/oled")?.json).toEqual({ rotate_180: false });
+    await waitFor(() => expect(robot.lastPost("/setup/oled")?.json).toEqual({ rotate_180: false }));
+  });
+
+  it("restores the setup screen when leaving the screen step", async () => {
+    const { robot, click } = await startCalibration();
+
+    await click("Next: Screen");
+    await waitFor(() => expect(robot.lastPost("/setup/oled")?.json).toBeDefined());
+    await click("Back");
+
+    await waitFor(() => expect(robot.lastPost("/setup/oled")?.json).toBeUndefined());
+    expect(stepLabel()).toBe("Step 1 of 5 · Servos");
   });
 
   it("saves the hostname, then tests the new network ahead of the saved ones", async () => {

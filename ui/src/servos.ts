@@ -14,3 +14,5 @@ export const DEFAULT_SERVO_RANGES: Range[] = [
 
 export const savedRanges = ({ servo_mins: mins, servo_maxs: maxs }: Settings): Range[] =>
   mins.map((min, index) => [min, maxs[index]] as const);
+
+export const inRange = (angle: number, [min, max]: Range) => angle >= min && angle <= max;

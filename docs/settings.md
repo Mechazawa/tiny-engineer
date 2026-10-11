@@ -14,9 +14,9 @@ Follow the same pattern for a new setting.
 | --- | --- |
 | Storage | NVS under namespace `te`; short key name (≤15 chars for Preferences) |
 | RAM | One `SettingsValues` struct (`g_settings`) filled by `initSettings()`; callers use getters |
-| Update API | `saveSettings(const SettingsPatch&, ...)`: only the fields the patch sets change |
+| Update API | `saveSettings(const SettingsPatch&)`: only the fields the patch sets change, and only changed keys are written to NVS |
 | HTTP | JSON object body on `POST /settings`; at least one field required |
-| Apply timing | Prefer immediate apply. If boot-only (like hostname), set `reboot_required` and document it. WiFi networks live in a `WifiNetworkList` saved with `saveWifiNetworks()`, outside `saveSettings(...)`; they are tested before save only in setup AP mode. Servo min/max (`servo_mins` / `servo_maxs`), RGB LED mapping (`rgb_order`), and OLED rotation (`oled_rotate_180`) are setup-AP-only and apply immediately |
+| Apply timing | Prefer immediate apply. If boot-only (like hostname), add it to `settingsRebootRequired()` so replies report `reboot_required`, and document it. WiFi networks live in a `WifiNetworkList` saved with `saveWifiNetworks()`, outside `saveSettings(...)`; they are tested before save only in setup AP mode. Servo min/max (`servo_mins` / `servo_maxs`), RGB LED mapping (`rgb_order`), and OLED rotation (`oled_rotate_180`) are setup-AP-only and apply immediately |
 | Types | Prefer small integers / short strings; validate before any NVS write |
 
 ## Checklist
@@ -29,7 +29,7 @@ Public API: [`settings.h`](../src/settings/settings.h). Values struct: [`values.
 
 1. Add `SETTINGS_DEFAULT_*`, min/max (or length) constants in [`settings.h`](../src/settings/settings.h).
 2. Add the field to `SettingsValues` in [`values.h`](../src/settings/values.h), set its default in `SettingsValues::defaults()` and log it in `SettingsValues::log()` ([`values.cpp`](../src/settings/values.cpp)). For secrets like `access_token`, log set/unset only, never the raw value.
-3. Add the NVS key in [`nvs.h`](../src/settings/nvs.h) (e.g. `kKeyFoo = "foo"`). Read it in `SettingsValues::load()` (keep the default on bad or missing data) and write it in `SettingsValues::save()` ([`nvs.cpp`](../src/settings/nvs.cpp)).
+3. Add the NVS key in [`nvs.h`](../src/settings/nvs.h) (e.g. `kKeyFoo = "foo"`). Read it in `SettingsValues::load()` (keep the default on bad or missing data) and write it in `writeValues()` ([`nvs.cpp`](../src/settings/nvs.cpp)).
 4. Add `settingsValidateFoo(...)` in [`validate.cpp`](../src/settings/validate.cpp) and the getter `settingsFoo()` in [`getters.cpp`](../src/settings/getters.cpp).
 5. Add the field to `SettingsPatch` in [`settings.h`](../src/settings/settings.h) (`std::optional<T>`, or `const char*` for text), check it in `SettingsPatch::invalidField()` and copy it in `SettingsValues::apply()`. `saveSettings()` rejects the whole patch when a field is invalid and writes every key together.
 
@@ -40,12 +40,12 @@ Call the getter wherever the value affects behavior (e.g. `settingsVolume()` in 
 ### 3. HTTP — [`src/http/settings_handlers.cpp`](../src/http/settings_handlers.cpp)
 
 1. Add the field to `settingsJson()`.
-2. Read it into the patch in `readPatch()` with `readValue` (numbers, booleans) or `readText` (strings). A wrong JSON type answers **400** `invalid <field>`, and so does a value `SettingsPatch::invalidField()` rejects.
+2. Read it into the patch with one `read("foo", patch.foo)` line in `readPatch()`. A wrong JSON type answers **400** `invalid <field>`, and so does a value `SettingsPatch::invalidField()` rejects. Fields `readPatch()` does not read answer **400** `unknown field <field>`.
 
 ### 4. Web UI — [`ui/`](../ui/)
 
 1. Add the field to `Settings` in [`ui/src/api/types.ts`](../ui/src/api/types.ts).
-2. Add a control to `ConfigForm` in [`ui/src/config/ConfigPage.tsx`](../ui/src/config/ConfigPage.tsx): read it in `draftFrom()` and send it from `save()`. Use `.range-row` + range/number for 0–N scales (see volume).
+2. Add a control to `ConfigForm` in [`ui/src/config/ConfigForm.tsx`](../ui/src/config/ConfigForm.tsx): read it in `draftFrom()` and send it from `save()`. Use `.range-row` + range/number for 0–N scales (see volume).
 3. API reference table under POST `/settings` in [`ui/src/views/ApiReference.tsx`](../ui/src/views/ApiReference.tsx): param, type, range.
 4. Home Config card blurb if the setting is user-facing.
 
@@ -79,7 +79,7 @@ Flash only when you want to try it on hardware (`pio run -t upload`).
 
 - **Partial writes:** validate first; never write NVS then fail validation mid-way.
 - **Factory reset:** `factoryResetSettings()` in [`nvs.cpp`](../src/settings/nvs.cpp) clears NVS namespace `te` and writes defaults, which clears every saved WiFi network. Servo min/max (`sranges`), RGB LED mapping (`rgb_ord`), and OLED rotation (`oled_rot`) are written back unchanged. Exposed as `POST /settings/reset`. After reset, power-cycle into setup AP mode to configure WiFi again. Servo ranges, LED mapping, and screen rotation can be retuned in that wizard.
-- **Hostname-style settings:** freeze the boot value separately if live change cannot apply (see `settingsBootHostname()` / `reboot_required`).
+- **Hostname-style settings:** freeze the boot value separately if live change cannot apply (see `g_bootSettings` and `settingsRebootRequired()`).
 - **UI size:** the panel is embedded gzipped in the firmware; keep controls compact.
 - **Doc drift:** HTML param tables must match `api.md` exactly.
 

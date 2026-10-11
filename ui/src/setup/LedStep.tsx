@@ -1,8 +1,9 @@
 import clsx from "clsx";
+import { useEffect } from "preact/hooks";
 import { Button } from "../components/Button";
 import { ConfigSection } from "../components/ConfigSection";
 import { useStatus } from "../status/status";
-import type { LedMapping } from "./useLedMapping";
+import { type LedMapping, releaseLed } from "./useLedMapping";
 
 const CHANNELS = [
   ["R", "Red"],
@@ -12,14 +13,16 @@ const CHANNELS = [
 const BYTE_LABELS = ["First byte", "Second byte", "Third byte"];
 
 export function LedStep({ mapping }: { mapping: LedMapping }) {
-  const { perform, clearStatus } = useStatus();
+  const { perform } = useStatus();
+
+  // Leaving the step hands the LED back to the setup AP's dim blue.
+  useEffect(() => () => void releaseLed(), []);
 
   const preview = (json: { color: string; rgb_order: string } | { byte: number }) =>
     perform({
       path: "/setup/led",
       request: { method: "POST", json },
       failure: "LED preview failed",
-      onSuccess: clearStatus,
     });
 
   function pickLook(byte: number, look: string) {
@@ -40,7 +43,7 @@ export function LedStep({ mapping }: { mapping: LedMapping }) {
             onClick={() =>
               preview({
                 color: channel,
-                rgb_order: mapping.valid ? mapping.order : mapping.savedOrder,
+                rgb_order: mapping.previewOrder,
               })
             }
           >
@@ -60,10 +63,10 @@ export function LedStep({ mapping }: { mapping: LedMapping }) {
             <strong>Current mapping</strong>
           </p>
           <div className="led-map">
-            {mapping.looks.map((channel, byte) => (
-              <div key={byte} className="led-chip-wrap">
-                <div className={`led-chip led-${channel.toLowerCase()}`}></div>
-                <span className="led-chip-letter">{channel}</span>
+            {BYTE_LABELS.map((label, byte) => (
+              <div key={label} className="led-chip-wrap">
+                <div className={`led-chip led-${mapping.looks[byte].toLowerCase()}`}></div>
+                <span className="led-chip-letter">{mapping.looks[byte]}</span>
               </div>
             ))}
           </div>

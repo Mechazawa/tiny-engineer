@@ -10,11 +10,6 @@ export function AuthGate() {
 
   async function submit(event: TargetedSubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (!candidate) {
-      return;
-    }
-
     setRejected(false);
 
     if (!(await unlock(candidate))) {

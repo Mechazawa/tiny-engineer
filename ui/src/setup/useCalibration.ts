@@ -22,7 +22,7 @@ export function useCalibration(settings: Settings) {
     ranges,
     setRanges,
     valid: ranges.every(([min, max]) => min < max),
-    placePartsDone() {
+    placePartsDone: () => {
       setPhase("ranges");
       setJoint(0);
       setAngles(angles.map((angle, index) => (index === 0 ? CENTER : angle)));

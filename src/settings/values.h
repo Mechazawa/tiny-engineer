@@ -30,12 +30,17 @@ struct SettingsValues {
   // Reads NVS over the current values; keys that are missing or invalid keep theirs.
   void load();
 
-  // Writes every key. clearFirst also erases the rest of the namespace, WiFi networks included.
-  bool save(bool clearFirst = false) const;
+  // Writes the keys that differ from `saved`, the values NVS holds now.
+  bool save(const SettingsValues& saved) const;
+
+  // Erases the namespace, WiFi networks included, then writes every key.
+  bool replaceAll() const;
 
   void log(const char* prefix) const;
 };
 
 extern SettingsValues g_settings;
 extern WifiNetworkList g_wifiNetworks;
-extern char g_bootHostname[SETTINGS_HOSTNAME_MAX_LEN + 1];
+// Hostname and loading screen are read at boot only; a change waits for a reboot.
+extern SettingsValues g_bootSettings;
+extern bool g_wifiChangedSinceBoot;

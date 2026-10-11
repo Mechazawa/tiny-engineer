@@ -33,7 +33,9 @@ export interface Request {
 }
 
 // Every firmware reply carries `ok`; errors are {"ok":false,"error":...}.
-export type Reply = { ok: true };
+export interface Reply {
+  ok: true;
+}
 export type ApiResult<T extends Reply> = { ok: true; data: T } | { ok: false; data: ApiError };
 
 export function apiFetch(path: string, { method = "GET", params, json, signal }: Request = {}) {
@@ -61,7 +63,17 @@ export async function api<T extends Reply = Reply>(
   path: string,
   request?: Request,
 ): Promise<ApiResult<T>> {
-  const data: T | ApiError = await (await apiFetch(path, request)).json();
+  // Trusted, not validated: the firmware and this UI share the reply shapes in types.ts.
+  const data = (await (await apiFetch(path, request)).json()) as T | ApiError;
 
   return data.ok ? { ok: true, data } : { ok: false, data };
+}
+
+// For hardware previews that matter only while the robot is reachable.
+export async function sendQuietly(path: string, request: Request) {
+  try {
+    await apiFetch(path, request);
+  } catch {
+    // Nothing to report; the next preview or action shows any real failure.
+  }
 }

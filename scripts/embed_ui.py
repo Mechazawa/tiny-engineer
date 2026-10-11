@@ -37,7 +37,7 @@ if not installed.is_file() or installed.stat().st_mtime < (ui_dir / "package-loc
 npm("run", "build")
 
 page = (ui_dir / "dist" / "index.html").read_bytes()
-# mtime=0 keeps the bytes identical for identical sources, so an unchanged UI does not rebuild index_page.cpp.
+# mtime=0 keeps the bytes identical for identical sources, so an unchanged UI does not rebuild routes.cpp.
 packed = gzip.compress(page, compresslevel=9, mtime=0)
 rows = ",\n".join(
     "  " + ", ".join(f"0x{byte:02x}" for byte in packed[offset:offset + 16])

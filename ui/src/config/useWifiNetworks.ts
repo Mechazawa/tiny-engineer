@@ -10,15 +10,23 @@ export function useWifiNetworks(saved: string[], onSaved: (settings: Settings) =
   const [removed, setRemoved] = useResettableState(savedKey, () => new Set<string>());
   const [added, setAdded] = useResettableState(savedKey, () => new Map<string, string>());
 
-  // Order is boot priority for networks a scan misses: new ones first, then the kept saved ones.
-  const desired: WifiNetwork[] = [
-    ...[...added].map(([ssid, password]) => ({ ssid, password })),
-    ...saved.filter((ssid) => !removed.has(ssid) && !added.has(ssid)).map((ssid) => ({ ssid })),
-  ];
+  // Boot tries the networks a scan misses in this order: new ones first, then the kept saved ones.
+  const newNetworks = [...added].map(([ssid, password]) => ({ ssid, password }));
+  const keptNetworks = saved
+    .filter((ssid) => !removed.has(ssid) && !added.has(ssid))
+    .map((ssid) => ({ ssid }));
+  const desired: WifiNetwork[] = [...newNetworks, ...keptNetworks];
   const pending = removed.size > 0 || added.size > 0;
 
-  const unremove = (ssid: string) =>
-    setRemoved((names) => new Set([...names].filter((name) => name !== ssid)));
+  function undoRemove(ssid: string) {
+    setRemoved((names) => {
+      const next = new Set(names);
+
+      next.delete(ssid);
+
+      return next;
+    });
+  }
 
   return {
     saved,
@@ -26,26 +34,39 @@ export function useWifiNetworks(saved: string[], onSaved: (settings: Settings) =
     removed,
     desired,
     pending,
-    stageAdd(ssid: string, password: string) {
-      unremove(ssid);
-      setAdded((networks) => new Map([...networks, [ssid, password]]));
+    undoRemove,
+    stageAdd: (ssid: string, password: string) => {
+      undoRemove(ssid);
+      setAdded((networks) => new Map(networks).set(ssid, password));
     },
-    undoAdd: (ssid: string) =>
-      setAdded((networks) => new Map([...networks].filter(([name]) => name !== ssid))),
-    remove: (ssid: string) => setRemoved((names) => new Set([...names, ssid])),
-    undoRemove: unremove,
+    undoAdd: (ssid: string) => {
+      setAdded((networks) => {
+        const next = new Map(networks);
+
+        next.delete(ssid);
+
+        return next;
+      });
+    },
+    remove: (ssid: string) => {
+      setRemoved((names) => new Set(names).add(ssid));
+    },
     // Resolves to the robot's error, or null when the list saved or nothing changed.
-    async save(): Promise<string | null> {
+    save: async (): Promise<string | null> => {
       if (!pending) {
         return null;
       }
 
-      const result = await api<Settings>("/settings/wifi", { method: "PUT", json: desired }).catch(
-        () => null,
-      );
+      let result;
 
-      if (!result?.ok) {
-        return result?.data.error || "network error";
+      try {
+        result = await api<Settings>("/settings/wifi", { method: "PUT", json: desired });
+      } catch {
+        return "network error";
+      }
+
+      if (!result.ok) {
+        return result.data.error;
       }
 
       setRemoved(new Set());

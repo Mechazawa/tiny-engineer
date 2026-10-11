@@ -16,11 +16,8 @@ import { WifiNetworksSection } from "./WifiNetworksSection";
 
 const EYES_STYLES = ["classic", "kaomoji", "cover", "dots"];
 
-const clampVolume = (value: string) => {
-  const parsed = parseInt(value, 10);
-
-  return Number.isNaN(parsed) ? 70 : clamp(parsed, 0, 100);
-};
+// An emptied number field reads NaN; the stock volume stands in until the user types again.
+const clampVolume = (value: number) => (Number.isNaN(value) ? 70 : clamp(value, 0, 100));
 
 function draftFrom(settings: Settings) {
   return {
@@ -35,9 +32,10 @@ function draftFrom(settings: Settings) {
   };
 }
 
-function saveMessage(previousHost: string, previousLoading: LoadingMode, saved: Settings) {
-  const hostChanged = saved.hostname !== previousHost || Boolean(saved.reboot_required);
-  const loadingChanged = saved.loading !== previousLoading;
+// Hostname and loading screen are read at boot, so a change to either waits for a reboot.
+function saveMessage(previous: Settings, saved: Settings) {
+  const hostChanged = saved.hostname !== previous.hostname;
+  const loadingChanged = saved.loading !== previous.loading;
 
   if (hostChanged && loadingChanged) {
     return "Saved. Hostname and loading screen apply after reboot.";
@@ -66,7 +64,6 @@ export function ConfigForm({ settings }: { settings: Settings }) {
   async function save(event: TargetedSubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const previousLoading = draft.loading;
     const newToken = accessToken.pendingValue;
 
     await perform<Settings>({
@@ -105,7 +102,7 @@ export function ConfigForm({ settings }: { settings: Settings }) {
 
         const wifiNote = wifiChanged ? " WiFi networks apply after reboot." : "";
 
-        setStatus(saveMessage(draft.hostname, previousLoading, saved) + wifiNote, "ok");
+        setStatus(saveMessage(settings, saved) + wifiNote, "ok");
       },
     });
   }
@@ -164,7 +161,7 @@ export function ConfigForm({ settings }: { settings: Settings }) {
               min="0"
               max="100"
               value={draft.volume}
-              onInput={(event) => set({ volume: clampVolume(event.currentTarget.value) })}
+              onInput={(event) => set({ volume: clampVolume(event.currentTarget.valueAsNumber) })}
             />
             <input
               type="number"
@@ -174,7 +171,7 @@ export function ConfigForm({ settings }: { settings: Settings }) {
               step="1"
               required
               value={draft.volume}
-              onInput={(event) => set({ volume: clampVolume(event.currentTarget.value) })}
+              onInput={(event) => set({ volume: clampVolume(event.currentTarget.valueAsNumber) })}
             />
           </div>
         </div>

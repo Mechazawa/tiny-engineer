@@ -1,7 +1,7 @@
 import { type ComponentChildren, createContext } from "preact";
 import { useCallback, useContext, useEffect, useMemo, useState } from "preact/hooks";
-import { api, apiFetch, token } from "./api/client";
-import type { AuthInfo, Health, Settings } from "./api/types";
+import { api, token } from "./api/client";
+import type { AuthInfo, Settings } from "./api/types";
 import { useStatus } from "./status/status";
 
 type Gate = "booting" | "auth" | "reboot" | null;
@@ -12,7 +12,6 @@ interface RobotApi {
   inSetup: boolean;
   version: string | null;
   settings: Settings | null;
-  applyHealth: (health: Health) => void;
   applySettings: (settings: Settings) => void;
   unlock: (candidate: string) => Promise<boolean>;
   showRebootGate: () => void;
@@ -31,10 +30,6 @@ export function useRobot(): RobotApi {
   return value;
 }
 
-async function tokenAccepted() {
-  return (await apiFetch("/settings")).status !== 401;
-}
-
 export function RobotProvider({ children }: { children: ComponentChildren }) {
   const { setStatus } = useStatus();
   const [gate, setGate] = useState<Gate>("booting");
@@ -43,93 +38,89 @@ export function RobotProvider({ children }: { children: ComponentChildren }) {
   const [version, setVersion] = useState<string | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
 
-  const applyHealth = useCallback((health: Health) => {
-    setVersion(health.version || null);
-    setProvisioning(Boolean(health.provisioning));
-    setWifiConfigured(Boolean(health.wifi_configured));
-  }, []);
-
   const applySettings = useCallback((next: Settings) => {
     setSettings(next);
-    setWifiConfigured(Boolean(next.wifi_configured));
+    setWifiConfigured(next.wifi_configured);
   }, []);
 
-  const enterApp = useCallback(async () => {
+  // GET /settings also tells whether the current token is accepted.
+  const loadSettings = useCallback(async (): Promise<"loaded" | "unauthorized" | "offline"> => {
     try {
-      const health = await api<Health>("/health");
+      const reply = await api<Settings>("/settings");
 
-      if (health.ok) {
-        applyHealth(health.data);
+      if (reply.ok) {
+        applySettings(reply.data);
+
+        return "loaded";
       }
+
+      return reply.data.error === "unauthorized" ? "unauthorized" : "offline";
     } catch {
-      // Keep the normal UI; a reload retries.
+      return "offline";
     }
-
-    setGate(null);
-
-    try {
-      const loaded = await api<Settings>("/settings");
-
-      if (loaded.ok) {
-        applySettings(loaded.data);
-      }
-    } catch {
-      setStatus("Could not load settings", "err");
-    }
-  }, [applyHealth, applySettings, setStatus]);
+  }, [applySettings]);
 
   const unlock = useCallback(
     async (candidate: string) => {
       token.set(candidate);
 
-      try {
-        if (await tokenAccepted()) {
-          await enterApp();
+      if ((await loadSettings()) === "loaded") {
+        setGate(null);
 
-          return true;
-        }
-      } catch {
-        // Treated as a rejected token below.
+        return true;
       }
 
       token.set("");
 
       return false;
     },
-    [enterApp],
+    [loadSettings],
   );
 
   useEffect(() => {
-    async function boot() {
-      let auth;
+    void (async () => {
+      let auth: AuthInfo | null = null;
 
       try {
-        auth = await api<AuthInfo>("/auth");
+        const reply = await api<AuthInfo>("/auth");
+
+        auth = reply.ok ? reply.data : null;
       } catch {
-        return enterApp();
+        // The settings request below shows whether the robot answers at all.
       }
 
-      if (!auth.ok || !auth.data.required) {
-        return enterApp();
+      if (auth) {
+        setVersion(auth.version);
+        setProvisioning(auth.provisioning);
+        setWifiConfigured(auth.wifi_configured);
       }
 
-      if (token.get()) {
-        try {
-          if (await tokenAccepted()) {
-            return enterApp();
-          }
+      if (auth?.required && !token.get()) {
+        setGate("auth");
 
-          token.set("");
-        } catch {
-          // Network trouble: ask for the token again without discarding it.
-        }
+        return;
       }
 
-      setGate("auth");
-    }
+      const loaded = await loadSettings();
 
-    boot();
-  }, [enterApp]);
+      if (loaded === "unauthorized") {
+        token.set("");
+      }
+
+      // A stored token that could not be checked is kept, and asked for again.
+      if (auth?.required && loaded !== "loaded") {
+        setGate("auth");
+
+        return;
+      }
+
+      if (loaded === "offline") {
+        setStatus("Could not load settings", "err");
+      }
+
+      setGate(null);
+    })();
+  }, [loadSettings, setStatus]);
 
   const value = useMemo<RobotApi>(
     () => ({
@@ -137,7 +128,6 @@ export function RobotProvider({ children }: { children: ComponentChildren }) {
       inSetup: provisioning || !wifiConfigured,
       version,
       settings,
-      applyHealth,
       applySettings,
       unlock,
       showRebootGate: () => setGate("reboot"),
@@ -146,7 +136,7 @@ export function RobotProvider({ children }: { children: ComponentChildren }) {
         setWifiConfigured(true);
       },
     }),
-    [gate, provisioning, wifiConfigured, version, settings, applyHealth, applySettings, unlock],
+    [gate, provisioning, wifiConfigured, version, settings, applySettings, unlock],
   );
 
   return <RobotContext.Provider value={value}>{children}</RobotContext.Provider>;

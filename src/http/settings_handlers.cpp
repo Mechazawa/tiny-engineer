@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#include <cstring>
+#include <algorithm>
 
 #include "display/oled.h"
 #include "http/handlers.h"
@@ -43,11 +43,21 @@ bool readField(JsonVariantConst list, uint8_t (&out)[SETTINGS_SERVO_COUNT]) {
   return true;
 }
 
-// Name of the first field with the wrong JSON type, or nullptr once the patch holds every field.
-const char* readPatch(JsonObjectConst body, SettingsPatch& patch) {
+// Fills the patch from the body. Returns the 400 message, or an empty string
+// when every field is known and has the right JSON type.
+String readPatch(JsonObjectConst body, SettingsPatch& patch) {
+  const char* known[16] = {};
+  size_t knownCount = 0;
   const char* wrong = nullptr;
+
   auto read = [&](const char* key, auto& out) {
-    if (wrong == nullptr && !body[key].isNull() && !readField(body[key], out)) {
+    if (body[key].isNull()) {
+      return;
+    }
+
+    known[knownCount++] = key;
+
+    if (wrong == nullptr && !readField(body[key], out)) {
       wrong = key;
     }
   };
@@ -64,17 +74,33 @@ const char* readPatch(JsonObjectConst body, SettingsPatch& patch) {
   read("rgb_order", patch.rgbOrder);
   read("oled_rotate_180", patch.oledRotate180);
 
-  if (wrong == nullptr && (!body["servo_mins"].isNull() || !body["servo_maxs"].isNull())) {
-    ServoRanges ranges{};
+  ServoRanges ranges{};
+  read("servo_mins", ranges.mins);
+  read("servo_maxs", ranges.maxs);
 
-    if (!readField(body["servo_mins"], ranges.mins) || !readField(body["servo_maxs"], ranges.maxs)) {
-      return "servo_mins or servo_maxs";
+  for (const JsonPairConst field : body) {
+    const auto isKnown = [&](const char* key) { return field.key() == key; };
+
+    if (std::none_of(known, known + knownCount, isKnown)) {
+      return String("unknown field ") + field.key().c_str();
     }
+  }
 
+  if (wrong != nullptr) {
+    return String("invalid ") + wrong;
+  }
+
+  const bool hasMins = !body["servo_mins"].isNull();
+
+  if (hasMins != !body["servo_maxs"].isNull()) {
+    return "servo_mins and servo_maxs go together";
+  }
+
+  if (hasMins) {
     patch.servoRanges = ranges;
   }
 
-  return wrong;
+  return "";
 }
 
 JsonDocument settingsJson() {
@@ -110,6 +136,7 @@ JsonDocument settingsJson() {
     ssids.add(networks.at(i).ssid);
   }
 
+  doc["reboot_required"] = settingsRebootRequired();
   return doc;
 }
 
@@ -132,14 +159,14 @@ void handleSettingsPost(WebServer& server) {
   }
 
   SettingsPatch patch;
-  const char* invalid = readPatch(body.as<JsonObjectConst>(), patch);
+  String error = readPatch(body.as<JsonObjectConst>(), patch);
 
-  if (invalid == nullptr) {
-    invalid = patch.invalidField();
+  if (error.isEmpty() && patch.invalidField() != nullptr) {
+    error = String("invalid ") + patch.invalidField();
   }
 
-  if (invalid != nullptr) {
-    sendError(server, 400, (String("invalid ") + invalid).c_str());
+  if (!error.isEmpty()) {
+    sendError(server, 400, error.c_str());
     return;
   }
 
@@ -160,17 +187,13 @@ void handleSettingsPost(WebServer& server) {
     restoreProvisioningOled();
   }
 
-  JsonDocument reply = settingsJson();
-  reply["reboot_required"] = strcmp(settingsHostname(), settingsBootHostname()) != 0;
-  sendJson(server, 200, reply);
+  sendJson(server, 200, settingsJson());
 }
 
 void handleSettingsWifiPut(WebServer& server) {
   JsonDocument body;
 
-  if (deserializeJson(body, server.arg("plain")) ||
-      !body.is<JsonArrayConst>()) {
-    sendError(server, 400, "body must be a JSON array of networks");
+  if (!readJsonBody<JsonArrayConst>(server, body)) {
     return;
   }
 
@@ -249,14 +272,10 @@ void handleSettingsWifiPut(WebServer& server) {
 }
 
 void handleSettingsReset(WebServer& server) {
-  bool rebootRequired = false;
-
-  if (!factoryResetSettings(&rebootRequired)) {
+  if (!factoryResetSettings()) {
     sendError(server, 400, "factory reset failed");
     return;
   }
 
-  JsonDocument reply = settingsJson();
-  reply["reboot_required"] = rebootRequired;
-  sendJson(server, 200, reply);
+  sendJson(server, 200, settingsJson());
 }

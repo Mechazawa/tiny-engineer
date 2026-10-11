@@ -6,7 +6,7 @@ import { useStatus } from "../status/status";
 
 export function FactoryReset() {
   const { showRebootGate } = useRobot();
-  const { perform, clearStatus } = useStatus();
+  const { perform } = useStatus();
 
   async function reset() {
     const confirmed = confirm(
@@ -17,17 +17,15 @@ export function FactoryReset() {
       return;
     }
 
-    const result = await perform({
+    await perform({
       path: "/settings/reset",
       pending: "Resetting…",
       failure: "Factory reset failed",
+      onSuccess: () => {
+        token.set("");
+        showRebootGate();
+      },
     });
-
-    if (result?.ok) {
-      token.set("");
-      clearStatus();
-      showRebootGate();
-    }
   }
 
   return (

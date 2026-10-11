@@ -22,7 +22,7 @@ async function openConfig(settings: { wifi_networks: string[] }) {
   return {
     robot,
     ...app,
-    async stage(ssid: string, password = "") {
+    stage: async (ssid: string, password = "") => {
       await app.user.type(screen.getByLabelText("Network name (SSID)"), ssid);
 
       if (password) {
@@ -31,7 +31,7 @@ async function openConfig(settings: { wifi_networks: string[] }) {
 
       await app.click("Add network");
     },
-    async rowButton(ssid: string) {
+    rowButton: async (ssid: string) => {
       await app.user.click(
         within(screen.getByRole("listitem", { name: ssid })).getByRole("button"),
       );

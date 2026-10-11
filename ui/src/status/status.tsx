@@ -8,9 +8,11 @@ export interface Action<T extends Reply> {
   path: string;
   request?: Request;
   // Shown while the request runs. Without it the action is a quick preview: it neither shows
-  // progress nor locks the controls, though it still waits for a running action to finish.
+  // progress nor locks the controls, and it is dropped while a locking action runs.
   pending?: string;
   failure: string;
+  // Shown on success; without it the status bar clears.
+  done?: string;
   // Runs before the controls unlock, for follow-up requests that belong to the same action.
   onSuccess?: (data: T) => unknown;
 }
@@ -45,15 +47,15 @@ export function useStatus(): StatusApi {
 }
 
 export function StatusProvider({ children }: { children: ComponentChildren }) {
-  const [status, setStatusState] = useState<StatusMessage | null>(null);
+  const [statusMessage, setStatusMessage] = useState<StatusMessage | null>(null);
   const [busy, setBusy] = useState(false);
   // The ref blocks a second action in the same tick, before the busy state renders.
   const runningRef = useRef(false);
 
   const setStatus = useCallback((message: string, type?: StatusType) => {
-    setStatusState({ message, type });
+    setStatusMessage({ message, type });
   }, []);
-  const clearStatus = useCallback(() => setStatusState(null), []);
+  const clearStatus = useCallback(() => setStatusMessage(null), []);
 
   const perform = useCallback(
     async <T extends Reply = Reply>({
@@ -61,6 +63,7 @@ export function StatusProvider({ children }: { children: ComponentChildren }) {
       request = { method: "POST" },
       pending,
       failure,
+      done,
       onSuccess,
     }: Action<T>) => {
       if (runningRef.current) {
@@ -80,9 +83,17 @@ export function StatusProvider({ children }: { children: ComponentChildren }) {
 
         if (!result.ok) {
           setStatus(result.data.error || failure, "err");
-        } else if (onSuccess) {
-          await onSuccess(result.data);
+
+          return result;
         }
+
+        if (done) {
+          setStatus(done, "ok");
+        } else {
+          clearStatus();
+        }
+
+        await onSuccess?.(result.data);
 
         return result;
       } catch {
@@ -96,7 +107,7 @@ export function StatusProvider({ children }: { children: ComponentChildren }) {
         }
       }
     },
-    [setStatus],
+    [setStatus, clearStatus],
   );
 
   const value = useMemo(
@@ -106,7 +117,9 @@ export function StatusProvider({ children }: { children: ComponentChildren }) {
 
   return (
     <StatusContext.Provider value={value}>
-      <StatusMessageContext.Provider value={status}>{children}</StatusMessageContext.Provider>
+      <StatusMessageContext.Provider value={statusMessage}>
+        {children}
+      </StatusMessageContext.Provider>
     </StatusContext.Provider>
   );
 }

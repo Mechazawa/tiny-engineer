@@ -88,7 +88,8 @@ void handleIndex(WebServer& server) {
 
 void registerHttpRoutes(WebServer& server) {
   for (const Route& route : kRoutes) {
-    server.on(route.path, route.method, [&server, route]() {
+    // A reference into kRoutes keeps the capture small enough for std::function to hold inline.
+    server.on(route.path, route.method, [&server, &route]() {
       if (const std::optional<Refusal> refusal = Refusal::check(server, route.access)) {
         refusal->send(server);
         return;

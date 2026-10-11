@@ -25,7 +25,6 @@ constexpr size_t SETTINGS_ACCESS_TOKEN_MAX_LEN = 64;
 constexpr size_t SETTINGS_WIFI_SSID_MAX_LEN = 32;
 constexpr size_t SETTINGS_WIFI_PASSWORD_MAX_LEN = 63;
 constexpr size_t SETTINGS_WIFI_NETWORK_MAX = 5;
-constexpr uint8_t SETTINGS_VOLUME_MIN = 0;
 constexpr uint8_t SETTINGS_VOLUME_MAX = 100;
 constexpr uint32_t SETTINGS_CONTINUOUS_TIMEOUT_MIN_MIN = 1;
 constexpr uint32_t SETTINGS_CONTINUOUS_TIMEOUT_MAX_MIN = 1440;
@@ -86,8 +85,9 @@ float settingsServoMax(int index);
 const char* settingsRgbOrder();
 bool settingsOledRotate180();
 
-// Hostname used at boot for Wi-Fi/mDNS (frozen after initSettings).
-const char* settingsBootHostname();
+// True once the saved hostname, loading screen or WiFi networks differ from
+// what this boot started with; those apply only after a reboot.
+bool settingsRebootRequired();
 
 bool settingsValidateSleepTimeout(uint32_t sleepTimeoutMin);
 bool settingsValidateHostname(const char* hostname);
@@ -107,9 +107,6 @@ bool saveSettings(const SettingsPatch& patch);
 // Replaces every saved network in RAM and NVS.
 bool saveWifiNetworks(const WifiNetworkList& networks);
 
-// Clears NVS namespace and restores settings to defaults except servo
-// min/max, RGB LED byte order, and OLED 180° rotation, which stay as
-// currently saved.
-// *rebootRequired is set when boot hostname or loading differed from
-// defaults before reset.
-bool factoryResetSettings(bool* rebootRequired);
+// Clears the NVS namespace and restores the defaults, WiFi networks included,
+// but keeps the servo min/max, RGB LED byte order and OLED 180° rotation.
+bool factoryResetSettings();

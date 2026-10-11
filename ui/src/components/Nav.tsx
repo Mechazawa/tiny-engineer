@@ -14,16 +14,20 @@ export function Nav() {
 
   return (
     <nav>
-      {NAV.map(([path, label]) => (
-        <Link
-          key={path}
-          href={path}
-          className={location === path ? "active" : ""}
-          aria-current={location === path ? "page" : undefined}
-        >
-          {label}
-        </Link>
-      ))}
+      {NAV.map(([path, label]) => {
+        const current = location === path;
+
+        return (
+          <Link
+            key={path}
+            href={path}
+            className={current ? "active" : undefined}
+            aria-current={current ? "page" : undefined}
+          >
+            {label}
+          </Link>
+        );
+      })}
     </nav>
   );
 }

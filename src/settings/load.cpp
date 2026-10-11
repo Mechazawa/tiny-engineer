@@ -25,7 +25,7 @@ bool loadWifiNetworks() {
 }
 
 void migrateLegacyWifi() {
-  if (!settingsNvsBeginWrite()) {
+  if (!g_settingsPrefs.begin(kNs, false)) {
     return;
   }
 
@@ -41,7 +41,7 @@ void migrateLegacyWifi() {
     g_settingsPrefs.remove(kKeyWifiPass);
   }
 
-  settingsNvsEnd();
+  g_settingsPrefs.end();
 }
 
 }  // namespace
@@ -51,15 +51,15 @@ void initSettings() {
   g_wifiNetworks.clear();
   bool legacyWifi = false;
 
-  if (settingsNvsBeginRead()) {
+  if (g_settingsPrefs.begin(kNs, true)) {
     g_settings.load();
     legacyWifi = loadWifiNetworks();
-    settingsNvsEnd();
+    g_settingsPrefs.end();
   } else {
     serialLogPrintln("Settings: NVS open failed; using defaults");
   }
 
-  strlcpy(g_bootHostname, g_settings.hostname, sizeof(g_bootHostname));
+  g_bootSettings = g_settings;
 
   if (legacyWifi) {
     migrateLegacyWifi();

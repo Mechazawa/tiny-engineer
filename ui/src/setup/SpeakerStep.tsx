@@ -3,18 +3,15 @@ import { ConfigSection } from "../components/ConfigSection";
 import { useStatus } from "../status/status";
 
 export function SpeakerStep() {
-  const { perform, setStatus } = useStatus();
+  const { perform } = useStatus();
 
   async function play() {
-    const result = await perform({
+    await perform({
       path: "/setup/audio",
       pending: "Playing…",
       failure: "Playback failed",
+      done: "Done.",
     });
-
-    if (result?.ok) {
-      setStatus("Done.", "ok");
-    }
   }
 
   return (

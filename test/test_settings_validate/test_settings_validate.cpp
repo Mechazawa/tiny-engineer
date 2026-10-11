@@ -71,6 +71,9 @@ void test_access_token() {
   TEST_ASSERT_TRUE(settingsValidateAccessToken(token64));
   TEST_ASSERT_FALSE(settingsValidateAccessToken(token65));
   TEST_ASSERT_FALSE(settingsValidateAccessToken("foo\x01" "bar"));
+  TEST_ASSERT_TRUE(settingsValidateAccessToken("two words"));
+  TEST_ASSERT_FALSE(settingsValidateAccessToken(" leading"));
+  TEST_ASSERT_FALSE(settingsValidateAccessToken("trailing "));
   TEST_ASSERT_FALSE(settingsValidateAccessToken(nullptr));
 }
 

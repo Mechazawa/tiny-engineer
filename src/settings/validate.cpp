@@ -73,6 +73,12 @@ bool settingsValidateAccessToken(const char* accessToken) {
     return false;
   }
 
+  // HTTP clients and the server trim header values, so a token that starts or
+  // ends with a space could never match the Authorization header.
+  if (len > 0 && (accessToken[0] == ' ' || accessToken[len - 1] == ' ')) {
+    return false;
+  }
+
   for (size_t i = 0; i < len; i++) {
     const unsigned char c =
       static_cast<unsigned char>(accessToken[i]);

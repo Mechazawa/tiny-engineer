@@ -54,6 +54,15 @@ describe("config page", () => {
     await waitFor(() => expect(statusText()).toBe("Saved. Hostname applies after reboot."));
   });
 
+  it("says when a loading screen change needs a reboot", async () => {
+    const { user, click } = await openConfig();
+
+    await user.selectOptions(field("Boot loading screen"), "sleep_inertia");
+    await click("Save settings");
+
+    await waitFor(() => expect(statusText()).toBe("Saved. Loading screen applies after reboot."));
+  });
+
   it("sends an empty token to remove it and forgets the stored copy", async () => {
     sessionStorage.setItem("te_access_token", "old");
 

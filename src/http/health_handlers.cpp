@@ -12,6 +12,7 @@
 void handleAuth(WebServer& server) {
   JsonDocument body;
   body["ok"] = true;
+  body["version"] = FW_VERSION;
   body["required"] = settingsAccessTokenSet();
   body["wifi_configured"] = settingsWifiConfigured();
   body["provisioning"] = wifiProvisioningMode();

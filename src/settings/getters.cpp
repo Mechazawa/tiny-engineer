@@ -19,10 +19,6 @@ const char* settingsHostname() {
   return g_settings.hostname;
 }
 
-const char* settingsBootHostname() {
-  return g_bootHostname;
-}
-
 uint8_t settingsVolume() {
   return g_settings.volume;
 }

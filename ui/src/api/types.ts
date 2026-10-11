@@ -5,6 +5,7 @@ export interface ApiError {
 
 export interface AuthInfo {
   ok: true;
+  version: string;
   required: boolean;
   wifi_configured: boolean;
   provisioning: boolean;
