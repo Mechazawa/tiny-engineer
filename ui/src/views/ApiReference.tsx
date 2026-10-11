@@ -85,7 +85,9 @@ export function ApiReference() {
               <code>hostname</code>
             </td>
             <td>string</td>
-            <td>1&ndash;31 chars, letters/digits/hyphen</td>
+            <td>
+              1&ndash;31 chars, <code>[A-Za-z0-9-]</code>, not starting/ending with <code>-</code>
+            </td>
           </tr>
           <tr>
             <td>
