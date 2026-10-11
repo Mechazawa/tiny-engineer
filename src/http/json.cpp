@@ -1,6 +1,5 @@
 #include "http/json.h"
 
-#include <cstdio>
 #include <cstring>
 
 #include "settings/settings.h"
@@ -43,27 +42,6 @@ bool bearerTokenMatches(const String& header, const char* expected) {
 
 void httpSendJson(WebServer& server, int code, const char* body) {
   sendWithCors(server, code, "application/json", body);
-}
-
-void httpAppendJsonString(String& out, const char* text) {
-  out += '"';
-
-  for (const char* p = text; *p != '\0'; p++) {
-    const unsigned char c = static_cast<unsigned char>(*p);
-
-    if (c == '"' || c == '\\') {
-      out += '\\';
-      out += static_cast<char>(c);
-    } else if (c < 0x20) {
-      char escaped[7];
-      snprintf(escaped, sizeof(escaped), "\\u%04x", c);
-      out += escaped;
-    } else {
-      out += static_cast<char>(c);
-    }
-  }
-
-  out += '"';
 }
 
 void httpSendHtml(WebServer& server, int code, const char* body) {

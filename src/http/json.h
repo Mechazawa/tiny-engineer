@@ -3,10 +3,6 @@
 #include <WebServer.h>
 
 void httpSendJson(WebServer& server, int code, const char* body);
-
-// Appends text as a quoted JSON string with quotes, backslashes and control
-// characters escaped.
-void httpAppendJsonString(String& out, const char* text);
 void httpSendHtml(WebServer& server, int code, const char* body);
 void httpSendCorsPreflight(WebServer& server);
 

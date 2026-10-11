@@ -1,6 +1,7 @@
 #include "http/settings_handlers.h"
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -13,29 +14,6 @@
 #include "settings/wifi_network_list.h"
 
 namespace {
-
-void formatServoRangeJson(char* dest, size_t destSize) {
-  snprintf(
-    dest,
-    destSize,
-    "\"servo_mins\":[%u,%u,%u,%u,%u],"
-    "\"servo_maxs\":[%u,%u,%u,%u,%u],"
-    "\"rgb_order\":\"%s\","
-    "\"oled_rotate_180\":%s",
-    static_cast<unsigned>(settingsServoMin(0)),
-    static_cast<unsigned>(settingsServoMin(1)),
-    static_cast<unsigned>(settingsServoMin(2)),
-    static_cast<unsigned>(settingsServoMin(3)),
-    static_cast<unsigned>(settingsServoMin(4)),
-    static_cast<unsigned>(settingsServoMax(0)),
-    static_cast<unsigned>(settingsServoMax(1)),
-    static_cast<unsigned>(settingsServoMax(2)),
-    static_cast<unsigned>(settingsServoMax(3)),
-    static_cast<unsigned>(settingsServoMax(4)),
-    settingsRgbOrder(),
-    settingsOledRotate180() ? "true" : "false"
-  );
-}
 
 bool parseServoCsv(const String& raw, uint8_t out[SETTINGS_SERVO_COUNT]) {
   const char* p = raw.c_str();
@@ -68,83 +46,55 @@ bool parseServoCsv(const String& raw, uint8_t out[SETTINGS_SERVO_COUNT]) {
   return true;
 }
 
-void appendWifiNetworksJson(String& body) {
-  const WifiNetworkList& networks = settingsWifiNetworks();
-
-  body += ",\"wifi_networks\":[";
-
-  for (size_t i = 0; i < networks.count(); i++) {
-    if (i > 0) {
-      body += ',';
-    }
-
-    httpAppendJsonString(body, networks.at(i).ssid);
-  }
-
-  body += ']';
-}
-
 void sendSettingsJson(
   WebServer& server,
   bool rebootRequired,
   bool wifiConnectSuccess
 ) {
-  char servoJson[176];
-  formatServoRangeJson(servoJson, sizeof(servoJson));
-  char head[1000];
+  JsonDocument doc;
 
-  snprintf(
-    head,
-    sizeof(head),
-    "{"
-    "\"ok\":true,"
-    "\"sleep_timeout\":%lu,"
-    "\"hostname\":\"%s\","
-    "\"volume\":%u,"
-    "\"welcome\":%s,"
-    "\"serial_log\":%s,"
-    "\"continuous_timeout\":%lu,"
-    "\"loading\":\"%s\","
-    "\"eyes_style\":\"%s\","
-    "\"access_token_set\":%s,"
-    "\"wifi_configured\":%s,"
-    "%s",
-    (unsigned long)settingsSleepTimeoutMin(),
-    settingsHostname(),
-    static_cast<unsigned>(settingsVolume()),
-    settingsWelcomeEnabled() ? "true" : "false",
-    settingsSerialLogEnabled() ? "true" : "false",
-    (unsigned long)settingsContinuousTimeoutMin(),
-    settingsLoading(),
-    settingsEyesStyle(),
-    settingsAccessTokenSet() ? "true" : "false",
-    settingsWifiConfigured() ? "true" : "false",
-    servoJson
-  );
+  doc["ok"] = true;
+  doc["sleep_timeout"] = settingsSleepTimeoutMin();
+  doc["hostname"] = settingsHostname();
+  doc["volume"] = settingsVolume();
+  doc["welcome"] = settingsWelcomeEnabled();
+  doc["serial_log"] = settingsSerialLogEnabled();
+  doc["continuous_timeout"] = settingsContinuousTimeoutMin();
+  doc["loading"] = settingsLoading();
+  doc["eyes_style"] = settingsEyesStyle();
+  doc["access_token_set"] = settingsAccessTokenSet();
+  doc["wifi_configured"] = settingsWifiConfigured();
 
-  String body(head);
-  appendWifiNetworksJson(body);
+  JsonArray servoMins = doc["servo_mins"].to<JsonArray>();
+  JsonArray servoMaxs = doc["servo_maxs"].to<JsonArray>();
+
+  for (size_t i = 0; i < SETTINGS_SERVO_COUNT; i++) {
+    servoMins.add(static_cast<unsigned>(settingsServoMin(i)));
+    servoMaxs.add(static_cast<unsigned>(settingsServoMax(i)));
+  }
+
+  doc["rgb_order"] = settingsRgbOrder();
+  doc["oled_rotate_180"] = settingsOledRotate180();
+
+  const WifiNetworkList& networks = settingsWifiNetworks();
+  JsonArray ssids = doc["wifi_networks"].to<JsonArray>();
+
+  for (size_t i = 0; i < networks.count(); i++) {
+    ssids.add(networks.at(i).ssid);
+  }
 
   if (wifiConnectSuccess) {
-    char wifiJson[96];
-
-    snprintf(
-      wifiJson,
-      sizeof(wifiJson),
-      ",\"wifi_connect_success\":true,"
-      "\"wifi_ip\":\"%s\","
-      "\"wifi_hostname\":\"%s\"",
-      wifiIpText(),
-      httpMdnsHostname()
-    );
-    body += wifiJson;
+    doc["wifi_connect_success"] = true;
+    doc["wifi_ip"] = wifiIpText();
+    doc["wifi_hostname"] = httpMdnsHostname();
   }
 
   if (rebootRequired) {
-    body += ",\"reboot_required\":true";
+    doc["reboot_required"] = true;
   }
 
-  body += '}';
+  String body;
+  serializeJson(doc, body);
   httpSendJson(server, 200, body.c_str());
 }
 
