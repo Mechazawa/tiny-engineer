@@ -7,7 +7,7 @@ describe("access token gate", () => {
     fakeRobot({ authRequired: true, token: "secret" });
     renderApp("/config");
 
-    expect(await screen.findByRole("heading", { name: "Access token required" })).toBeTruthy();
+    await screen.findByRole("heading", { name: "Access token required" });
     expect(screen.queryByRole("navigation")).toBeNull();
   });
 
@@ -27,7 +27,7 @@ describe("access token gate", () => {
 
     await user.type(await screen.findByLabelText("Access token"), "secret{Enter}");
 
-    expect(await screen.findByRole("heading", { name: "Config" })).toBeTruthy();
+    await screen.findByRole("heading", { name: "Config" });
     await waitFor(() => expect(robot.requests.at(-1)?.authorization).toBe("Bearer secret"));
   });
 
@@ -36,7 +36,7 @@ describe("access token gate", () => {
     sessionStorage.setItem("te_access_token", "secret");
     renderApp("/config");
 
-    expect(await screen.findByRole("heading", { name: "Config" })).toBeTruthy();
+    await screen.findByRole("heading", { name: "Config" });
     expect(screen.queryByRole("heading", { name: "Access token required" })).toBeNull();
   });
 });

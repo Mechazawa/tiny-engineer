@@ -17,7 +17,8 @@ export function useWifiNetworks(saved: string[], onSaved: (settings: Settings) =
   ];
   const pending = removed.size > 0 || added.size > 0;
 
-  const unremove = (ssid: string) => new Set([...removed].filter((name) => name !== ssid));
+  const unremove = (ssid: string) =>
+    setRemoved((names) => new Set([...names].filter((name) => name !== ssid)));
 
   return {
     saved,
@@ -26,12 +27,13 @@ export function useWifiNetworks(saved: string[], onSaved: (settings: Settings) =
     desired,
     pending,
     stageAdd(ssid: string, password: string) {
-      setRemoved(unremove(ssid));
-      setAdded(new Map([...added, [ssid, password]]));
+      unremove(ssid);
+      setAdded((networks) => new Map([...networks, [ssid, password]]));
     },
-    undoAdd: (ssid: string) => setAdded(new Map([...added].filter(([name]) => name !== ssid))),
-    remove: (ssid: string) => setRemoved(new Set([...removed, ssid])),
-    undoRemove: (ssid: string) => setRemoved(unremove(ssid)),
+    undoAdd: (ssid: string) =>
+      setAdded((networks) => new Map([...networks].filter(([name]) => name !== ssid))),
+    remove: (ssid: string) => setRemoved((names) => new Set([...names, ssid])),
+    undoRemove: unremove,
     // Resolves to the robot's error, or null when the list saved or nothing changed.
     async save(): Promise<string | null> {
       if (!pending) {

@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import type { TargetedKeyboardEvent } from "preact";
 import { useState } from "preact/hooks";
 import { Button } from "../components/Button";
 import { ConfigSection } from "../components/ConfigSection";
@@ -23,7 +24,7 @@ function NetworkRow({
   onClick: () => void;
 }) {
   return (
-    <li className={clsx("wifi-network", removed && "wifi-network-removed")}>
+    <li className={clsx("wifi-network", removed && "wifi-network-removed")} aria-label={ssid}>
       <span className="wifi-network-ssid">{ssid}</span>
       <span className="wifi-network-note">{note}</span>
       <Button
@@ -64,7 +65,7 @@ export function WifiNetworksSection({ networks }: { networks: WifiNetworks }) {
     setPassword("");
   }
 
-  const addOnEnter = (event: KeyboardEvent) => {
+  const addOnEnter = (event: TargetedKeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
       stageAdd();

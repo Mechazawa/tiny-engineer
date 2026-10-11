@@ -20,7 +20,7 @@ describe("setup wizard", () => {
     fakeRobot({ provisioning: true });
     renderApp("/");
 
-    expect(await screen.findByRole("heading", { name: "Tiny Engineer setup" })).toBeTruthy();
+    await screen.findByRole("heading", { name: "Tiny Engineer setup" });
     expect(screen.queryByRole("navigation")).toBeNull();
     expect(stepLabel()).toBe("Step 1 of 5 · Servos");
   });
@@ -122,7 +122,7 @@ describe("setup wizard", () => {
 
     await click("Connect to WiFi");
 
-    expect(await screen.findByRole("navigation")).toBeTruthy();
+    await screen.findByRole("navigation");
 
     const writes = robot.requests.slice(writesBefore).filter((request) => request.method !== "GET");
 

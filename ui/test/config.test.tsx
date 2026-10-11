@@ -62,7 +62,7 @@ describe("config page", () => {
     await click("Remove token");
     await click("Save settings");
 
-    expect(await screen.findByText("Auth disabled")).toBeTruthy();
+    await screen.findByText("Auth disabled");
     expect(robot.lastPost("/settings")?.json).toHaveProperty("access_token", "");
     expect(sessionStorage.getItem("te_access_token")).toBeNull();
   });

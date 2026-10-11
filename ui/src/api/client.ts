@@ -32,8 +32,9 @@ export interface Request {
   signal?: AbortSignal;
 }
 
-// `ok` also covers firmware errors reported as {"ok":false} in a 200 body.
-export type ApiResult<T> = { ok: true; data: T } | { ok: false; data: ApiError };
+// Every firmware reply carries `ok`; errors are {"ok":false,"error":...}.
+export type Reply = { ok: true };
+export type ApiResult<T extends Reply> = { ok: true; data: T } | { ok: false; data: ApiError };
 
 export function apiFetch(path: string, { method = "GET", params, json, signal }: Request = {}) {
   const query = params ? `?${new URLSearchParams(params)}` : "";
@@ -56,9 +57,11 @@ export function apiFetch(path: string, { method = "GET", params, json, signal }:
   });
 }
 
-export async function api<T>(path: string, request?: Request): Promise<ApiResult<T>> {
-  const response = await apiFetch(path, request);
-  const data = await response.json();
+export async function api<T extends Reply = Reply>(
+  path: string,
+  request?: Request,
+): Promise<ApiResult<T>> {
+  const data: T | ApiError = await (await apiFetch(path, request)).json();
 
-  return response.ok && data.ok !== false ? { ok: true, data } : { ok: false, data };
+  return data.ok ? { ok: true, data } : { ok: false, data };
 }

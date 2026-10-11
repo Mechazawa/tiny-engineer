@@ -1,4 +1,5 @@
 import { Button } from "../components/Button";
+import { clamp } from "../lib/math";
 import { ConfigSection } from "../components/ConfigSection";
 import { DEFAULT_SERVO_RANGES, type Range, SERVO_NAMES } from "../servos";
 import { useStatus } from "../status/status";
@@ -28,7 +29,7 @@ export function FindRanges({ calibration }: { calibration: Calibration }) {
     angles.map((each, index) => (index === joint ? value : each));
 
   async function nudge(delta: number) {
-    const next = Math.max(0, Math.min(180, angle + delta));
+    const next = clamp(angle + delta, 0, 180);
 
     if (next === angle) {
       return;
@@ -73,6 +74,7 @@ export function FindRanges({ calibration }: { calibration: Calibration }) {
           <Button
             key={name}
             className={index === joint ? "active" : undefined}
+            aria-pressed={index === joint}
             onClick={() => calibration.setJoint(index)}
           >
             {name}

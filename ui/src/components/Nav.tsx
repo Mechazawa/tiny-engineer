@@ -15,7 +15,12 @@ export function Nav() {
   return (
     <nav>
       {NAV.map(([path, label]) => (
-        <Link key={path} href={path} className={location === path ? "active" : ""}>
+        <Link
+          key={path}
+          href={path}
+          className={location === path ? "active" : ""}
+          aria-current={location === path ? "page" : undefined}
+        >
           {label}
         </Link>
       ))}

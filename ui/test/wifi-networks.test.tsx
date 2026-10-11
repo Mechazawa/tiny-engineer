@@ -2,14 +2,15 @@ import { screen, waitFor, within } from "@testing-library/preact";
 import { describe, expect, it } from "vitest";
 import { fakeRobot, renderApp } from "./robot";
 
+// Each row reads "<ssid><note><button>"; the cells are the row's text children.
 const rows = () =>
   within(screen.getByRole("list", { name: "Saved WiFi networks" }))
     .queryAllByRole("listitem")
-    .map((row) => ({
-      ssid: row.querySelector(".wifi-network-ssid")?.textContent,
-      note: row.querySelector(".wifi-network-note")?.textContent,
-      button: within(row).getByRole<HTMLButtonElement>("button"),
-    }));
+    .map((row) => {
+      const [ssid, note] = [...row.children].map((cell) => cell.textContent);
+
+      return { ssid, note, button: within(row).getByRole<HTMLButtonElement>("button") };
+    });
 const statusText = () => screen.queryByRole("status")?.textContent;
 
 async function openConfig(settings: { wifi_networks: string[] }) {
@@ -31,9 +32,9 @@ async function openConfig(settings: { wifi_networks: string[] }) {
       await app.click("Add network");
     },
     async rowButton(ssid: string) {
-      const row = screen.getByText(ssid, { selector: ".wifi-network-ssid" }).closest("li");
-
-      await app.user.click(within(row as HTMLElement).getByRole("button"));
+      await app.user.click(
+        within(screen.getByRole("listitem", { name: ssid })).getByRole("button"),
+      );
     },
   };
 }

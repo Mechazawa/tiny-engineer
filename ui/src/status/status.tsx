@@ -1,10 +1,10 @@
 import { type ComponentChildren, createContext } from "preact";
 import { useCallback, useContext, useMemo, useRef, useState } from "preact/hooks";
-import { api, type ApiResult, type Request } from "../api/client";
+import { api, type ApiResult, type Reply, type Request } from "../api/client";
 
 type StatusType = "loading" | "ok" | "err";
 
-export interface Action<T> {
+export interface Action<T extends Reply> {
   path: string;
   request?: Request;
   // Shown while the request runs. Without it the action is a quick preview: it neither shows
@@ -15,16 +15,24 @@ export interface Action<T> {
   onSuccess?: (data: T) => unknown;
 }
 
+export interface StatusMessage {
+  message: string;
+  type?: StatusType;
+}
+
 interface StatusApi {
   busy: boolean;
-  status: { message: string; type?: StatusType } | null;
   setStatus: (message: string, type?: StatusType) => void;
   clearStatus: () => void;
   // Resolves to the result, or null when another action is running or the request failed to send.
-  perform: <T>(action: Action<T>) => Promise<ApiResult<T> | null>;
+  perform: <T extends Reply = Reply>(action: Action<T>) => Promise<ApiResult<T> | null>;
 }
 
 const StatusContext = createContext<StatusApi | null>(null);
+// Separate so a new message re-renders the status bar alone, not every button.
+const StatusMessageContext = createContext<StatusMessage | null>(null);
+
+export const useStatusMessage = () => useContext(StatusMessageContext);
 
 export function useStatus(): StatusApi {
   const value = useContext(StatusContext);
@@ -37,7 +45,7 @@ export function useStatus(): StatusApi {
 }
 
 export function StatusProvider({ children }: { children: ComponentChildren }) {
-  const [status, setStatusState] = useState<StatusApi["status"]>(null);
+  const [status, setStatusState] = useState<StatusMessage | null>(null);
   const [busy, setBusy] = useState(false);
   // The ref blocks a second action in the same tick, before the busy state renders.
   const runningRef = useRef(false);
@@ -48,7 +56,13 @@ export function StatusProvider({ children }: { children: ComponentChildren }) {
   const clearStatus = useCallback(() => setStatusState(null), []);
 
   const perform = useCallback(
-    async <T,>({ path, request = { method: "POST" }, pending, failure, onSuccess }: Action<T>) => {
+    async <T extends Reply = Reply>({
+      path,
+      request = { method: "POST" },
+      pending,
+      failure,
+      onSuccess,
+    }: Action<T>) => {
       if (runningRef.current) {
         return null;
       }
@@ -86,9 +100,13 @@ export function StatusProvider({ children }: { children: ComponentChildren }) {
   );
 
   const value = useMemo(
-    () => ({ busy, status, setStatus, clearStatus, perform }),
-    [busy, status, setStatus, clearStatus, perform],
+    () => ({ busy, setStatus, clearStatus, perform }),
+    [busy, setStatus, clearStatus, perform],
   );
 
-  return <StatusContext.Provider value={value}>{children}</StatusContext.Provider>;
+  return (
+    <StatusContext.Provider value={value}>
+      <StatusMessageContext.Provider value={status}>{children}</StatusMessageContext.Provider>
+    </StatusContext.Provider>
+  );
 }

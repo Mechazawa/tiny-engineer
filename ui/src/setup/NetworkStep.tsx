@@ -1,3 +1,4 @@
+import type { TargetedSubmitEvent } from "preact";
 import { useState } from "preact/hooks";
 import type { Settings, WifiNetwork } from "../api/types";
 import { Button } from "../components/Button";
@@ -24,7 +25,7 @@ export function NetworkStep({ settings }: { settings: Settings }) {
   const [hostname, setHostname] = useResettableState(settings.hostname, String);
 
   // Runs once the browser has checked the hostname field.
-  async function connect(event: Event) {
+  async function connect(event: TargetedSubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const network = ssid.trim();
@@ -110,7 +111,11 @@ export function NetworkStep({ settings }: { settings: Settings }) {
               value={password}
               onInput={(event) => setPassword(event.currentTarget.value)}
             />
-            <Button className="btn-token-toggle" onClick={() => setRevealed(!revealed)}>
+            <Button
+              className="btn-token-toggle"
+              aria-pressed={revealed}
+              onClick={() => setRevealed(!revealed)}
+            >
               {revealed ? "Hide" : "Show"}
             </Button>
           </div>

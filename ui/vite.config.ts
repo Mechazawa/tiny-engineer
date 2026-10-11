@@ -19,6 +19,7 @@ export default defineConfig({
   plugins: [preact({ reactAliasesEnabled: false }), viteSingleFile()],
   test: {
     environment: "jsdom",
+    unstubGlobals: true,
   },
   server: {
     host: "127.0.0.1",

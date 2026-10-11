@@ -1,3 +1,4 @@
+import type { TargetedSubmitEvent } from "preact";
 import { useState } from "preact/hooks";
 import { Button } from "../components/Button";
 import { useRobot } from "../robot";
@@ -7,7 +8,7 @@ export function AuthGate() {
   const [candidate, setCandidate] = useState("");
   const [rejected, setRejected] = useState(false);
 
-  async function submit(event: Event) {
+  async function submit(event: TargetedSubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!candidate) {

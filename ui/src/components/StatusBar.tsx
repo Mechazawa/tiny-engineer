@@ -1,7 +1,7 @@
-import { useStatus } from "../status/status";
+import { useStatusMessage } from "../status/status";
 
 export function StatusBar() {
-  const { status } = useStatus();
+  const status = useStatusMessage();
 
   if (!status) {
     return null;

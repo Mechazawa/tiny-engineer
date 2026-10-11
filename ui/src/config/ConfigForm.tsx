@@ -1,9 +1,11 @@
+import type { TargetedSubmitEvent } from "preact";
 import { token } from "../api/client";
 import type { LoadingMode, Settings } from "../api/types";
 import { ApplyBadge } from "../components/ApplyBadge";
 import { Button } from "../components/Button";
 import { ConfigSection } from "../components/ConfigSection";
 import { HostnameField } from "../components/HostnameField";
+import { clamp } from "../lib/math";
 import { useRobot } from "../robot";
 import { useStatus } from "../status/status";
 import { useResettableState } from "../useResettableState";
@@ -17,7 +19,7 @@ const EYES_STYLES = ["classic", "kaomoji", "cover", "dots"];
 const clampVolume = (value: string) => {
   const parsed = parseInt(value, 10);
 
-  return Number.isNaN(parsed) ? 70 : Math.min(100, Math.max(0, parsed));
+  return Number.isNaN(parsed) ? 70 : clamp(parsed, 0, 100);
 };
 
 function draftFrom(settings: Settings) {
@@ -58,9 +60,10 @@ export function ConfigForm({ settings }: { settings: Settings }) {
   const [draft, setDraft] = useResettableState(settings, draftFrom);
   const accessToken = useAccessToken(settings);
   const networks = useWifiNetworks(settings.wifi_networks, applySettings);
-  const set = (fields: Partial<typeof draft>) => setDraft({ ...draft, ...fields });
+  const set = (fields: Partial<typeof draft>) =>
+    setDraft((previous) => ({ ...previous, ...fields }));
 
-  async function save(event: Event) {
+  async function save(event: TargetedSubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const previousLoading = draft.loading;

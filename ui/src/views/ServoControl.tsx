@@ -95,6 +95,7 @@ export function ServoControl() {
             <input
               type="number"
               id="servo-angle"
+              aria-describedby="servo-range-hint"
               min={min}
               max={max}
               value={angle}

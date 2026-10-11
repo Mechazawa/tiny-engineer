@@ -19,18 +19,16 @@ export function useAccessToken(settings: Settings) {
       configured,
       value: clearPending ? "" : (draft ?? (configured ? MASK : "")),
       clearPending,
-      onInput: (next: string) => setState({ draft: next, clearPending }),
+      onInput: (next: string) => setState((state) => ({ ...state, draft: next })),
       onFocus() {
-        if (draft === null) {
-          setState({ draft: "", clearPending });
-        }
+        setState((state) => (state.draft === null ? { ...state, draft: "" } : state));
       },
       onBlur() {
-        if (configured && draft?.trim() === "") {
-          setState({ draft: null, clearPending });
+        if (configured) {
+          setState((state) => (state.draft?.trim() === "" ? { ...state, draft: null } : state));
         }
       },
-      onToggle: () => setState({ draft: null, clearPending: !clearPending }),
+      onToggle: () => setState((state) => ({ draft: null, clearPending: !state.clearPending })),
     },
   };
 }

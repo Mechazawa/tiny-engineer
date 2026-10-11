@@ -17,8 +17,14 @@ export function HostnameField({
         pattern="[A-Za-z0-9]([A-Za-z0-9-]{0,29}[A-Za-z0-9])?"
         required
         value={value}
-        // Hostnames hold no spaces, so stray ones at either end are dropped while typing.
-        onInput={(event) => onInput(event.currentTarget.value.trim())}
+        // Hostnames hold no spaces, so stray ones at either end are dropped while typing. The
+        // field is written back too: when trimming leaves the state unchanged, nothing re-renders.
+        onInput={(event) => {
+          const trimmed = event.currentTarget.value.trim();
+
+          event.currentTarget.value = trimmed;
+          onInput(trimmed);
+        }}
       />
       <p className="hint">Letters, digits, hyphen — no .local</p>
     </div>

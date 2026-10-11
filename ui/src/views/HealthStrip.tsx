@@ -1,41 +1,8 @@
 import { useEffect, useState } from "preact/hooks";
 import { api } from "../api/client";
 import type { Health } from "../api/types";
+import { formatBytes, formatDuration } from "../lib/format";
 import { useRobot } from "../robot";
-
-function formatUptime(ms: number) {
-  const totalSeconds = Math.floor(ms / 1000);
-  const seconds = totalSeconds % 60;
-  const minutes = Math.floor(totalSeconds / 60) % 60;
-  const hours = Math.floor(totalSeconds / 3600) % 24;
-  const days = Math.floor(totalSeconds / 86400);
-
-  if (totalSeconds < 60) {
-    return `${seconds} s`;
-  }
-
-  if (totalSeconds < 3600) {
-    return `${minutes} min ${seconds} s`;
-  }
-
-  if (totalSeconds < 86400) {
-    return `${hours} h ${minutes} min`;
-  }
-
-  return `${days} d ${hours} h`;
-}
-
-function formatBytes(bytes: number) {
-  if (bytes >= 1048576) {
-    return `${(bytes / 1048576).toFixed(1)} MB`;
-  }
-
-  if (bytes >= 1024) {
-    return `${Math.round(bytes / 1024)} KB`;
-  }
-
-  return `${bytes} B`;
-}
 
 function describeHealth(health: Health) {
   const heapUsed = health.heap_size
@@ -44,7 +11,7 @@ function describeHealth(health: Health) {
 
   return [
     `IP: ${health.wifi?.connected ? health.wifi.ip : "offline"}`,
-    `Uptime: ${formatUptime(health.uptime_ms)}`,
+    `Uptime: ${formatDuration(health.uptime_ms)}`,
     `Heap: ${heapUsed}% used (${formatBytes(health.free_heap)} free)`,
     typeof health.cpu_temp_c === "number" && `Temp: ${health.cpu_temp_c.toFixed(1)} °C`,
     health.version,

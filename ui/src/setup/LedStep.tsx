@@ -82,6 +82,7 @@ export function LedStep({ mapping }: { mapping: LedMapping }) {
                       `led-${channel.toLowerCase()}`,
                       mapping.looks[byte] === channel && "active",
                     )}
+                    aria-pressed={mapping.looks[byte] === channel}
                     onClick={() => pickLook(byte, channel)}
                   >
                     {name}
