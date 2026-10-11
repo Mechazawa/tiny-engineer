@@ -183,8 +183,9 @@ bool connectSta(
 bool connectSavedNetworks() {
   const WifiNetworkList& networks = settingsWifiNetworks();
   // A single network is tried with the full timeout, so it needs no scan.
-  const bool scanned = networks.count() > 1;
-  const int found = scanned ? WiFi.scanNetworks() : 0;
+  // A failed scan (negative result) also gives every network the full timeout.
+  const int found = networks.count() > 1 ? WiFi.scanNetworks() : -1;
+  const bool scanned = found >= 0;
   int32_t rssi[SETTINGS_WIFI_NETWORK_MAX];
   size_t order[SETTINGS_WIFI_NETWORK_MAX];
 
